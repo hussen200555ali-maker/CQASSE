@@ -14,33 +14,13 @@ RewriteRule ^database/ - [F,L]
 RewriteRule ^includes/ - [F,L]
 
 # ============================================================================
-# رؤوس الأمان HTTP Security Headers [SEC-001] - v2.0.2
+# رؤوس الأمان — تُدار من includes/security_headers.php (PHP ديناميكية مع nonce)
+# ملاحظة: تم إزالة الرؤوس المكررة من هنا لتجنب الإرسال المزدوج.
+# راجع includes/security_headers.php للرؤوس المُدارة عبر PHP.
 # ============================================================================
 <IfModule mod_headers.c>
-    # منع Clickjacking
-    Header always set X-Frame-Options "SAMEORIGIN"
-
-    # منع MIME Sniffing
-    Header always set X-Content-Type-Options "nosniff"
-
-    # حماية XSS
-    Header always set X-XSS-Protection "1; mode=block"
-
-    # سياسة الإحالة
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-
-    # سياسة الصلاحيات
-    Header always set Permissions-Policy "geolocation=(), camera=(), microphone=()"
-
-    # سياسة أمان المحتوى CSP — تُدار من includes/security_headers.php (ديناميكية مع nonce)
-    # ملاحظة: لا يُحدد هنا لتجنب تعارض مع السياسة الديناميكية من PHP
-
-    # HSTS - إجبار HTTPS (للمحلات التي تستخدم HTTPS)
+    # HSTS - إجبار HTTPS (يُرسل عبر .htaccess للملفات الثابتة التي لا تمر عبر PHP)
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-
-    # منع التخزين المؤقت للصفحات الديناميكية
-    Header always set Cache-Control "no-store, no-cache, must-revalidate"
-    Header always set Pragma "no-cache"
 </IfModule>
 
 # تعطيل عرض محتويات المجلدات
