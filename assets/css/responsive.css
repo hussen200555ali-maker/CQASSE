@@ -1,0 +1,2946 @@
+/* ============================================================
+   EQAS - Responsive Styles
+   نظام التقييم الشامل - أنماط الاستجابة الشاملة
+   RTL Arabic Interface - Comprehensive Breakpoint Coverage
+   ============================================================
+   
+   Breakpoints:
+   - xs:  0–575px    (phones)
+   - sm:  576–767px  (large phones / small tablets)
+   - md:  768–991px  (tablets)
+   - lg:  992–1199px (small desktops)
+   - xl:  1200–1399px (desktops)
+   - 2xl: 1400px+    (large desktops)
+   
+   Strategy: Desktop-first with progressive enhancement
+   for smaller viewports via max-width media queries.
+   ============================================================ */
+
+
+/* ============================================================
+   0. TOUCH DEVICE & SAFETY INSETS (Base — no breakpoint)
+   ============================================================ */
+
+/* --- Safe Area Insets for notched phones --- */
+@supports (padding: env(safe-area-inset-top)) {
+    .topbar {
+        padding-top: env(safe-area-inset-top);
+        height: calc(var(--header-height) + env(safe-area-inset-top));
+    }
+
+    .sidebar {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .main-content-inner {
+        padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+    }
+
+    .toast-container {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .modal-dialog {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .footer {
+        padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    }
+}
+
+/* --- Touch-friendly baseline (applies everywhere) --- */
+@media (pointer: coarse) {
+    /* Remove hover-only transform on touch */
+    .btn:hover {
+        transform: none;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+
+    .sidebar-menu-link:hover {
+        transform: none;
+    }
+
+    /* Larger tap targets for form controls */
+    .form-check-input {
+        width: 22px;
+        height: 22px;
+    }
+
+    .form-check {
+        min-height: 44px;
+    }
+
+    /* Increase spacing between interactive items */
+    .sidebar-menu-link {
+        padding-top: var(--space-4);
+        padding-bottom: var(--space-4);
+    }
+
+    /* Ensure minimum touch target */
+    .header-action-btn,
+    .sidebar-toggle {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* --- Touch device: disable hover-only dropdowns, show on tap --- */
+@media (hover: none) and (pointer: coarse) {
+    .data-table tbody tr:hover {
+        background-color: transparent;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+}
+
+
+/* ============================================================
+   1. LAYOUT SYSTEM — lg (max-width: 1199px)
+   ============================================================ */
+@media (max-width: 1199px) {
+
+    /* Container padding reduction */
+    .container {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+
+    .container-fluid {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+
+    /* Grid adjustments for small desktops */
+    .grid-5 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-6 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Auto grids — slightly smaller min */
+    .grid-auto {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}
+
+
+/* ============================================================
+   2. LAYOUT SYSTEM — md (max-width: 991px) — Tablet
+   ============================================================ */
+@media (max-width: 991px) {
+
+    /* --- Page Wrapper --- */
+    .page-wrapper {
+        margin-right: 0 !important;
+    }
+
+    /* --- Sidebar: overlay mode --- */
+    .sidebar {
+        transform: translateX(100%);
+        will-change: transform;
+        /* Ensure z-index above overlay */
+        z-index: 1040;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden;
+    }
+
+    /* --- Sidebar overlay --- */
+    .sidebar-overlay {
+        z-index: 1035;
+    }
+
+    /* --- Main content: full width --- */
+    .main-content {
+        margin-right: 0 !important;
+    }
+
+    .main-content-inner {
+        padding: var(--space-4);
+    }
+
+    /* --- Show sidebar toggle --- */
+    .sidebar-toggle {
+        display: flex !important;
+    }
+
+    /* --- Grid system: collapse multi-col grids --- */
+    .grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-6 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* --- Container --- */
+    .container {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+
+    /* --- Card adjustments --- */
+    .card-header {
+        padding: var(--space-3) var(--space-4);
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .card-body {
+        padding: var(--space-4);
+    }
+
+    .card-footer {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* --- Notification dropdown: narrower --- */
+    .notification-dropdown {
+        width: 320px;
+        left: -100px;
+    }
+
+    /* --- User dropdown name: keep visible on tablet --- */
+    .user-dropdown-name {
+        display: inline;
+    }
+
+    /* --- Section spacing --- */
+    .section {
+        margin-bottom: var(--space-6);
+    }
+
+    /* --- Charts: responsive height --- */
+    .chart-container {
+        min-height: 250px;
+    }
+
+    .chart-container canvas {
+        max-height: 300px;
+    }
+}
+
+
+/* ============================================================
+   3. LAYOUT SYSTEM — sm (max-width: 767px) — Large phone / Small tablet
+   ============================================================ */
+@media (max-width: 767px) {
+
+    /* --- Main content padding --- */
+    .main-content-inner {
+        padding: var(--space-3);
+    }
+
+    /* --- Grid: further collapse --- */
+    .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-6 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-auto {
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+
+    .grid-auto-sm {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+
+    /* --- Container --- */
+    .container,
+    .container-fluid {
+        padding-left: var(--space-3);
+        padding-right: var(--space-3);
+    }
+
+    /* --- Card stacking --- */
+    .card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .card-header .card-title {
+        margin-bottom: var(--space-2);
+    }
+
+    .card-body {
+        padding: var(--space-3);
+    }
+
+    /* --- Section spacing --- */
+    .section {
+        margin-bottom: var(--space-4);
+    }
+
+    /* --- Notification dropdown: full width --- */
+    .notification-dropdown {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 0;
+        max-height: 70vh;
+        overflow-y: auto;
+        z-index: var(--z-dropdown);
+    }
+
+    /* --- User dropdown: wider --- */
+    .user-dropdown-menu {
+        min-width: 180px;
+    }
+
+    .dropdown-menu {
+        min-width: 170px;
+    }
+
+    /* --- Quick search: smaller --- */
+    .quick-search input {
+        width: 140px;
+    }
+
+    .header-search {
+        max-width: 200px;
+    }
+
+    /* --- Stat cards: 2 columns --- */
+    .grid-4 .stat-card,
+    .stat-card {
+        /* handled via grid */
+    }
+
+    /* --- Charts --- */
+    .chart-container {
+        min-height: 200px;
+    }
+
+    .chart-container canvas {
+        max-height: 250px;
+    }
+
+    /* --- Form row: start stacking --- */
+    .form-row > .form-group {
+        min-width: 160px;
+    }
+
+    /* --- Toast notifications: wider on tablet --- */
+    .toast-container {
+        left: var(--space-4);
+        right: var(--space-4);
+    }
+
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+
+/* ============================================================
+   4. LAYOUT SYSTEM — xs (max-width: 575px) — Phone
+   ============================================================ */
+@media (max-width: 575px) {
+
+    /* --- Main content: minimal padding --- */
+    .main-content-inner {
+        padding: var(--space-2);
+    }
+
+    /* --- Container --- */
+    .container,
+    .container-fluid {
+        padding-left: var(--space-2);
+        padding-right: var(--space-2);
+    }
+
+    /* --- Grid: single column on phone --- */
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-5 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-6 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-auto {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-auto-sm {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+
+    .grid-auto-lg {
+        grid-template-columns: 1fr;
+    }
+
+    /* --- Reduce grid gaps --- */
+    .grid {
+        gap: var(--space-3);
+    }
+
+    /* --- Card full width with reduced padding --- */
+    .card-body {
+        padding: var(--space-3);
+    }
+
+    .card-header {
+        padding: var(--space-3);
+    }
+
+    .card-footer {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    /* --- Stat cards: single column --- */
+    .grid-4 {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ============================================================
+   5. TOPBAR / HEADER — Responsive
+   ============================================================ */
+
+/* --- lg and below (max-width: 1199px) --- */
+@media (max-width: 1199px) {
+    .topbar {
+        padding: 0 var(--space-4);
+    }
+
+    .header {
+        padding: 0 var(--space-4);
+    }
+}
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .topbar {
+        padding: 0 var(--space-3);
+    }
+
+    .header {
+        padding: 0 var(--space-3);
+    }
+
+    /* Breadcrumb: truncate on tablet */
+    .breadcrumb-nav {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .breadcrumb {
+        max-width: 200px;
+        overflow: hidden;
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    .topbar-right,
+    .topbar-left {
+        gap: var(--space-2);
+    }
+
+    .header-right,
+    .header-left {
+        gap: var(--space-2);
+    }
+
+    /* Breadcrumb: hidden on small screens */
+    .breadcrumb-nav {
+        display: none;
+    }
+
+    .breadcrumb {
+        display: none;
+    }
+
+    /* Page title: fluid with truncation */
+    .topbar .page-title h1 {
+        font-size: clamp(13px, 0.75rem + 0.5vw, 16px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px;
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Quick search: hidden on phone */
+    .quick-search {
+        display: none !important;
+    }
+
+    .header-search {
+        display: none !important;
+    }
+
+    /* User name: hidden on phone, avatar only */
+    .user-dropdown-name {
+        display: none !important;
+    }
+
+    .user-btn span {
+        display: none !important;
+    }
+
+    /* User dropdown: compact toggle */
+    .user-dropdown-toggle {
+        padding: var(--space-1);
+    }
+
+    .user-btn {
+        padding: 4px 8px;
+        border-radius: 50%;
+    }
+
+    .user-btn i.fa-chevron-down {
+        display: none;
+    }
+
+    /* Page title: fluid on phone */
+    .topbar .page-title h1 {
+        font-size: clamp(12px, 0.7rem + 0.4vw, 14px);
+        max-width: 120px;
+    }
+
+    /* Notification bell: slightly larger tap */
+    .notification-bell {
+        padding: var(--space-2);
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Header action buttons: 44px min */
+    .header-action-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+
+/* ============================================================
+   6. CARDS — Responsive
+   ============================================================ */
+
+@media (max-width: 991px) {
+    .card {
+        border-radius: var(--radius-md);
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-sm);
+    }
+}
+
+@media (max-width: 575px) {
+    .card {
+        border-radius: var(--radius-sm);
+        margin-bottom: var(--space-3);
+    }
+
+    .card-header {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .card-header > * {
+        flex-shrink: 0;
+    }
+
+    .card-header .card-actions {
+        width: 100%;
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    /* Card footer: stack buttons */
+    .card-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+}
+
+
+/* ============================================================
+   7. TABLES — Responsive (CRITICAL)
+   ============================================================ */
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    /* Better horizontal scroll with shadow indicators */
+    .table-wrapper {
+        position: relative;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Left shadow indicator for scrollable content (RTL: shadow on left = more content that way) */
+    .table-wrapper::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(to left, transparent, rgba(0, 0, 0, 0.08));
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity var(--transition-base);
+    }
+
+    .table-wrapper.is-scrollable::after {
+        opacity: 1;
+    }
+
+    /* Data table: minimum readable font */
+    .data-table {
+        font-size: var(--font-size-xs);
+        min-width: 600px;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+        padding: var(--space-2) var(--space-3);
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    .data-table {
+        min-width: 500px;
+    }
+
+    /* Sticky first column support */
+    .data-table.sticky-first-col thead th:first-child,
+    .data-table.sticky-first-col tbody td:first-child {
+        position: sticky;
+        right: 0;
+        background-color: inherit;
+        z-index: 2;
+        box-shadow: -2px 0 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .data-table.sticky-first-col thead th:first-child {
+        background-color: var(--primary);
+        z-index: 3;
+    }
+
+    .data-table.sticky-first-col tbody td:first-child {
+        background-color: var(--surface);
+    }
+
+    .data-table.sticky-first-col tbody tr:nth-child(even) td:first-child {
+        background-color: rgba(245, 245, 245, 0.95);
+    }
+
+    .data-table.sticky-first-col tbody tr:hover td:first-child {
+        background-color: rgba(26, 86, 50, 0.06);
+    }
+}
+
+/* --- xs (max-width: 575px) — Card view for tables --- */
+@media (max-width: 575px) {
+    /* Card-style table layout for very small screens */
+    .data-table.card-view thead {
+        display: none;
+    }
+
+    .data-table.card-view tbody tr {
+        display: block;
+        margin-bottom: var(--space-3);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        background-color: var(--surface);
+    }
+
+    .data-table.card-view tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: var(--space-2) var(--space-3);
+        border-bottom: 1px solid var(--border-light);
+        text-align: right;
+    }
+
+    .data-table.card-view tbody td::before {
+        content: attr(data-label);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-xs);
+        color: var(--text-secondary);
+        margin-left: var(--space-3);
+        flex-shrink: 0;
+    }
+
+    .data-table.card-view tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table.card-view .row-checkbox {
+        width: auto;
+    }
+
+    .data-table.card-view .actions {
+        white-space: normal;
+        text-align: right;
+    }
+
+    .data-table.card-view .actions .btn {
+        margin-bottom: var(--space-1);
+    }
+
+    /* Regular scrollable table */
+    .data-table {
+        min-width: 400px;
+    }
+
+    /* Table search: full width */
+    .table-search-input {
+        width: 100% !important;
+    }
+}
+
+/* --- Swipe hint for scrollable tables on touch devices --- */
+@media (hover: none) and (pointer: coarse) {
+    /* Grab cursor + snap for smoother scrolling */
+    .table-wrapper {
+        cursor: grab;
+        scroll-snap-type: x mandatory;
+    }
+
+    .table-wrapper:active {
+        cursor: grabbing;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+        scroll-snap-align: start;
+    }
+
+    /* Fade overlay hint on the right side indicating scrollability */
+    .table-wrapper::after {
+        background: linear-gradient(to left, rgba(0, 0, 0, 0.06), transparent);
+    }
+
+    /* Animated swipe dots on card-view tables */
+    .data-table.card-view + .swipe-hint {
+        display: flex;
+    }
+}
+
+/* Swipe hint indicator (add manually after card-view table if desired) */
+.swipe-hint {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-2) 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    animation: swipePulse 2s ease-in-out infinite;
+}
+
+.swipe-hint i {
+    font-size: var(--font-size-sm);
+}
+
+.swipe-hint .swipe-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.swipe-hint .swipe-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background-color: var(--border-dark);
+    animation: swipeDot 1.5s ease-in-out infinite;
+}
+
+.swipe-hint .swipe-dot:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.swipe-hint .swipe-dot:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes swipePulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+@keyframes swipeDot {
+    0%, 100% { background-color: var(--border-dark); transform: scale(1); }
+    50% { background-color: var(--primary); transform: scale(1.3); }
+}
+
+
+/* ============================================================
+   8. FORMS — Responsive
+   ============================================================ */
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    /* Form row: reduce minimum width */
+    .form-row > .form-group {
+        min-width: 160px;
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    /* Form row: stack vertically */
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .form-row > .form-group {
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Inline form: wrap */
+    .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-2);
+    }
+
+    .form-inline .form-group {
+        width: 100%;
+    }
+
+    .form-inline .form-control {
+        width: 100%;
+    }
+
+    /* Select: full width */
+    select.form-control {
+        width: 100%;
+    }
+
+    /* Input group: stack if needed */
+    .input-group {
+        flex-wrap: wrap;
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Larger touch targets (44px minimum) */
+    .form-control {
+        min-height: 44px;
+        padding: var(--space-3) var(--space-3);
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+
+    textarea.form-control {
+        min-height: 80px;
+    }
+
+    select.form-control {
+        min-height: 44px;
+    }
+
+    /* Form group: full width */
+    .form-group {
+        margin-bottom: var(--space-4);
+    }
+
+    /* Form label: slightly larger for readability */
+    .form-label {
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--space-1);
+    }
+
+    /* Form check: 44px touch target */
+    .form-check {
+        min-height: 44px;
+        padding: var(--space-2) 0;
+    }
+
+    .form-check-input {
+        width: 22px;
+        height: 22px;
+    }
+
+    /* Floating labels: ensure no overlap on small screens */
+    .form-floating .form-control {
+        padding-top: var(--space-5);
+        padding-bottom: var(--space-1);
+    }
+
+    /* Input group: full width stacking */
+    .input-group {
+        flex-direction: column;
+    }
+
+    .input-group .form-control,
+    .input-group .input-group-prepend .input-group-text,
+    .input-group .input-group-append .input-group-text {
+        border-radius: var(--radius-md) !important;
+        width: 100%;
+    }
+
+    .input-group .input-group-prepend .input-group-text {
+        border-left: 1px solid var(--border) !important;
+        border-bottom: 0;
+    }
+
+    .input-group .input-group-append .input-group-text {
+        border-right: 1px solid var(--border) !important;
+        border-top: 0;
+    }
+}
+
+
+/* ============================================================
+   9. BUTTONS — Responsive
+   ============================================================ */
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    /* Minimum 44px touch target height */
+    .btn {
+        min-height: 44px;
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Button groups: wrap */
+    .btn-group {
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+        flex: 0 0 auto;
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Full-width primary action buttons on mobile */
+    .btn-mobile-full {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Button groups: stack vertically */
+    .btn-group-vertical-sm {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .btn-group-vertical-sm .btn {
+        width: 100%;
+    }
+
+    /* Action bar buttons: side by side */
+    .card-footer .btn,
+    .modal-footer .btn {
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Table action buttons: compact */
+    .data-table .actions .btn {
+        padding: var(--space-1) var(--space-1);
+        font-size: 10px;
+        min-height: 32px;
+    }
+}
+
+
+/* ============================================================
+   10. MODALS — Responsive
+   ============================================================ */
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .modal-dialog {
+        max-width: 90vw;
+        margin: var(--space-4) auto;
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    .modal-dialog {
+        max-width: 95vw;
+        margin: var(--space-2) auto;
+    }
+
+    .modal-content {
+        border-radius: var(--radius-lg);
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Full screen / bottom sheet style */
+    .modal-overlay.show {
+        align-items: flex-end;
+    }
+
+    .modal-dialog {
+        max-width: 100vw;
+        width: 100vw;
+        margin: 0;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-content {
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Drag handle indicator for bottom sheet */
+    .modal-header::before {
+        content: '';
+        position: absolute;
+        top: var(--space-2);
+        left: 50%;
+        transform: translateX(50%);
+        width: 40px;
+        height: 4px;
+        background-color: var(--border-dark);
+        border-radius: var(--radius-full);
+    }
+
+    .modal-header {
+        position: relative;
+        padding-top: var(--space-5);
+        flex-shrink: 0;
+    }
+
+    /* Close button: always accessible */
+    .modal-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-body {
+        overflow-y: auto;
+        flex: 1;
+        padding: var(--space-3);
+    }
+
+    .modal-footer {
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        padding: var(--space-3);
+    }
+
+    .modal-footer .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Small modal: normal centered on phone */
+    .modal-dialog.modal-sm {
+        max-width: 95vw;
+        margin: var(--space-4) auto;
+        border-radius: var(--radius-lg);
+    }
+
+    .modal-dialog.modal-sm .modal-content {
+        border-radius: var(--radius-lg);
+    }
+
+    .modal-dialog.modal-sm .modal-header::before {
+        display: none;
+    }
+
+    .modal-dialog.modal-sm .modal-header {
+        padding-top: var(--space-4);
+    }
+
+    /* Confirm dialog on mobile */
+    .confirm-overlay.show {
+        align-items: flex-end;
+    }
+
+    .confirm-dialog {
+        width: 100%;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+}
+
+
+/* ============================================================
+   11. TOAST NOTIFICATIONS — Responsive
+   ============================================================ */
+
+/* Default: top-left for RTL */
+.toast-container {
+    position: fixed;
+    top: var(--space-4);
+    left: var(--space-4);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.toast-container .toast {
+    pointer-events: auto;
+}
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .toast-container {
+        max-width: 350px;
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    .toast-container {
+        top: auto;
+        bottom: var(--space-4);
+        left: var(--space-3);
+        right: var(--space-3);
+        max-width: none;
+        width: auto;
+    }
+
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    .toast-container {
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: var(--space-2);
+    }
+
+    .toast {
+        width: 100%;
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-sm);
+    }
+
+    .toast-title {
+        font-size: var(--font-size-sm);
+    }
+
+    .toast-message {
+        font-size: var(--font-size-xs);
+    }
+
+    .toast-progress {
+        height: 3px;
+    }
+}
+
+
+/* ============================================================
+   12. STAT CARDS / DASHBOARD — Responsive
+   ============================================================ */
+
+/* --- lg (max-width: 1199px) --- */
+@media (max-width: 1199px) {
+    .stat-card {
+        padding: var(--space-4);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-2xl);
+    }
+}
+
+/* --- md (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .stat-card {
+        padding: var(--space-3);
+    }
+
+    .stat-card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: var(--font-size-lg);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-xl);
+    }
+
+    .stat-card-label {
+        font-size: var(--font-size-xs);
+    }
+
+    /* Dashboard grid: 3 cols on tablet */
+    .dashboard-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* --- sm (max-width: 767px) --- */
+@media (max-width: 767px) {
+    /* Dashboard grid: 2 cols on large phone */
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card {
+        padding: var(--space-3);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-lg);
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Dashboard grid: single column on phone */
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+    }
+
+    .stat-card-icon {
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-base);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-xl);
+    }
+
+    .stat-card-label {
+        font-size: var(--font-size-xs);
+    }
+
+    /* Charts: compact height */
+    .chart-container {
+        min-height: 180px;
+    }
+
+    .chart-container canvas {
+        max-height: 200px;
+    }
+
+    /* Dashboard grid custom layouts */
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* Info box: stack vertically */
+    .info-box {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    /* Alert severity bar: stack */
+    .alert-severity-bar {
+        flex-direction: column;
+    }
+}
+
+/* --- md (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .quick-actions {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+}
+
+
+/* ============================================================
+   13. PAGINATION — Responsive
+   ============================================================ */
+
+/* --- md and below (max-width: 991px) --- */
+@media (max-width: 991px) {
+    .pagination {
+        gap: var(--space-1);
+    }
+
+    .pagination .page-link {
+        padding: var(--space-2) var(--space-3);
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    /* Compact pagination */
+    .pagination {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .pagination .page-link {
+        padding: var(--space-1) var(--space-2);
+        min-height: 36px;
+        min-width: 36px;
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* --- xs (max-width: 575px) --- */
+@media (max-width: 575px) {
+    /* Hide page numbers, show prev/next only */
+    .pagination .page-item:not(.active):not(:first-child):not(:last-child) {
+        display: none;
+    }
+
+    /* Always show active page */
+    .pagination .page-item.active {
+        display: list-item;
+    }
+
+    /* Show first, last, and +/- 1 around active */
+    .pagination .page-item.page-ellipsis {
+        display: list-item;
+    }
+
+    .pagination .page-link {
+        min-height: 44px;
+        min-width: 44px;
+        font-size: var(--font-size-sm);
+    }
+
+    /* Pagination info text */
+    .pagination-info {
+        font-size: var(--font-size-xs);
+        text-align: center;
+        width: 100%;
+        margin-top: var(--space-2);
+    }
+}
+
+
+/* ============================================================
+    14. TYPOGRAPHY SCALE — Fluid (via clamp)
+    ============================================================ */
+
+/* Fluid base font size — smoothly scales from 14px to 16px */
+html {
+    font-size: clamp(14px, 0.875rem + 0.25vw, 16px);
+}
+
+/* Fluid headings — scale proportionally with viewport */
+h1 { font-size: clamp(1.5rem, 1.25rem + 0.5vw, 2.25rem); }
+h2 { font-size: clamp(1.25rem, 1.125rem + 0.35vw, 1.875rem); }
+h3 { font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.5rem); }
+h4 { font-size: clamp(0.9375rem, 0.875rem + 0.2vw, 1.25rem); }
+h5 { font-size: clamp(0.875rem, 0.825rem + 0.15vw, 1.125rem); }
+h6 { font-size: clamp(0.8125rem, 0.75rem + 0.125vw, 1rem); }
+
+/* Section title: fluid size */
+.section-title {
+    font-size: clamp(0.875rem, 0.8rem + 0.2vw, 1.25rem);
+}
+
+/* Page title in topbar: fluid */
+.page-title {
+    font-size: clamp(0.875rem, 0.8rem + 0.25vw, 1.25rem);
+}
+
+/* Body text margin reduction on small viewports */
+@media (max-width: 575px) {
+    p {
+        margin-bottom: var(--space-3);
+    }
+}
+
+
+/* ============================================================
+   15. TOUCH-FRIENDLY ENHANCEMENTS
+   ============================================================ */
+
+/* --- sm and below (max-width: 767px) --- */
+@media (max-width: 767px) {
+    /* Minimum 44px tap targets for all interactive elements */
+    a,
+    button,
+    [role="button"],
+    .btn,
+    .sidebar-menu-link,
+    .notification-item,
+    .user-dropdown-item,
+    .dropdown-menu a {
+        min-height: 44px;
+    }
+
+    /* Increase spacing between clickable items */
+    .sidebar-menu-link {
+        padding-top: var(--space-3);
+        padding-bottom: var(--space-3);
+    }
+
+    .sidebar-submenu .sidebar-menu-link {
+        padding-top: var(--space-3);
+        padding-bottom: var(--space-3);
+    }
+
+    /* Larger checkboxes and radios */
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+    }
+
+    /* Larger notification items */
+    .notification-item {
+        padding: var(--space-3) var(--space-3);
+    }
+
+    /* Larger dropdown items */
+    .dropdown-menu a {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .user-dropdown-item {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Tabs: scrollable and touch-friendly */
+    .tab-nav,
+    .nav-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+    }
+
+    .tab-nav .tab-link,
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+        padding: var(--space-3) var(--space-4);
+        min-height: 44px;
+    }
+
+    /* Tooltip: disable on touch (they interfere) */
+    [data-tooltip]:hover::after,
+    [data-tooltip]:hover::before {
+        display: none;
+    }
+}
+
+
+/* ============================================================
+   16. SCROLL-TO-TOP BUTTON
+   ============================================================ */
+
+.scroll-to-top {
+    position: fixed;
+    bottom: var(--space-6);
+    left: var(--space-6);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background-color: var(--primary);
+    color: var(--text-white);
+    border: none;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--font-size-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-sticky);
+    transition: all var(--transition-base);
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.scroll-to-top.visible {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+}
+
+/* On desktop, hide by default or make smaller */
+@media (min-width: 992px) {
+    .scroll-to-top {
+        width: 40px;
+        height: 40px;
+        bottom: var(--space-8);
+        left: var(--space-8);
+        font-size: var(--font-size-base);
+    }
+}
+
+/* On mobile, always show when scroll position demands */
+@media (max-width: 991px) {
+    .scroll-to-top {
+        bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+        left: var(--space-4);
+    }
+}
+
+@media (max-width: 575px) {
+    .scroll-to-top {
+        bottom: var(--space-3);
+        left: var(--space-3);
+        width: 48px;
+        height: 48px;
+    }
+}
+
+
+/* ============================================================
+   17. FOOTER — Responsive
+   ============================================================ */
+
+@media (max-width: 991px) {
+    .footer {
+        padding: var(--space-3) var(--space-4);
+        text-align: center;
+    }
+
+    .footer p {
+        font-size: var(--font-size-xs);
+    }
+}
+
+@media (max-width: 575px) {
+    .footer {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .footer p {
+        font-size: 11px;
+        line-height: var(--line-height-normal);
+    }
+}
+
+
+/* ============================================================
+   18. FLASH MESSAGES — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .flash-message {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    .flash-content {
+        gap: var(--space-2);
+    }
+
+    .flash-close {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 575px) {
+    .flash-message {
+        padding: var(--space-2);
+        font-size: var(--font-size-xs);
+    }
+}
+
+
+/* ============================================================
+   19. SIDEBAR — Mobile-Specific Refinements
+   ============================================================ */
+
+@media (max-width: 991px) {
+    /* Sidebar: overlay mode with smooth animation */
+    .sidebar {
+        box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .sidebar.show {
+        box-shadow: -4px 0 32px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Sidebar toggle: visible and styled */
+    .sidebar-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: var(--radius-md);
+        font-size: 20px;
+    }
+
+    /* Prevent content shift when sidebar opens */
+    body.sidebar-open .topbar,
+    body.sidebar-open .main-content-inner {
+        /* No margin shift needed since sidebar is overlay */
+    }
+}
+
+@media (max-width: 575px) {
+    /* Sidebar: full width on very small phones */
+    .sidebar {
+        width: 85vw;
+        max-width: 300px;
+    }
+
+    /* Sidebar user info: compact */
+    .sidebar-user {
+        padding: var(--space-3) var(--space-3);
+    }
+
+    .sidebar-user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: var(--font-size-sm);
+    }
+
+    .sidebar-user-name {
+        font-size: var(--font-size-xs);
+    }
+
+    .sidebar-user-role {
+        font-size: 10px;
+    }
+
+    /* Sidebar logo: compact */
+    .sidebar-logo {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .sidebar-logo h2 {
+        font-size: var(--font-size-lg);
+    }
+
+    .sidebar-logo .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    /* Sidebar menu links: larger touch targets */
+    .sidebar-menu-link {
+        padding: var(--space-3) var(--space-4);
+        min-height: 44px;
+    }
+
+    .sidebar-submenu .sidebar-menu-link {
+        padding-right: var(--space-8);
+        min-height: 40px;
+    }
+
+    /* Section titles */
+    .sidebar-section-title {
+        padding: var(--space-2) var(--space-4);
+        font-size: 9px;
+    }
+
+    /* Logout button: larger */
+    .sidebar-footer .sidebar-logout-btn {
+        padding: var(--space-3);
+        min-height: 44px;
+    }
+}
+
+
+/* ============================================================
+    20. BULK ACTION BAR — Responsive
+    ============================================================ */
+
+@media (max-width: 767px) {
+    .bulk-action-bar {
+        flex-direction: column;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .bulk-action-bar .bulk-actions {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+
+    .bulk-action-bar .btn {
+        flex: 1;
+        min-width: 0;
+        font-size: var(--font-size-xs);
+    }
+}
+
+/* Fixed bottom bulk action bar for mobile (add .bulk-action-bar-fixed) */
+@media (max-width: 767px) {
+    .bulk-action-bar-fixed {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: var(--z-sticky);
+        background-color: var(--surface);
+        border-top: 1px solid var(--border);
+        box-shadow: var(--shadow-lg);
+        padding: var(--space-2) var(--space-3);
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        animation: slideInUp var(--transition-base) ease;
+    }
+
+    .bulk-action-bar-fixed .bulk-select-info {
+        flex: 1;
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .bulk-action-bar-fixed .bulk-actions {
+        display: flex;
+        gap: var(--space-2);
+        flex-shrink: 0;
+    }
+
+    .bulk-action-bar-fixed .btn {
+        min-height: 44px;
+        white-space: nowrap;
+    }
+
+    /* Add padding to body to prevent content hidden behind fixed bar */
+    body.has-bulk-bar {
+        padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+
+/* ============================================================
+   21. FILTER BAR — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .filter-bar {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .filter-bar .form-control,
+    .filter-bar select {
+        width: 100%;
+    }
+
+    .filter-bar .btn {
+        width: 100%;
+    }
+}
+
+
+/* ============================================================
+   22. BADGES & TAGS — Responsive
+   ============================================================ */
+
+@media (max-width: 575px) {
+    .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+}
+
+
+/* ============================================================
+   23. PROGRESS BARS — Responsive
+   ============================================================ */
+
+@media (max-width: 575px) {
+    .progress {
+        height: 6px;
+    }
+
+    .progress-label {
+        font-size: var(--font-size-xs);
+    }
+}
+
+
+/* ============================================================
+   24. ALERTS — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .alert {
+        padding: var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    .alert-dismiss {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+
+/* ============================================================
+   25. TABS — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .tabs,
+    .nav-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar,
+    .nav-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-link,
+    .nav-link {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+}
+
+
+/* ============================================================
+   26. DROPDOWN MENUS — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    .user-dropdown-menu {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        right: auto;
+        width: 100%;
+        max-width: 300px;
+        border-radius: 0 0 var(--radius-lg) 0;
+        box-shadow: var(--shadow-xl);
+    }
+
+    .dropdown-menu {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        min-width: 200px;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 575px) {
+    .user-dropdown-menu {
+        right: 0;
+        left: auto;
+        max-width: none;
+        width: 100%;
+        border-radius: 0;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .user-dropdown-item {
+        min-height: 44px;
+        padding: var(--space-3) var(--space-4);
+    }
+}
+
+
+/* ============================================================
+   27. ASSESSMENT / EVALUATION FORMS — Responsive
+   ============================================================ */
+
+@media (max-width: 767px) {
+    /* Assessment criteria: stack */
+    .assessment-criteria {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .assessment-criteria .criterion-row {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .assessment-criteria .criterion-row .criterion-label {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .assessment-criteria .criterion-row .criterion-input {
+        width: 100%;
+    }
+
+    /* Rating scales: horizontal scroll */
+    .rating-scale {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+@media (max-width: 575px) {
+    /* Assessment card: compact */
+    .assessment-card {
+        padding: var(--space-3);
+    }
+
+    .assessment-card-header {
+        padding: var(--space-2) var(--space-3);
+        font-size: var(--font-size-sm);
+    }
+
+    /* EQI score: compact */
+    .eqi-score-value {
+        font-size: var(--font-size-3xl);
+    }
+}
+
+
+/* ============================================================
+   28. LANDSCAPE ORIENTATION — Phone Handling
+   ============================================================ */
+
+@media (max-width: 991px) and (orientation: landscape) {
+    /* Reduce topbar height in landscape */
+    .topbar {
+        height: 50px;
+    }
+
+    .header {
+        height: 50px;
+    }
+
+    /* Sidebar: narrower in landscape */
+    .sidebar {
+        width: 260px;
+    }
+
+    /* Modal: use more of the landscape viewport */
+    .modal-dialog {
+        max-width: 80vw;
+        max-height: 85vh;
+    }
+
+    .modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    /* Charts: use landscape width */
+    .chart-container {
+        min-height: 180px;
+    }
+
+    .chart-container canvas {
+        max-height: 220px;
+    }
+
+    /* Stat cards: horizontal layout in landscape */
+    .dashboard-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat-card {
+        padding: var(--space-2);
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-lg);
+    }
+}
+
+@media (max-width: 767px) and (orientation: landscape) {
+    /* Even more compact in phone landscape */
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .topbar .page-title h1 {
+        font-size: 13px;
+    }
+
+    /* Bottom sheet modal in landscape: don't go full width */
+    .modal-dialog {
+        max-width: 90vw;
+        margin: var(--space-2) auto;
+        border-radius: var(--radius-lg);
+    }
+
+    .modal-dialog .modal-header::before {
+        display: none;
+    }
+
+    .modal-dialog .modal-header {
+        padding-top: var(--space-4);
+    }
+}
+
+@media (max-width: 575px) and (orientation: landscape) {
+    /* Very compact for phone landscape */
+    .main-content-inner {
+        padding: var(--space-2);
+    }
+
+    .stat-card {
+        padding: var(--space-2);
+    }
+
+    .stat-card-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .stat-card-value {
+        font-size: var(--font-size-base);
+    }
+}
+
+
+/* ============================================================
+   29. PRINT ENHANCEMENTS (complements print.css)
+   ============================================================ */
+
+@media print {
+    /* Hide responsive-only elements */
+    .sidebar-toggle,
+    .scroll-to-top,
+    .sidebar-overlay,
+    .quick-search,
+    .notification-bell,
+    .notification-badge,
+    .btn-mobile-full {
+        display: none !important;
+    }
+
+    /* Ensure sidebar is hidden */
+    .sidebar {
+        display: none !important;
+    }
+
+    /* Reset main content */
+    .main-content {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+
+    .main-content-inner {
+        padding: 0 !important;
+    }
+
+    /* Prevent page breaks inside cards */
+    .card,
+    .stat-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* Ensure grids print in readable format */
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .grid-5,
+    .grid-6 {
+        display: block;
+    }
+
+    .grid-2 > *,
+    .grid-3 > *,
+    .grid-4 > *,
+    .grid-5 > *,
+    .grid-6 > * {
+        display: block;
+        width: 100%;
+        margin-bottom: 12pt;
+    }
+
+    /* Table card-view: revert to normal table for print */
+    .data-table.card-view thead {
+        display: table-header-group;
+    }
+
+    .data-table.card-view tbody tr {
+        display: table-row;
+    }
+
+    .data-table.card-view tbody td {
+        display: table-cell;
+    }
+
+    .data-table.card-view tbody td::before {
+        display: none;
+    }
+}
+
+
+/* ============================================================
+   30. VISIBILITY UTILITIES — Responsive
+   ============================================================ */
+
+/* Hide on mobile */
+@media (max-width: 991px) {
+    .hide-on-mobile,
+    .hidden-md-down {
+        display: none !important;
+    }
+}
+
+/* Hide on tablet */
+@media (max-width: 767px) {
+    .hide-on-tablet,
+    .hidden-sm-down {
+        display: none !important;
+    }
+}
+
+/* Hide on phone */
+@media (max-width: 575px) {
+    .hide-on-phone,
+    .hidden-xs {
+        display: none !important;
+    }
+}
+
+/* Show only on mobile */
+@media (min-width: 992px) {
+    .show-on-mobile-only,
+    .visible-md-down {
+        display: none !important;
+    }
+}
+
+/* Show only on phone */
+@media (min-width: 576px) {
+    .show-on-phone-only,
+    .visible-xs {
+        display: none !important;
+    }
+}
+
+/* Show only on tablet */
+@media (min-width: 992px), (max-width: 575px) {
+    .show-on-tablet-only,
+    .visible-sm {
+        display: none !important;
+    }
+}
+
+
+/* ============================================================
+    31. PRIORITY-BASED COLUMN VISIBILITY
+    ============================================================
+    Usage: Add .priority-1, .priority-2, .priority-3, .priority-4
+    to table headers/cells. Higher number = hidden at smaller breakpoints.
+    Example: <th class="priority-3">Column</th>
+    ============================================================ */
+
+.priority-4 { display: none; }
+
+@media (min-width: 576px) {
+    .priority-4 { display: table-cell; }
+}
+
+@media (max-width: 1199px) {
+    .priority-4 { display: none; }
+}
+
+@media (max-width: 991px) {
+    .priority-3 { display: none; }
+    .priority-4 { display: none; }
+}
+
+@media (max-width: 767px) {
+    .priority-2 { display: none; }
+    .priority-3 { display: none; }
+    .priority-4 { display: none; }
+}
+
+@media (min-width: 992px) {
+    .priority-3 { display: table-cell; }
+}
+
+@media (min-width: 768px) {
+    .priority-2 { display: table-cell; }
+}
+
+@media (min-width: 1200px) {
+    .priority-4 { display: table-cell; }
+}
+
+/* Also apply to td elements */
+.data-table .priority-2,
+.data-table .priority-3,
+.data-table .priority-4 {
+    display: none;
+}
+
+/* Override at breakpoints for data-table context */
+@media (min-width: 768px) {
+    .data-table .priority-2 { display: table-cell; }
+}
+@media (min-width: 992px) {
+    .data-table .priority-3 { display: table-cell; }
+}
+@media (min-width: 1200px) {
+    .data-table .priority-4 { display: table-cell; }
+}
+
+
+/* ============================================================
+    32. FLEX & SPACING UTILITIES — Responsive Overrides
+    ============================================================ */
+
+@media (max-width: 767px) {
+    .flex-row-sm {
+        flex-direction: row;
+    }
+
+    .flex-col-sm {
+        flex-direction: column;
+    }
+
+    .gap-sm-2 { gap: var(--space-2); }
+    .gap-sm-3 { gap: var(--space-3); }
+    .gap-sm-4 { gap: var(--space-4); }
+
+    .p-sm-2 { padding: var(--space-2); }
+    .p-sm-3 { padding: var(--space-3); }
+    .p-sm-4 { padding: var(--space-4); }
+
+    .m-sm-0 { margin: 0; }
+    .mb-sm-2 { margin-bottom: var(--space-2); }
+    .mb-sm-3 { margin-bottom: var(--space-3); }
+    .mb-sm-4 { margin-bottom: var(--space-4); }
+
+    .text-sm-center { text-align: center; }
+    .text-sm-right { text-align: right; }
+
+    .w-sm-100 { width: 100%; }
+}
+
+@media (max-width: 575px) {
+    .flex-col-xs {
+        flex-direction: column;
+    }
+
+    .gap-xs-1 { gap: var(--space-1); }
+    .gap-xs-2 { gap: var(--space-2); }
+
+    .p-xs-2 { padding: var(--space-2); }
+    .p-xs-3 { padding: var(--space-3); }
+
+    .mb-xs-2 { margin-bottom: var(--space-2); }
+    .mb-xs-3 { margin-bottom: var(--space-3); }
+
+    .w-xs-100 { width: 100%; }
+}
+
+
+/* ============================================================
+    33. ANIMATION / TRANSITION REDUCTIONS — Preference
+    ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .sidebar {
+        transition: none !important;
+    }
+
+    .main-content {
+        transition: none !important;
+    }
+
+    .modal-dialog {
+        transition: none !important;
+    }
+
+    .toast {
+        transition: none !important;
+    }
+
+    .scroll-to-top {
+        transition: none !important;
+    }
+}
+
+
+/* ============================================================
+    34. HIGH CONTRAST MODE — Preference
+    ============================================================ */
+
+@media (prefers-contrast: high) {
+    .card {
+        border-width: 2px;
+        border-color: var(--text-primary);
+    }
+
+    .btn {
+        border-width: 2px;
+    }
+
+    .form-control {
+        border-width: 2px;
+    }
+
+    .data-table thead th {
+        border-bottom-width: 3px;
+    }
+
+    .data-table tbody td {
+        border-bottom-width: 1px;
+    }
+}
+
+
+/* ============================================================
+    35. DARK MODE SUPPORT — Automatic via prefers-color-scheme
+    ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #121212;
+        --surface: #1e1e1e;
+        --card: #1e1e1e;
+        --card-hover: #2a2a2a;
+        --text-primary: #e4e4e7;
+        --text-secondary: #a0a0ab;
+        --text-muted: #71717a;
+        --text-light: #52525b;
+        --border: #2a2a2a;
+        --border-light: #333333;
+        --border-dark: #444444;
+        --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.45);
+        --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+        --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Body background */
+    body {
+        background-color: var(--background);
+        color: var(--text-primary);
+    }
+
+    /* Cards */
+    .card {
+        background-color: var(--card);
+        border-color: var(--border);
+    }
+
+    .card-header {
+        border-bottom-color: var(--border);
+    }
+
+    .card-footer {
+        background-color: rgba(255, 255, 255, 0.03);
+        border-top-color: var(--border);
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Header / Topbar */
+    .header,
+    .topbar {
+        background-color: var(--surface);
+        border-bottom-color: var(--border);
+    }
+
+    /* Data tables */
+    .data-table {
+        background-color: var(--surface);
+    }
+
+    .data-table tbody tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .data-table tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .data-table tbody td {
+        border-bottom-color: var(--border);
+    }
+
+    .data-table tfoot {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .data-table tfoot td {
+        border-top-color: var(--border);
+    }
+
+    .data-table.sticky-first-col tbody td:first-child {
+        background-color: var(--surface);
+    }
+
+    .data-table.sticky-first-col tbody tr:nth-child(even) td:first-child {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    .data-table.sticky-first-col tbody tr:hover td:first-child {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Card-view tables */
+    .data-table.card-view tbody tr {
+        background-color: var(--card);
+        border-color: var(--border);
+    }
+
+    .data-table.card-view tbody td {
+        border-bottom-color: var(--border);
+    }
+
+    /* Form controls */
+    .form-control {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 3px rgba(45, 122, 74, 0.2);
+    }
+
+    .form-control:disabled,
+    .form-control[readonly] {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .form-floating .form-control:focus ~ label,
+    .form-floating .form-control:not(:placeholder-shown) ~ label {
+        background-color: var(--surface);
+    }
+
+    /* Select dropdown arrow */
+    select.form-control {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0ab' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    }
+
+    /* Input group */
+    .input-group .input-group-prepend .input-group-text,
+    .input-group .input-group-append .input-group-text {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--border);
+        color: var(--text-secondary);
+    }
+
+    /* Buttons */
+    .btn-light {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+        border-color: var(--border);
+    }
+
+    .btn-light:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+        border-color: var(--border-dark);
+    }
+
+    /* Sidebar - keep primary green as a design feature, slightly darkened */
+    .sidebar {
+        background-color: #0f3a20;
+    }
+
+    /* Dropdowns */
+    .user-dropdown-menu,
+    .notification-dropdown,
+    .dropdown-menu {
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+
+    .user-dropdown-item,
+    .dropdown-item {
+        color: var(--text-primary);
+    }
+
+    .user-dropdown-item:hover,
+    .dropdown-item:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .notification-item:hover {
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .notification-item.unread {
+        background-color: rgba(45, 122, 74, 0.15);
+    }
+
+    .notification-footer {
+        border-top-color: var(--border);
+    }
+
+    .notification-header {
+        border-bottom-color: var(--border);
+    }
+
+    /* Modals */
+    .modal-overlay {
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-dialog {
+        background-color: var(--surface);
+    }
+
+    .modal-header {
+        border-bottom-color: var(--border);
+    }
+
+    .modal-footer {
+        border-top-color: var(--border);
+    }
+
+    /* Toasts */
+    .toast {
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+
+    /* Alerts */
+    .alert {
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    .alert-success {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .alert-warning {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .alert-info {
+        background-color: rgba(23, 162, 184, 0.1);
+    }
+
+    /* Pagination */
+    .pagination .page-link {
+        background-color: var(--surface);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+
+    .pagination .page-link:hover {
+        background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: transparent;
+        color: var(--text-muted);
+    }
+
+    /* Breadcrumb */
+    .breadcrumb-item a:hover {
+        color: var(--primary-lighter);
+    }
+
+    /* Badges: adjust for dark bg */
+    .badge-light {
+        background-color: rgba(255, 255, 255, 0.08);
+        border-color: var(--border);
+    }
+
+    /* Progress bars */
+    .progress {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Tabs */
+    .nav-tabs {
+        border-bottom-color: var(--border);
+    }
+
+    .nav-tabs .nav-link.active {
+        background-color: var(--surface);
+        border-color: var(--border);
+        border-bottom-color: var(--surface);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar-track {
+        background: var(--background);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--border-dark);
+    }
+
+    /* Dividers */
+    .divider {
+        background: linear-gradient(to left, transparent, var(--border), transparent);
+    }
+
+    /* Flash messages */
+    .flash-message {
+        background-color: var(--surface);
+        border-color: var(--border);
+    }
+
+    /* Quick search */
+    .header-search input {
+        background-color: rgba(255, 255, 255, 0.06);
+        color: var(--text-primary);
+    }
+
+    .header-search input:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 3px rgba(45, 122, 74, 0.2);
+    }
+
+    /* Stat cards */
+    .stat-card {
+        background-color: var(--card);
+    }
+
+    /* Table wrapper background */
+    .table-wrapper {
+        background-color: var(--surface);
+    }
+
+    /* Info box */
+    .info-box {
+        background-color: var(--card);
+        border-color: var(--border);
+    }
+
+    /* Section title border */
+    .section-title {
+        border-bottom-color: var(--primary-light);
+    }
+}
+
+
+/* ============================================================
+    36. SPECIFIC PAGE OVERRIDES — Known EQAS Pages
+    ============================================================ */
+
+/* --- Grade Entry Page --- */
+@media (max-width: 767px) {
+    .grade-entry-table {
+        font-size: var(--font-size-xs);
+    }
+
+    .grade-entry-table .form-control {
+        min-height: 36px;
+        padding: var(--space-1) var(--space-2);
+        font-size: var(--font-size-sm);
+    }
+}
+
+@media (max-width: 575px) {
+    .grade-entry-table .form-control {
+        min-height: 44px;
+        font-size: 16px; /* Prevent iOS zoom */
+    }
+}
+
+/* --- Attendance Page --- */
+@media (max-width: 767px) {
+    .attendance-grid {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .attendance-grid .student-name {
+        min-width: 120px;
+        position: sticky;
+        right: 0;
+        background-color: var(--surface);
+        z-index: 1;
+    }
+}
+
+/* --- EQI Report Page --- */
+@media (max-width: 767px) {
+    .eqi-dimensions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .eqi-comparison-chart {
+        min-height: 250px;
+    }
+}
+
+@media (max-width: 575px) {
+    .eqi-score-container {
+        text-align: center;
+    }
+
+    .eqi-score-value {
+        font-size: var(--font-size-3xl);
+    }
+
+    .eqi-score-label {
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* --- Student List Page --- */
+@media (max-width: 575px) {
+    .student-card {
+        padding: var(--space-3);
+    }
+
+    .student-card .student-info {
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .student-card .student-actions {
+        width: 100%;
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .student-card .student-actions .btn {
+        flex: 1;
+    }
+}
+
+/* --- Behavior Evaluation --- */
+@media (max-width: 767px) {
+    .behavior-criteria-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Import Pages --- */
+@media (max-width: 767px) {
+    .import-form {
+        padding: var(--space-3);
+    }
+
+    .import-preview {
+        overflow-x: auto;
+    }
+}
+
+
+/* ============================================================
+    37. INTERNET EXPLORER / LEGACY FALLBACKS
+    ============================================================ */
+
+/* CSS Grid fallback for older browsers */
+@supports not (display: grid) {
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .grid-5,
+    .grid-6 {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .grid-2 > * { width: 50%; }
+    .grid-3 > * { width: 33.333%; }
+    .grid-4 > * { width: 25%; }
+    .grid-5 > * { width: 20%; }
+    .grid-6 > * { width: 16.666%; }
+
+    @media (max-width: 767px) {
+        .grid-2 > *,
+        .grid-3 > * { width: 100%; }
+        .grid-4 > * { width: 50%; }
+        .grid-5 > * { width: 33.333%; }
+        .grid-6 > * { width: 33.333%; }
+    }
+
+    @media (max-width: 575px) {
+        .grid-4 > * { width: 100%; }
+        .grid-5 > * { width: 50%; }
+        .grid-6 > * { width: 50%; }
+    }
+}
+
+/* CSS Custom Properties fallback */
+@supports not (--custom: property) {
+    /* Minimal fallback for browsers without CSS variables */
+    .sidebar {
+        width: 280px;
+    }
+
+    .main-content {
+        margin-right: 280px;
+    }
+
+    @media (max-width: 991px) {
+        .sidebar {
+            transform: translateX(100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        .main-content {
+            margin-right: 0;
+        }
+    }
+}
+
+
+/* ============================================================
+    38. SCROLLBAR STYLING — Mobile
+    ============================================================ */
+
+@media (max-width: 991px) {
+    /* Thin scrollbars on mobile */
+    ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+    }
+
+    /* Table wrapper scroll indicator */
+    .table-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background-color: var(--border-dark);
+        border-radius: var(--radius-full);
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+        background-color: var(--background);
+    }
+}
+
+
+/* ============================================================
+    39. OVERLAY & BACKDROP — Responsive
+    ============================================================ */
+
+@media (max-width: 575px) {
+    .sidebar-overlay {
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    .modal-overlay {
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    .confirm-overlay {
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+}
+
+
+/* ============================================================
+   END OF RESPONSIVE.CSS
+   ============================================================ */

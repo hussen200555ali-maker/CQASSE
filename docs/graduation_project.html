@@ -1,0 +1,1094 @@
+﻿<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS</title>
+<style>
+  @page { margin: 2.5cm 3cm; size: A4; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Traditional Arabic', 'Scheherazade New', 'Amiri', 'Times New Roman', serif;
+    font-size: 14pt; line-height: 2; color: #222;
+    background: #fff; padding: 0; max-width: 100%;
+  }
+  .page { max-width: 21cm; margin: 0 auto; padding: 2.5cm 3cm; background: #fff; }
+  @media print {
+    .page { padding: 0; margin: 0; max-width: none; }
+    .no-print { display: none !important; }
+    @page { margin: 2.5cm 3cm; }
+  }
+  .cover { text-align: center; padding: 4cm 2cm 2cm; page-break-after: always; }
+  .cover .univ { font-size: 22pt; font-weight: bold; margin-bottom: 10px; }
+  .cover .dept { font-size: 18pt; margin-bottom: 30px; }
+  .cover .logo { font-size: 72pt; margin: 30px 0; color: #1a5276; }
+  .cover .title-main { font-size: 28pt; font-weight: bold; color: #1a5276; margin: 30px 0 10px; }
+  .cover .title-sub { font-size: 20pt; margin-bottom: 40px; }
+  .cover .info { font-size: 16pt; margin-top: 50px; line-height: 2.5; }
+  .cover .year { font-size: 18pt; margin-top: 40px; }
+  h1 { font-size: 22pt; text-align: center; margin: 30px 0 20px; color: #1a5276; page-break-before: always; }
+  h1:first-of-type { page-break-before: avoid; }
+  h2 { font-size: 18pt; margin: 25px 0 15px; color: #2c3e50; border-bottom: 2px solid #1a5276; padding-bottom: 5px; }
+  h3 { font-size: 16pt; margin: 20px 0 10px; color: #34495e; }
+  h4 { font-size: 14pt; margin: 15px 0 8px; color: #555; }
+  p { margin-bottom: 10px; text-align: justify; }
+  ul, ol { margin: 10px 0 10px 30px; }
+  li { margin-bottom: 5px; text-align: justify; }
+  .toc { page-break-after: always; }
+  .toc h1 { page-break-before: avoid; }
+  .toc-item { display: flex; justify-content: space-between; padding: 3px 0; }
+  .toc-l1 { font-weight: bold; font-size: 14pt; margin-top: 5px; }
+  .toc-l2 { padding-right: 20px; font-size: 13pt; }
+  .toc-l3 { padding-right: 40px; font-size: 12pt; }
+  table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 12pt; }
+  th, td { border: 1px solid #666; padding: 8px 10px; text-align: center; vertical-align: top; }
+  th { background: #1a5276; color: #fff; font-weight: bold; }
+  tr:nth-child(even) { background: #f5f8fa; }
+  .dedication, .acknowledgments { text-align: center; padding: 4cm 2cm; page-break-after: always; }
+  .dedication p, .acknowledgments p { font-size: 16pt; line-height: 2.5; text-align: center; }
+  .supervisor-cert { text-align: center; padding: 3cm 2cm; page-break-after: always; }
+  .supervisor-cert .cert-text { border: 2px solid #333; padding: 30px; margin-top: 30px; font-size: 16pt; line-height: 2.5; }
+  .figure-box { border: 1px solid #ccc; padding: 20px; margin: 15px 0; text-align: center; background: #fafafa; min-height: 100px; }
+  .figure-box .caption { margin-top: 10px; font-size: 12pt; font-weight: bold; }
+  .abstract { page-break-after: always; }
+  .abstract h1 { page-break-before: avoid; }
+  .abstract p { font-size: 14pt; line-height: 2.2; }
+  .print-btn { display: block; margin: 20px auto; padding: 12px 30px; font-size: 16px; background: #1a5276; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+  .print-btn:hover { background: #154360; }
+  .page-break { page-break-after: always; }
+  .center { text-align: center; }
+  .box { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin: 10px 0; background: #f9f9f9; }
+  .box-info { border-right: 4px solid #17a2b8; }
+  code { font-family: 'Courier New', monospace; font-size: 11pt; background: #f0f0f0; padding: 2px 5px; border-radius: 3px; }
+  .note { font-size: 12pt; color: #666; font-style: italic; }
+  .ref { font-size: 12pt; line-height: 2; }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="cover">
+  <div class="univ">الجمهورية ة</div>
+  <div class="univ">وزارة التعليم العالي والبحث العلمي</div>
+  <div class="dept">[اسم الجامعة]</div>
+  <div class="dept">[اسم الكلية]</div>
+  <div class="dept">[اسم القسم]</div>
+  <div class="logo">🎓</div>
+  <div class="title-main">نظام التقييم الشامل لجودة التعليم المدرسي </div>
+  <div class="title-sub">EQAS: Education Quality Assessment System</div>
+  <div class="info">
+    <p>مشروع تخرج مقدّم لنيل درجة [اسم الدرجة]</p>
+    <p>في [اسم التخصص]</p>
+  </div>
+  <div class="info">
+    <p><strong>إعداد الطلاب:</strong></p>
+    <p>[اسم الطالب الأول]</p>
+    <p>[اسم الطالب الثاني]</p>
+    <p>[اسم الطالب الثالث]</p>
+  </div>
+  <div class="info">
+    <p><strong>إشراف:</strong></p>
+    <p>[اسم المشرف]</p>
+  </div>
+  <div class="year">2025 – 2026 م</div>
+</div>
+<div class="dedication">
+  <h1 style="page-break-before:avoid">الإهداء</h1>
+  <p>إلى منارة العلم وأساس الأمة...</p>
+  <p>إلى معلمينا الذين أضاءوا لنا دروب المعرفة</p>
+  <p>إلى آبائنا وأمهاتنا، دعائم العطاء بلا حدود</p>
+  <p>إلى كل من يسعى لرفعة التعليم في اليمن</p>
+  <p>نهدي هذا العمل المتواضع</p>
+  <p style="margin-top:40px; font-style:italic;">"ربِّ زدني علماً"</p>
+</div>
+<div class="acknowledgments">
+  <h1 style="page-break-before:avoid">الشكر والتقدير</h1>
+  <p>الحمد لله رب العالمين الذي بنعمته تتم الصالحات، والصلاة والسلام على نبينا محمد وعلى آله وصحبه أجمعين.</p>
+  <p>نتقدم بجزيل الشكر والتقدير إلى مشرفنا الفاضل [اسم المشرف] على توجيهاته القيمة وجهوده المتميزة التي كان لها الأثر الكبير في إنجاز هذا المشروع.</p>
+  <p>كما نشكر إدارة [اسم الجامعة] وكلية [اسم الكلية] على توفير البيئة العلمية المناسبة لإنجاز هذا العمل.</p>
+  <p>وندين بالفضل لكل من ساهم معنا من قريب أو بعيد في إنجاز هذا المشروع.</p>
+  <p>والشكر موصول لعائلاتنا التي كانت خير داعم وسند طوال رحلتنا العلمية.</p>
+</div>
+<div class="supervisor-cert">
+  <h1 style="page-break-before:avoid">شهادة المشرف</h1>
+  <div class="cert-text">
+    <p>أشهد أن مشروع التخرج الموسوم بـ:</p>
+    <p style="font-size:20pt; font-weight:bold; margin:20px 0;">"نظام التقييم الشامل لجودة التعليم المدرسي "</p>
+    <p>EQAS: Education Quality Assessment System</p>
+    <p style="margin-top:30px;">قد تم إنجازه تحت إشرافي وفق المتطلبات الأكاديمية لنيل درجة [اسم الدرجة] في [اسم التخصص].</p>
+  </div>
+  <div style="margin-top:50px; text-align:left; display:flex; justify-content:space-between;">
+    <div style="text-align:center;">
+      <p>المشرف</p>
+      <p>[اسم المشرف]</p>
+      <p>التوقيع: ................</p>
+      <p>التاريخ: ..../..../......</p>
+    </div>
+    <div style="text-align:center;">
+      <p>رئيس القسم</p>
+      <p>[اسم رئيس القسم]</p>
+      <p>التوقيع: ................</p>
+      <p>التاريخ: ..../..../......</p>
+    </div>
+  </div>
+</div>
+<div class="toc">
+  <h1 style="page-break-before:avoid">فهرس المحتويات</h1>
+  <div class="toc-item toc-l1"><span>الموضوع</span><span>الصفحة</span></div>
+  <div class="toc-item toc-l1"><span>الإهداء</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الشكر والتقدير</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>شهادة المشرف</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس المحتويات</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس الجداول</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس الأشكال</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس المخططات</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس الملاحق</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس الرموز والمختصرات</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>فهرس المصطلحات</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>ملخص البحث</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الفصل الأول: الإطار العام للمشروع</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.1 المقدمة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.2 مشكلة المشروع</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.3 أهمية المشروع</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.4 أهداف المشروع</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.5 نطاق المشروع</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>1.6 الهيكلة التنظيمية للمشروع</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الفصل الثاني: الدراسات السابقة ودراسة الجدوى</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>2.1 المقدمة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>2.2 استعراض الدراسات والأعمال السابقة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>2.3 دراسة الجدوى الشاملة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>2.4 دراسة المخاطر وخطة التخفيف</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>2.5 الخطة الزمنية للمشروع</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الفصل الثالث: التحليل والمتطلبات</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.1 المقدمة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.2 منهجية التطوير</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.3 المتطلبات البرمجية والمادية</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.4 متطلبات النظام</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.5 مواصفات معالجة الأخطاء</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.6 دورة حياة الفصل الدراسي</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.7 خوارزميات الحساب التفصيلية</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.8 مثال تطبيقي شامل</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.9 معالجة الحالات الخاصة</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.10 خطة الاختبار ومعايير القبول</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.11 خطة النشر والتشغيل</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.12 استراتيجية ترحيل البيانات</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.13 مواصفات واجهة برمجة التطبيقات</span><span>─</span></div>
+  <div class="toc-item toc-l2"><span>3.14 قواعد التحقق من البيانات</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الفصل الرابع: التصميم</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>المراجع والمصادر</span><span>─</span></div>
+  <div class="toc-item toc-l1"><span>الملاحق</span><span>─</span></div>
+</div>
+<div class="page-break"></div>
+<h1>فهرس الجداول</h1>
+<table>
+  <tr><th>رقم الجدول</th><th>عنوان الجدول</th><th>الصفحة</th></tr>
+  <tr><td>1</td><td>الأدوار الأربعة والصلاحيات</td><td>─</td></tr>
+  <tr><td>2</td><td>المتطلبات البرمجية</td><td>─</td></tr>
+  <tr><td>3</td><td>المتطلبات المادية</td><td>─</td></tr>
+  <tr><td>4</td><td>المتطلبات الوظيفية – الوحدة 1</td><td>─</td></tr>
+  <tr><td>5</td><td>المتطلبات الوظيفية – الوحدة 2</td><td>─</td></tr>
+  <tr><td>6</td><td>المتطلبات الوظيفية – الوحدة 3</td><td>─</td></tr>
+  <tr><td>7</td><td>المتطلبات الوظيفية – الوحدة 4</td><td>─</td></tr>
+  <tr><td>8</td><td>المتطلبات الوظيفية – الوحدة 5</td><td>─</td></tr>
+  <tr><td>9</td><td>المتطلبات الوظيفية – الوحدة 6</td><td>─</td></tr>
+  <tr><td>10</td><td>المتطلبات الوظيفية – الوحدة 7</td><td>─</td></tr>
+  <tr><td>11</td><td>المتطلبات الوظيفية – الوحدة 8</td><td>─</td></tr>
+  <tr><td>12</td><td>المتطلبات الوظيفية – الوحدة 9</td><td>─</td></tr>
+  <tr><td>13</td><td>المتطلبات الوظيفية – الوحدة 10</td><td>─</td></tr>
+  <tr><td>14</td><td>المتطلبات الوظيفية – الوحدة 11</td><td>─</td></tr>
+  <tr><td>15</td><td>المتطلبات الوظيفية – الوحدة 12</td><td>─</td></tr>
+  <tr><td>16</td><td>المتطلبات الوظيفية – الوحدة 13</td><td>─</td></tr>
+  <tr><td>17</td><td>المتطلبات غير الوظيفية</td><td>─</td></tr>
+  <tr><td>18</td><td>قاموس البيانات – جدول المستخدمين</td><td>─</td></tr>
+  <tr><td>19</td><td>قاموس البيانات – جدول المدارس</td><td>─</td></tr>
+</table>
+
+<div class="page-break"></div>
+<h1>فهرس الأشكال</h1>
+<table>
+  <tr><th>رقم الشكل</th><th>عنوان الشكل</th><th>الصفحة</th></tr>
+  <tr><td>1</td><td>شعار النظام</td><td>─</td></tr>
+  <tr><td>2</td><td>واجهة تسجيل الدخول</td><td>─</td></tr>
+  <tr><td>3</td><td>لوحة تحكم مدير النظام</td><td>─</td></tr>
+  <tr><td>4</td><td>لوحة تحكم مدير المدرسة</td><td>─</td></tr>
+  <tr><td>5</td><td>لوحة تحكم المعلم</td><td>─</td></tr>
+  <tr><td>6</td><td>بوابة ولي الأمر</td><td>─</td></tr>
+  <tr><td>7</td><td>نموذج إدخال الدرجات</td><td>─</td></tr>
+  <tr><td>8</td><td>تقرير مؤشر جودة التعليم (EQI)</td><td>─</td></tr>
+</table>
+
+<div class="page-break"></div>
+<h1>فهرس المخططات</h1>
+<table>
+  <tr><th>رقم المخطط</th><th>عنوان المخطط</th><th>الصفحة</th></tr>
+  <tr><td>1</td><td>مخطط الوظائف الأعمال (BFD)</td><td>─</td></tr>
+  <tr><td>2</td><td>مخطط تدفق البيانات – المستوى الصفري</td><td>─</td></tr>
+  <tr><td>3</td><td>مخطط تدفق البيانات – المستوى الأول</td><td>─</td></tr>
+  <tr><td>4</td><td>مخطط تدفق البيانات – المستوى الثاني</td><td>─</td></tr>
+  <tr><td>5</td><td>مخطط العلاقات بين الكيانات (ERD)</td><td>─</td></tr>
+  <tr><td>6</td><td>مخطط حالة الاستخدام – مدير النظام</td><td>─</td></tr>
+  <tr><td>7</td><td>مخطط حالة الاستخدام – مدير المدرسة</td><td>─</td></tr>
+  <tr><td>8</td><td>مخطط حالة الاستخدام – المعلم</td><td>─</td></tr>
+  <tr><td>9</td><td>مخطط حالة الاستخدام – ولي الأمر</td><td>─</td></tr>
+  <tr><td>10</td><td>مخطط التسلسل – تسجيل الدخول</td><td>─</td></tr>
+  <tr><td>11</td><td>مخطط التسلسل – إدخال الدرجات</td><td>─</td></tr>
+  <tr><td>12</td><td>مخطط النشاط – دورة حياة الفصل الدراسي</td><td>─</td></tr>
+  <tr><td>13</td><td>مخطط الفئات (Class Diagram)</td><td>─</td></tr>
+</table>
+
+<div class="page-break"></div>
+<h1>فهرس الملاحق</h1>
+<table>
+  <tr><th>رقم الملحق</th><th>عنوان الملحق</th><th>الصفحة</th></tr>
+  <tr><td>أ</td><td>هيكل قاعدة البيانات الكامل (DDL)</td><td>─</td></tr>
+  <tr><td>ب</td><td>اسكربتات التثبيت الأولية (Seed Data)</td><td>─</td></tr>
+  <tr><td>ج</td><td>إعدادات النظام الافتراضية (96 إعداداً)</td><td>─</td></tr>
+  <tr><td>د</td><td>سيناريوهات اختبار النظام</td><td>─</td></tr>
+  <tr><td>هـ</td><td>تقرير تقييم XSS والأمان</td><td>─</td></tr>
+</table>
+
+<div class="page-break"></div>
+<h1>فهرس الرموز والمختصرات</h1>
+<table>
+  <tr><th>الرمز</th><th>المعنى بالعربية</th><th>المعنى بالإنجليزية</th></tr>
+  <tr><td>EQAS</td><td>نظام التقييم الشامل لجودة التعليم</td><td>Education Quality Assessment System</td></tr>
+  <tr><td>EQI</td><td>مؤشر جودة التعليم</td><td>Education Quality Index</td></tr>
+  <tr><td>GPA</td><td>المعدل التراكمي</td><td>Grade Point Average</td></tr>
+  <tr><td>BFD</td><td>مخطط الوظائف الأعمال</td><td>Business Function Diagram</td></tr>
+  <tr><td>DFD</td><td>مخطط تدفق البيانات</td><td>Data Flow Diagram</td></tr>
+  <tr><td>ERD</td><td>مخطط العلاقات بين الكيانات</td><td>Entity Relationship Diagram</td></tr>
+  <tr><td>LMS</td><td>نظام إدارة التعلم</td><td>Learning Management System</td></tr>
+  <tr><td>SIS</td><td>نظام معلومات الطلاب</td><td>Student Information System</td></tr>
+  <tr><td>CSRF</td><td>تزوير الطلب عبر المواقع</td><td>Cross-Site Request Forgery</td></tr>
+  <tr><td>XSS</td><td>البرمجة النصية عبر المواقع</td><td>Cross-Site Scripting</td></tr>
+  <tr><td>CSP</td><td>سياسة أمان المحتوى</td><td>Content Security Policy</td></tr>
+  <tr><td>PDO</td><td>كائنات بيانات PHP</td><td>PHP Data Objects</td></tr>
+  <tr><td>API</td><td>واجهة برمجة التطبيقات</td><td>Application Programming Interface</td></tr>
+  <tr><td>HTML</td><td>لغة ترميز النص التشعبي</td><td>HyperText Markup Language</td></tr>
+  <tr><td>CSS</td><td>صفحات الأنماط المتتالية</td><td>Cascading Style Sheets</td></tr>
+</table>
+<div class="page-break"></div>
+<h1>فهرس المصطلحات</h1>
+<table>
+  <tr><th>المصطلح العربي</th><th>المصطلح الإنجليزي</th><th>التعريف</th></tr>
+  <tr><td>التقييم الشامل</td><td>Comprehensive Assessment</td><td>عملية تقييم متعددة الأبعاد تشمل الجوانب الأكاديمية والسلوكية والمهارية</td></tr>
+  <tr><td>مؤشر جودة التعليم</td><td>Education Quality Index</td><td>مؤشر مركب يجمع 6 أبعاد لتقييم جودة التعليم في المدرسة</td></tr>
+  <tr><td>الاستمارة التقييمية الديناميكية</td><td>Dynamic Assessment Form</td><td>استمارة تقييم قابلة للتخصيص تُنشأ من معايير وعناصر وأدوات متنوعة</td></tr>
+  <tr><td>مقياس ليكرت</td><td>Likert Scale</td><td>مقياس من 5 مستويات لقياس الاتجاهات والآراء</td></tr>
+  <tr><td>الترفيع المشروط</td><td>Conditional Promotion</td><td>ترفيع الطالب مع شرط تحسين معيار غير مستوفٍ عبر خطة تحسين</td></tr>
+  <tr><td>محرك التقييم الموحد</td><td>Unified Assessment Engine</td><td>محرك برمجي يدعم 10 أنواع أدوات و7 أنواع تقييم</td></tr>
+  <tr><td>الخوارزمية الهجينة</td><td>Hybrid Algorithm</td><td>مزيج من 50% توزيع نسبي و50% توزيع متساوٍ للأوزان المفقودة</td></tr>
+  <tr><td>بصمة الجلسة</td><td>Session Fingerprint</td><td>قيمة مشفرة للتحقق من هوية المتصفح لمنع اختطاف الجلسة</td></tr>
+  <tr><td>مستوى القفل</td><td>Lock Level</td><td>مستوى تقييد الفصل الدراسي: none/soft/hard/admin_handled</td></tr>
+  <tr><td>خطة التحسين</td><td>Improvement Plan</td><td>خطة تربوية للطالب المرفوع ترفيعاً مشروطاً لتحسين أدائه</td></tr>
+</table>
+
+<div class="abstract">
+  <h1 style="page-break-before:avoid">ملخص البحث</h1>
+  <p>يهدف هذا المشروع إلى تصميم وتطوير نظام تقييم شامل لجودة التعليم المدرسي  (EQAS) يوفر أدوات متكاملة لتقييم وتحسين جودة العملية التعليمية في المدارس ة. ينطلق المشروع من مشكلة واقعية تتمثل في ضعف آليات تقييم جودة التعليم في اليمن، وغياب نظام معلوماتي موحّد يجمع بيانات التقييم الأكاديمي والسلوكي والمهاري والحضوري وجودة التدريس والمناخ المدرسي في منصة واحدة.</p>
+  <p>يغطّي النظام أربعة أدوار رئيسية هي: مدير النظام (group_admin) بصلاحيات كاملة، ومدير المدرسة (school_admin) بإدارة مدرسته، والمعلم (teacher) بعمليات التقييم والتدريس، وولي الأمر (parent) لمتابعة أبنائه. يتكون النظام من 71 جدولاً في قاعدة البيانات و181 ملف PHP، مع أكثر من 13 وحدة وظيفية تشمل 82 متطلباً وظيفياً و8 متطلبات غير وظيفية.</p>
+  <p>تم تطوير النظام باستخدام PHP (بدون أطر عمل) مع قاعدة بيانات MySQL وواجهة أمامية بتقنيات HTML5 وCSS3 وJavaScript. يعتمد النظام على محرك تقييم موحد يدعم 10 أنواع أدوات تقييم (مقياس ليكرت، مقياس التكرار، مقياس الرضا، نعم/لا، مقياس الشدة العكسي، عداد، رقمي 0-100، رقمي مخصص، روبريك 4 مستويات، نص حر) موزعة على 7 أنواع تقييم. كما يتضمن محركاً لحساب مؤشر جودة التعليم (EQI) بخوارزمية هجينة تجمع بين التوزيع النسبي والمتساوي، ومحرك قرارات الترفيع بثلاثة معايير إلزامية.</p>
+  <p>تم اتباع منهجية Scrum في إدارة المشروع، مع توثيق كامل للمتطلبات والتصميم والاختبارات. تضمن النظام إجراءات أمان متقدمة تشمل حماية CSRF، تجزئة كلمات المرور بـ bcrypt، حماية القوة الغاشمة، بصمة الجلسة، وسياسة أمان المحتوى (CSP).</p>
+  <p><strong>الكلمات المفتاحية:</strong> تقييم جودة التعليم، نظام معلومات مدرسي، مؤشر جودة التعليم، محرك تقييم موحد، النظام الموحّد للتقويم الأكاديمي، PHP، MySQL.</p>
+</div>
+<h1>الفصل الأول: الإطار العام للمشروع</h1>
+<h2>1.1 المقدمة</h2>
+<p>يشكل التعليم الركيزة الأساسية لبناء المجتمعات وتطويرها، وتُعد جودة التعليم مؤشراً رئيسياً على تقدم الأمم وازدهارها. في الجمهورية ة، تواجه العملية التعليمية تحديات كبيرة تتطلب أدوات تقييم حديثة وشاملة تساهم في قياس الأداء التعليمي وتحديد نقاط القوة والضعف واتخاذ القرارات التربوية المناسبة.</p>
+<p>يأتي نظام التقييم الشامل لجودة التعليم المدرسي  (EQAS) ليقدم حلاً متكاملاً لمشكلة غياب نظام معلوماتي موحّد يجمع مختلف جوانب التقييم التربوي في منصة واحدة. يهدف النظام إلى توفير أدوات شاملة لتقييم جودة العملية التعليمية من خلال مؤشرات كمية ونوعية مبنية على معايير علمية تشمل الأداء الأكاديمي والسلوك والحضور والمهارات وجودة التدريس والمناخ المدرسي.</p>
+<p>يتميز النظام بقابلية التوسع والتكيف مع احتياجات المدارس ة المختلفة، مع التركيز على تلبية المتطلبات المحلية مع اتباع أفضل الممارسات العالمية في بناء أنظمة المعلومات التربوية.</p>
+
+<h2>1.2 مشكلة المشروع</h2>
+<p>تعاني العملية التعليمية في اليمن من عدة مشكلات رئيسية يمكن تلخيصها:</p>
+<ol>
+  <li><strong>ضعف آليات التقييم:</strong> عدم وجود نظام معلوماتي متكامل يجمع عمليات التقييم الأكاديمي والسلوكي والمهاري في منصة واحدة، مما يؤدي إلى تشتت البيانات وصعوبة استخراج المؤشرات الكلية.</li>
+  <li><strong>غياب مؤشرات جودة شاملة:</strong> عدم وجود مؤشر نوعي مركّب يقيس جودة التعليم بشكل متكامل عبر أبعاده المختلفة.</li>
+  <li><strong>صعوبة اتخاذ القرارات التربوية:</strong> نقص البيانات الموحّدة والتحليلات اللازمة لدعم قرارات الترفيع والتوجيه التربوي والخطط العلاجية.</li>
+  <li><strong>ضعف التواصل بين المدرسة وأولياء الأمور:</strong> عدم وجود قناة معلوماتية تمكن ولي الأمر من متابعة أداء أبنائه بشكل دوري.</li>
+  <li><strong>تكرار العمل اليدوي:</strong> الاعتماد على الأساليب التقليدية (الدفاتر والسجلات الورقية) في توثيق المعلومات مما يؤدي إلى هدر الوقت والجهد.</li>
+  <li><strong>غياب التوحيد:</strong> اختلاف آليات التقييم بين مدرسة وأخرى، وعدم وجود نظام موحّد للتقويم الأكاديمي على مستوى النظام التعليمي.</li>
+</ol>
+
+<h2>1.3 أهمية المشروع</h2>
+<ul>
+  <li><strong>تحسين جودة التعليم:</strong> توفير أدوات تقييم شاملة تساعد في تحديد مستويات الأداء واتخاذ الإجراءات التصحيحية.</li>
+  <li><strong>نظام موحّد:</strong> تقديم نموذج معلوماتي موحّد للتقويم الأكاديمي وإدارة البيانات المدرسية على مستوى النظام.</li>
+  <li><strong>دعم القرار:</strong> توفير مؤشرات وتحليلات دقيقة تدعم متخذي القرار على مستوى المدرسة والنظام.</li>
+  <li><strong>توفير الوقت والجهد:</strong> أتمتة العمليات التقييمية والتقارير مما يقلل الأعباء الإدارية عن المعلمين والإداريين.</li>
+  <li><strong>تمكين أولياء الأمور:</strong> إشراك ولي الأمر في العملية التعليمية عبر بوابة متخصصة لمتابعة أداء أبنائه.</li>
+  <li><strong>التكلفة المنخفضة:</strong> نظام مفتوح المصدر يعمل على تقنيات مجانية (PHP، MySQL) مما يقلل تكاليف التشغيل.</li>
+</ul>
+
+<h2>1.4 أهداف المشروع</h2>
+<h3>1.4.1 الأهداف العامة</h3>
+<ul>
+  <li>تصميم وتطوير نظام تقييم شامل لجودة التعليم المدرسي  متعدد الأبعاد.</li>
+  <li>أتمتة عمليات التقييم الأكاديمي والسلوكي والمهاري والحضوري وجودة التدريس والمناخ المدرسي.</li>
+  <li>توفير مؤشرات جودة تعليم مركّبة تدعم اتخاذ القرارات التربوية.</li>
+  <li>تقديم منصة تواصل فعالة بين المدرسة وأولياء الأمور.</li>
+</ul>
+
+<h3>1.4.2 الأهداف التفصيلية</h3>
+<ul>
+  <li>بناء نظام إدارة مستخدمين بأربعة أدوار مع صلاحيات دقيقة (FR-001 إلى FR-006).</li>
+  <li>تطوير نظام إدارة مدارس وبيانات أساسية - صفوف، شعب، مواد، سنوات أكاديمية (FR-007 إلى FR-015).</li>
+  <li>بناء نظام حضور يومي وربطه بالإشعارات والتقارير (FR-016 إلى FR-020).</li>
+  <li>تطوير نظام سلوك قائم على النقاط (100 نقطة أساس) مع فئات إيجابية وسلبية (FR-021 إلى FR-025).</li>
+  <li>بناء نظام واجبات منزلية وإدارة المهارات (FR-026 إلى FR-029).</li>
+  <li>تطوير محرك استمارات تقييمية ديناميكية بـ 10 أنواع أدوات و7 أنواع تقييم (FR-030 إلى FR-035).</li>
+  <li>بناء نظام حسابات درجات متكامل GPA، نسبة مئوية، ترتيب، مواد راسبة (FR-036 إلى FR-044).</li>
+  <li>تطوير نظام تقييم جودة التدريس - ذاتي، أقران، إشرافي (FR-045 إلى FR-049).</li>
+  <li>بناء نظام استبيانات المناخ المدرسي وفحص المرافق (FR-050 إلى FR-052).</li>
+  <li>تطوير مؤشر جودة التعليم EQI ومحرك قرارات الترفيع والتنبيهات الذكية (FR-053 إلى FR-068).</li>
+  <li>بناء نظام إشعارات واتصال متعدد القنوات (FR-069 إلى FR-071).</li>
+  <li>تطوير بوابة ولي الأمر لمتابعة الطلاب (FR-072 إلى FR-075).</li>
+  <li>بناء نظام إعدادات وإدارة النظام (FR-076 إلى FR-082).</li>
+</ul>
+
+<h2>1.5 نطاق المشروع</h2>
+<h3>1.5.1 النطاق الوظيفي</h3>
+<p>يغطي النظام الوظائف الرئيسية: إدارة المستخدمين، إدارة المدارس، إدارة الطلاب، التسجيل في الشعب، إدارة التقويم الأكاديمي، تسجيل الحضور، تقييم السلوك، الاستمارات التقييمية الديناميكية، إدخال وحساب الدرجات الأكاديمية، تقييم جودة التدريس (3 أنواع)، استبيانات المناخ المدرسي، فحص المرافق، قوائم المهارات، مؤشر جودة التعليم (EQI)، قرارات الترفيع، التنبيهات الذكية (10 أنواع)، التقارير (Excel/PDF/رسوم بيانية)، الإشعارات والاتصال، بوابة ولي الأمر، النسخ الاحتياطي والاستعادة، إعدادات النظام.</p>
+
+<h3>1.5.2 نطاق المستخدمين</h3>
+<table>
+  <tr><th>الدور</th><th>الاسم العربي</th><th>الوصف</th></tr>
+  <tr><td>group_admin</td><td>مدير النظام</td><td>المسؤول الأول، يدير جميع المدارس والمستخدمين والإعدادات، لديه صلاحية النسخ الاحتياطي والاستعادة وإدارة التقويم الأكاديمي.</td></tr>
+  <tr><td>school_admin</td><td>مدير المدرسة</td><td>يدير مدرسته: المعلمين والطلاب والتسجيلات والتقييمات والإشراف التربوي واعتماد الترفيع.</td></tr>
+  <tr><td>teacher</td><td>معلم</td><td>يقوم بعمليات التقييم وإدخال الدرجات وتسجيل الحضور والسلوك والمهارات وتقييم التدريس.</td></tr>
+  <tr><td>parent</td><td>ولي أمر</td><td>يتابع أداء أبنائه من درجات وسلوك وحضور ومهارات وقرارات ترفيع عبر بوابة مخصصة.</td></tr>
+</table>
+
+<h3>1.5.3 النطاق التقني</h3>
+<table>
+  <tr><th>المكون</th><th>التقنية</th></tr>
+  <tr><td>خادم الويب</td><td>Apache (مع .htaccess للأمان)</td></tr>
+  <tr><td>لغة البرمجة</td><td>PHP 7.4+ (بدون أطر عمل)</td></tr>
+  <tr><td>قاعدة البيانات</td><td>MySQL 5.7+ / MariaDB 10.3+ (PDO مع استعلامات محضّرة)</td></tr>
+  <tr><td>الواجهة الأمامية</td><td>HTML5 + CSS3 + JavaScript (RTL)</td></tr>
+  <tr><td>الرسوم البيانية</td><td>Chart.js 4.x</td></tr>
+  <tr><td>تصدير Excel</td><td>EqasXlsxWriter (مكتبة مخصصة)</td></tr>
+  <tr><td>تصدير PDF</td><td>TCPDF</td></tr>
+  <tr><td>الترميز</td><td>UTF-8 (utf8mb4)</td></tr>
+  <tr><td>المنطقة الزمنية</td><td>Asia/Aden (توقيت اليمن)</td></tr>
+</table>
+
+<h3>1.5.4 النطاق الجغرافي والتطبيقي</h3>
+<p>يستهدف النظام المدارس ة في مرحلتي التعليم الأساسي والثانوي، مع إمكانية تطبيقه في أي مدرسة تتبع النظام التعليمي . يمكن للنظام العمل في مدرسة واحدة أو على مستوى مجموعة مدارس تحت إدارة مركزية واحدة.</p>
+
+<h2>1.6 الهيكلة التنظيمية للمشروع</h2>
+<h3>1.6.1 توزيع الأدوار والمسؤوليات</h3>
+<ul>
+  <li><strong>مدير المشروع:</strong> مسؤول عن التخطيط والمتابعة وإدارة المخاطر والتواصل.</li>
+  <li><strong>محلل النظام:</strong> مسؤول عن جمع وتحليل المتطلبات وتوثيق حالات الاستخدام.</li>
+  <li><strong>مطور قاعدة البيانات:</strong> مسؤول عن تصميم وتنفيذ قاعدة البيانات.</li>
+  <li><strong>مطور الواجهة الخلفية:</strong> مسؤول عن تطوير منطق الأعمال (PHP).</li>
+  <li><strong>مطور الواجهة الأمامية:</strong> مسؤول عن تصميم واجهات المستخدم وتجربة المستخدم.</li>
+  <li><strong>مختبر الجودة:</strong> مسؤول عن إعداد وتنفيذ خطط الاختبار وتوثيق الأخطاء.</li>
+  <li><strong>مصمم التوثيق:</strong> مسؤول عن إعداد وثائق المشروع والمستخدم وأدلة التشغيل.</li>
+</ul>
+<h1>الفصل الثاني: الدراسات السابقة ودراسة الجدوى</h1>
+
+<h2>2.1 المقدمة</h2>
+<p>يهدف هذا الفصل إلى استعراض الدراسات والأعمال السابقة ذات الصلة بمشروع EQAS، وتحليل الفجوة بينها وبين النظام المقترح، بالإضافة إلى إجراء دراسة جدوى شاملة من النواحي الفنية والاقتصادية والزمنية والتشغيلية والمالية، وأخيراً دراسة المخاطر المحتملة مع خطط التخفيف المقترحة.</p>
+
+<h2>2.2 استعراض الدراسات والأعمال السابقة</h2>
+
+<h3>2.2.1 أنظمة إدارة التعلم (LMS)</h3>
+<p><strong>أمثلة:</strong> Moodle، Blackboard، Canvas، Google Classroom</p>
+<p><strong>نقاط القوة:</strong> إدارة المحتوى التعليمي، تتبع التقدم، أدوات التقييم المدمجة، واجهات تفاعلية، دعم متعدد اللغات.</p>
+<p><strong>نقاط الضعف:</strong> لا توفر تقييماً متكاملاً لمعايير الجودة المتعددة، تفتقر لمؤشرات جودة تعليم مركّبة، لا تدعم آليات الترفيع المدرسية، لا تحتوي على أنظمة سلوك وحضور متخصصة.</p>
+
+<h3>2.2.2 أنظمة معلومات الطلاب (SIS)</h3>
+<p><strong>أمثلة:</strong> PowerSchool، Infinite Campus، Skyward</p>
+<p><strong>نقاط القوة:</strong> إدارة بيانات الطلاب المركزية، تتبع الحضور، إدارة الدرجات والتقارير الأكاديمية.</p>
+<p><strong>نقاط الضعف:</strong> تفتقر لمحرك تقييم ديناميكي متعدد الأدوات، لا تدعم التقييم التربوي الشامل (سلوك، مهارات، تدريس)، محدودة في التقارير التحليلية المتقدمة، معظمها تجاري ومكلف.</p>
+
+<h3>2.2.3 منصات التقييم والتحليل المتخصصة</h3>
+<p><strong>أمثلة:</strong> PowerBI التعليمي، Tableau for Education، نظام نور (السعودية)</p>
+<p><strong>نقاط القوة:</strong> تحليلات قوية، لوحات معلومات تفاعلية، مؤشرات أداء متقدمة.</p>
+<p><strong>نقاط الضعف:</strong> تحتاج لبيانات من مصادر متعددة ولا توفر نظاماً متكاملاً لجمع البيانات، تركز على التحليل دون توفير أدوات التقييم نفسها، مصممة لبيئات غير يمنية.</p>
+
+<h3>2.2.4 تحليل الفجوة وتحديد موقع المشروع</h3>
+<table>
+  <tr><th>المعيار</th><th>LMS (Moodle)</th><th>SIS (PowerSchool)</th><th>تحليلات (PowerBI)</th><th>EQAS</th></tr>
+  <tr><td>إدارة المستخدمين والأدوار</td><td>✓</td><td>✓</td><td>✗</td><td>✓ (4 أدوار)</td></tr>
+  <tr><td>إدارة المدارس المتعددة</td><td>✗</td><td>✓</td><td>✗</td><td>✓</td></tr>
+  <tr><td>محرك تقييم ديناميكي (10 أدوات)</td><td>جزئي</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>تقييم سلوك قائم على النقاط</td><td>✗</td><td>جزئي</td><td>✗</td><td>✓</td></tr>
+  <tr><td>تقييم جودة التدريس (3 أنواع)</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>مؤشر جودة تعليم مركب (EQI)</td><td>✗</td><td>✗</td><td>✗</td><td>✓ (6 أبعاد)</td></tr>
+  <tr><td>بوابة ولي الأمر</td><td>✓</td><td>✓</td><td>✗</td><td>✓</td></tr>
+  <tr><td>التقويم الأكاديمي الموحّد</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>مفتوح المصدر ومجاني</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td></tr>
+  <tr><td>متوافق مع النظام التعليمي </td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
+</table>
+
+<h3>2.2.5 الاستنتاج</h3>
+<p>يتفرد EQAS بدمج وظائف LMS و SIS ومنصات التحليل في نظام واحد متكامل، مع إضافة ميزات فريدة مثل محرك التقييم الموحد (10 أدوات × 7 أنواع)، ومؤشر جودة التعليم المركب (EQI) بخوارزمية هجينة، ومحرك قرارات الترفيع، والتنبيهات الذكية، وكلها مبنية خصيصاً للسياق التعليمي .</p>
+
+<h2>2.3 دراسة الجدوى الشاملة</h2>
+<h3>2.3.1 الجدوى الفنية</h3>
+<ul>
+  <li><strong>متطلبات الخادم:</strong> XAMPP (Apache + PHP 7.4+ + MySQL 5.7+) متوفرة مجاناً.</li>
+  <li><strong>المهارات الفنية:</strong> يستخدم PHP (لغة منتشرة) بتقنيات مألوفة، بدون أطر عمل معقدة.</li>
+  <li><strong>التوافقية:</strong> يعمل على جميع المتصفحات الحديثة (Chrome، Firefox، Edge، Safari).</li>
+  <li><strong>قابلية النشر:</strong> يمكن نشره على خادم محلي (XAMPP) أو مستضاف (cPanel/Shared Hosting).</li>
+  <li><strong>قابلية الصيانة:</strong> هيكل منظم وموثق جيداً مع 71 جدولاً و181 ملف PHP.</li>
+</ul>
+
+<h3>2.3.2 الجدوى الاقتصادية</h3>
+<ul>
+  <li><strong>تكاليف التطوير:</strong> منخفضة جداً (XAMPP مجاني، PHP و MySQL مفتوحة المصدر).</li>
+  <li><strong>تكاليف التشغيل:</strong> تعتمد على استضافة بسيطة (5-15$ شهرياً للاستضافة المشتركة).</li>
+  <li><strong>العائد المتوقع:</strong> تحسين جودة التعليم، تقليل الهدر الإداري، توفير وقت المعلمين.</li>
+  <li><strong>تكلفة الملكية الإجمالية (TCO):</strong> تقل بنسبة 70-90% عن الأنظمة التجارية المماثلة.</li>
+</ul>
+
+<h3>2.3.3 الجدوى الزمنية</h3>
+<table>
+  <tr><th>المرحلة</th><th>المدة</th><th>المخرجات</th></tr>
+  <tr><td>تحليل المتطلبات</td><td>3 أسابيع</td><td>وثيقة متطلبات، نموذج ERD</td></tr>
+  <tr><td>التصميم</td><td>أسبوعان</td><td>مخططات UML، نموذج قاعدة بيانات</td></tr>
+  <tr><td>التطوير (Sprint 1-4)</td><td>8 أسابيع</td><td>الوحدات الأساسية (مستخدمين، مدارس، تقويم)</td></tr>
+  <tr><td>التطوير (Sprint 5-8)</td><td>8 أسابيع</td><td>وحدات التقييم (محرك تقييم، درجات، سلوك)</td></tr>
+  <tr><td>التطوير (Sprint 9-12)</td><td>8 أسابيع</td><td>المؤشرات والتقارير (EQI، ترفيع، تنبيهات)</td></tr>
+  <tr><td>الاختبار وضمان الجودة</td><td>3 أسابيع</td><td>تقارير اختبار، شهادة اجتياز</td></tr>
+  <tr><td>التوثيق والنشر</td><td>أسبوعان</td><td>وثائق المشروع، دليل المستخدم</td></tr>
+</table>
+
+<h3>2.3.4 الجدوى التشغيلية</h3>
+<ul>
+  <li><strong>سهولة الاستخدام:</strong> واجهة عربية مبسطة تتوافق مع ثقافة المستخدم المحلي.</li>
+  <li><strong>التدريب:</strong> يمكن تدريب المستخدمين في ورشة عمل لمدة 2-3 أيام.</li>
+  <li><strong>الدعم الفني:</strong> النظام موثق بشكل كامل مع أدلة استخدام ومعالج تثبيت.</li>
+  <li><strong>الاعتمادية:</strong> سجل تغييرات مفصل ونظام نسخ احتياطي بثلاثة مستويات.</li>
+</ul>
+
+<h3>2.3.5 الجدوى المالية</h3>
+<p>المشروع لا يتطلب ميزانية تشغيلية كبيرة. التكاليف الأساسية: استضافة 100-200 دولار سنوياً، نطاق 10-20 دولار سنوياً (اختياري)، صيانة 200-400 دولار سنوياً.</p>
+
+<h2>2.4 دراسة المخاطر وخطة التخفيف</h2>
+<table>
+  <tr><th>الخطر</th><th>الاحتمالية</th><th>التأثير</th><th>خطة التخفيف</th></tr>
+  <tr><td>ضعف البنية التحتية للإنترنت</td><td>عالية</td><td>متوسط</td><td>النظام يعمل محلياً مع مزامنة دورية</td></tr>
+  <tr><td>انقطاع الكهرباء</td><td>عالية</td><td>متوسط</td><td>نسخ احتياطي تلقائي، دعم UPS</td></tr>
+  <tr><td>مقاومة المستخدمين للتغيير</td><td>متوسطة</td><td>مرتفع</td><td>واجهة بسيطة، تدريب مكثف، دعم فني</td></tr>
+  <tr><td>اختراق أمني</td><td>منخفضة</td><td>مرتفع</td><td>bcrypt، CSRF، CSP، بصمة جلسة</td></tr>
+  <tr><td>فقدان البيانات</td><td>منخفضة</td><td>مرتفع</td><td>3 مستويات نسخ احتياطي، سجل تغييرات</td></tr>
+  <tr><td>تغير المتطلبات أثناء التطوير</td><td>متوسطة</td><td>متوسط</td><td>Scrum تسمح بإضافة متطلبات كل Sprint</td></tr>
+</table>
+
+<h2>2.5 الخطة الزمنية للمشروع</h2>
+<p>تم إدارة المشروع باستخدام منهجية Scrum على 12 Sprint مدة كل منها أسبوعان:</p>
+<table>
+  <tr><th>Sprint</th><th>المدة</th><th>الوحدات المطورة</th></tr>
+  <tr><td>Sprint 1</td><td>الأسبوع 1-2</td><td>هيكل قاعدة البيانات، المصادقة، الجلسات، الإعدادات</td></tr>
+  <tr><td>Sprint 2</td><td>الأسبوع 3-4</td><td>إدارة المستخدمين (4 أدوار)، الصلاحيات، المدارس</td></tr>
+  <tr><td>Sprint 3</td><td>الأسبوع 5-6</td><td>الطلاب، التسجيلات، الصفوف، المراحل</td></tr>
+  <tr><td>Sprint 4</td><td>الأسبوع 7-8</td><td>التقويم الأكاديمي، السنوات والفصول، الحضور</td></tr>
+  <tr><td>Sprint 5</td><td>الأسبوع 9-10</td><td>محرك التقييم الموحد (10 أدوات)، الاستمارات</td></tr>
+  <tr><td>Sprint 6</td><td>الأسبوع 11-12</td><td>الدرجات الأكاديمية (GPA، نسبة، ترتيب)</td></tr>
+  <tr><td>Sprint 7</td><td>الأسبوع 13-14</td><td>السلوك (نقاط + استمارة)، المهارات، الواجبات</td></tr>
+  <tr><td>Sprint 8</td><td>الأسبوع 15-16</td><td>جودة التدريس (ذاتي/أقران/إشرافي)، المناخ، المرافق</td></tr>
+  <tr><td>Sprint 9</td><td>الأسبوع 17-18</td><td>مؤشر جودة التعليم (EQI) الخوارزمية الهجينة</td></tr>
+  <tr><td>Sprint 10</td><td>الأسبوع 19-20</td><td>محرك الترفيع، التنبيهات الذكية (10 أنواع)</td></tr>
+  <tr><td>Sprint 11</td><td>الأسبوع 21-22</td><td>التقارير (Excel، PDF)، بوابة ولي الأمر</td></tr>
+  <tr><td>Sprint 12</td><td>الأسبوع 23-24</td><td>النسخ الاحتياطي، معالج التثبيت، التوثيق، الاختبارات</td></tr>
+</table>
+<h1>الفصل الثالث: التحليل والمتطلبات</h1>
+
+<h2>3.1 المقدمة</h2>
+<p>يُعنى هذا الفصل بتحليل النظام وتحديد متطلباته بشكل تفصيلي، مع وصف منهجية التطوير المستخدمة، والمتطلبات البرمجية والمادية، والمتطلبات الوظيفية وغير الوظيفية، بالإضافة إلى مواصفات معالجة الأخطاء ودورة حياة الفصل الدراسي والخوارزميات الحسابية وخطة الاختبار والنشر.</p>
+
+<h2>3.2 منهجية التطوير</h2>
+<p>تم اعتماد منهجية Scrum (إحدى أطر عمل Agile) لإدارة المشروع. تم اختيار Scrum لأنها تتيح التكيف السريع مع تغير المتطلبات، وتقديم إصدارات عاملة بشكل دوري، وتعزيز التواصل بين أعضاء الفريق.</p>
+
+<h3>3.2.1 مراحل منهجية Scrum المطبقة</h3>
+<ul>
+  <li><strong>Product Backlog:</strong> قائمة أولويات بجميع المتطلبات الوظيفية (82 متطلباً).</li>
+  <li><strong>Sprint Planning:</strong> تخطيط كل Sprint (أسبوعان) بتحديد المهام القابلة للتنفيذ.</li>
+  <li><strong>Sprint Execution:</strong> تطوير المهام مع اجتماع يومي (Daily Standup).</li>
+  <li><strong>Sprint Review:</strong> عرض الإنجازات في نهاية كل Sprint وتحليل الملاحظات.</li>
+  <li><strong>Sprint Retrospective:</strong> تحليل أداء الفريق وتحديد نقاط التحسين.</li>
+  <li><strong>Increment:</strong> إصدار عامل ومختبر بعد كل Sprint.</li>
+</ul>
+
+<h3>3.2.2 فوائد استخدام Scrum</h3>
+<ul>
+  <li>تسليم مبكر ومستمر لقيمة تجارية ملموسة كل أسبوعين.</li>
+  <li>قابلية عالية لاستيعاب تغييرات المتطلبات.</li>
+  <li>شفافية كاملة في سير العمل عبر Product Backlog محدّث.</li>
+  <li>تحسين مستمر للجودة والأداء عبر Retrospectives دورية.</li>
+  <li>اكتشاف وحل 15 خطأً كبيراً خلال مرحلة التطوير قبل الإصدار.</li>
+</ul>
+
+<h2>3.3 المتطلبات البرمجية والمادية</h2>
+<h3>3.3.1 المتطلبات البرمجية</h3>
+<table>
+  <tr><th>المكون</th><th>المتطلبات</th></tr>
+  <tr><td>خادم الويب</td><td>Apache 2.4+ مع mod_rewrite، mod_headers</td></tr>
+  <tr><td>PHP</td><td>7.4+ مع الإضافات: PDO_mysql، mbstring، json، zip، gd</td></tr>
+  <tr><td>قاعدة البيانات</td><td>MySQL 5.7+ / MariaDB 10.3+ مع دعم utf8mb4</td></tr>
+  <tr><td>المتصفحات</td><td>Chrome 80+، Firefox 75+، Edge 80+، Safari 13+</td></tr>
+</table>
+
+<h3>3.3.2 المتطلبات المادية</h3>
+<table>
+  <tr><th>المكون</th><th>الحد الأدنى</th><th>الموصى به</th></tr>
+  <tr><td>المعالج</td><td>1 نواة @ 1.5 GHz</td><td>2 نواة @ 2.0 GHz</td></tr>
+  <tr><td>الذاكرة (RAM)</td><td>512 MB</td><td>1-4 GB</td></tr>
+  <tr><td>مساحة التخزين</td><td>2 GB</td><td>10 GB + مساحة للنسخ الاحتياطي</td></tr>
+  <tr><td>الاتصال بالإنترنت</td><td>مطلوب للنشر عن بعد</td><td>اتصال مستقر 1 Mbps</td></tr>
+</table>
+
+<h2>3.4 متطلبات النظام</h2>
+<h3>3.4.1 المتطلبات الوظيفية (FR-001 إلى FR-082)</h3>
+
+<h4>الوحدة 1: إدارة المستخدمين والصلاحيات (FR-001 إلى FR-006)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-001</td><td>تسجيل الدخول</td><td>تمكين المستخدم المسجل من تسجيل الدخول باسم المستخدم وكلمة المرور مع حماية CSRF وتجديد الجلسة</td><td>عالية</td></tr>
+  <tr><td>FR-002</td><td>إدارة المستخدمين</td><td>تمكين مدير النظام من إنشاء وعرض وتعديل وتعطيل المستخدمين</td><td>عالية</td></tr>
+  <tr><td>FR-003</td><td>إدارة الأدوار (RBAC)</td><td>التحكم في صلاحيات الوصول بناءً على الدور (group_admin، school_admin، teacher، parent)</td><td>عالية</td></tr>
+  <tr><td>FR-004</td><td>إدارة معلمي المدرسة</td><td>تمكين مدير المدرسة من إدارة معلمي مدرسته فقط مع توليد كلمة مرور عشوائية</td><td>عالية</td></tr>
+  <tr><td>FR-005</td><td>إجبار تغيير كلمة المرور</td><td>إجبار المستخدم على تغيير كلمة المرور عند أول تسجيل دخول</td><td>عالية</td></tr>
+  <tr><td>FR-006</td><td>حماية القوة الغاشمة</td><td>قفل الحساب بعد 5 محاولات فاشلة لمدة 15 دقيقة</td><td>عالية</td></tr>
+</table>
+
+<h4>الوحدة 2: إدارة المدارس والبيانات الأساسية (FR-007 إلى FR-015)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-007</td><td>إدارة المدارس</td><td>إنشاء وعرض وتعديل وتعطيل المدارس مع رمز مرجعي فريد</td><td>عالية</td></tr>
+  <tr><td>FR-008</td><td>إدارة الصفوف</td><td>إدارة الصفوف من 1 إلى 12 ضمن مرحلتي الأساسي والثانوي</td><td>عالية</td></tr>
+  <tr><td>FR-009</td><td>إدارة الشعب</td><td>إدارة الشعب الدراسية لكل صف ومدرسة مع معلم وطاقة استيعابية</td><td>عالية</td></tr>
+  <tr><td>FR-010</td><td>إدارة المواد</td><td>إدارة المواد الدراسية وربطها بالصفوف ودرجة النجاح</td><td>عالية</td></tr>
+  <tr><td>FR-011</td><td>السنوات الأكاديمية</td><td>إدارة السنوات الأكاديمية بشكل موحّد لجميع المدارس</td><td>عالية</td></tr>
+  <tr><td>FR-012</td><td>الفصول الدراسية</td><td>إدارة الفصول الدراسية مع lock_level (none/soft/hard/admin_handled)</td><td>عالية</td></tr>
+  <tr><td>FR-013</td><td>إدارة الطلاب</td><td>إدارة الطلاب مع توليد رقم قيد تلقائي واستيراد CSV</td><td>عالية</td></tr>
+  <tr><td>FR-014</td><td>تسجيل الطلاب</td><td>تسجيل الطلاب في الشعب بشكل فردي أو جماعي مع التحقق من السعة</td><td>عالية</td></tr>
+  <tr><td>FR-015</td><td>تحويل الطلاب</td><td>تمكين تحويل الطالب من شعبة لأخرى مع تسجيل السبب</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 3: إدارة الحضور (FR-016 إلى FR-020)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-016</td><td>تسجيل الحضور اليومي</td><td>تسجيل حضور الطلاب يومياً (present/absent/late/excused)</td><td>عالية</td></tr>
+  <tr><td>FR-017</td><td>الحضور حسب الحصة</td><td>تسجيل الحضور حسب الحصة للمرحلة الثانوية</td><td>متوسطة</td></tr>
+  <tr><td>FR-018</td><td>تعديل الحضور</td><td>تمكين تعديل سجلات الحضور مع تسجيل التعديل</td><td>متوسطة</td></tr>
+  <tr><td>FR-019</td><td>ملخص الحضور</td><td>عرض ملخص حضور لكل طالب وشعبة مع النسب المئوية</td><td>عالية</td></tr>
+  <tr><td>FR-020</td><td>إشعارات الغياب</td><td>إرسال إشعارات لأولياء الأمور عند تجاوز حد الغياب</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 4: إدارة السلوك (FR-021 إلى FR-025)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-021</td><td>أحداث السلوك</td><td>تسجيل أحداث السلوك الإيجابية والسلبية مصنفة حسب الفئة</td><td>عالية</td></tr>
+  <tr><td>FR-022</td><td>نظام النقاط السلوكية</td><td>تطبيق نظام نقاط يبدأ من 100 مع إضافة (حد أقصى 120) وخصم</td><td>عالية</td></tr>
+  <tr><td>FR-023</td><td>تقييم سلوك باستمارة</td><td>تقييم السلوك عبر استمارة ديناميكية مدمجة مع EQI (50% نقاط + 50% استمارة)</td><td>عالية</td></tr>
+  <tr><td>FR-024</td><td>تجاوز النتيجة السلوكية</td><td>تمكين تجاوز النتيجة للحالات الاستثنائية مع تسجيل المبرر</td><td>متوسطة</td></tr>
+  <tr><td>FR-025</td><td>تقارير السلوك</td><td>عرض تقارير سلوك لكل طالب وشعبة</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 5: الواجبات المنزلية والمهارات (FR-026 إلى FR-029)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-026</td><td>إضافة واجب منزلي</td><td>تمكين المعلم من إضافة واجب منزلي لشعبة مع تاريخ تسليم</td><td>متوسطة</td></tr>
+  <tr><td>FR-027</td><td>تسليم الواجبات</td><td>تسجيل حالة تسليم الواجب لكل طالب</td><td>متوسطة</td></tr>
+  <tr><td>FR-028</td><td>تصحيح الواجبات</td><td>تصحيح الواجبات مع درجة وملاحظات</td><td>متوسطة</td></tr>
+  <tr><td>FR-029</td><td>قوائم المهارات</td><td>إدارة قوائم المهارات لكل مدرسة/صف وتقييمها للطلاب</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 6: الاستمارات التقييمية الديناميكية (FR-030 إلى FR-035)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-030</td><td>إنشاء استمارة تقييم</td><td>إنشاء استمارات تقييم ديناميكية بأحد 7 أنواع مع معايير متعددة</td><td>عالية</td></tr>
+  <tr><td>FR-031</td><td>إدارة معايير التقييم</td><td>إضافة وتعديل وحذف المعايير ضمن الاستمارة</td><td>عالية</td></tr>
+  <tr><td>FR-032</td><td>إدارة عناصر التقييم</td><td>إضافة عناصر تقييم لكل معيار بأحد أنواع الأدوات الـ 10</td><td>عالية</td></tr>
+  <tr><td>FR-033</td><td>تعبئة الاستمارة</td><td>تعبئة الاستمارة لطالب/معلم مع تسجيل الردود</td><td>عالية</td></tr>
+  <tr><td>FR-034</td><td>تعديل الردود</td><td>تمكين تعديل الردود حسب صلاحية القفل (lock_level)</td><td>عالية</td></tr>
+  <tr><td>FR-035</td><td>حساب نتائج الاستمارة</td><td>حساب النسبة المئوية للاستمارة تلقائياً</td><td>عالية</td></tr>
+</table>
+
+<h4>الوحدة 7: حساب الدرجات والتقييم الأكاديمي (FR-036 إلى FR-044)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-036</td><td>أنواع الاختبارات</td><td>إدارة أنواع الاختبارات وتوزيع الأوزان الافتراضية</td><td>عالية</td></tr>
+  <tr><td>FR-037</td><td>توزيع الأوزان للمواد</td><td>توزيع الأوزان حسب المادة (أعمال سنة + اختبار نهائي)</td><td>عالية</td></tr>
+  <tr><td>FR-038</td><td>تسجيل درجات الاختبارات</td><td>إدخال درجات الطلاب لكل اختبار مع التحقق من صحة المدخلات</td><td>عالية</td></tr>
+  <tr><td>FR-039</td><td>النسبة المئوية</td><td>حساب النسبة المئوية لكل مادة تلقائياً (weighted average)</td><td>عالية</td></tr>
+  <tr><td>FR-040</td><td>المعدل التراكمي GPA</td><td>حساب GPA على مقياس 4.00</td><td>عالية</td></tr>
+  <tr><td>FR-041</td><td>الدرجة الحرفية</td><td>تحديد الدرجة الحرفية (A-F) حسب المقياس</td><td>عالية</td></tr>
+  <tr><td>FR-042</td><td>الترتيب</td><td>حساب ترتيب الطالب في الشعبة لكل مادة والإجمالي</td><td>عالية</td></tr>
+  <tr><td>FR-043</td><td>المواد الراسبة (Carry Over)</td><td>تطبيق نظام حمل المواد (حد أقصى مادتين للأساس)</td><td>عالية</td></tr>
+  <tr><td>FR-044</td><td>اختبارات التعويض</td><td>تمكين اختبارات التعويض للثانوي (حد أقصى محاولتين)</td><td>عالية</td></tr>
+</table>
+<h4>الوحدة 8: تقييم جودة التدريس (FR-045 إلى FR-049)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-045</td><td>التقييم الذاتي</td><td>تمكين المعلم من تقييم نفسه عبر استمارة تقييم ذاتي</td><td>عالية</td></tr>
+  <tr><td>FR-046</td><td>تقييم الأقران</td><td>تمكين المعلمين من تقييم زملائهم</td><td>عالية</td></tr>
+  <tr><td>FR-047</td><td>التقييم الإشرافي</td><td>تمكين مدير المدرسة من تقييم المعلمين إشرافياً</td><td>عالية</td></tr>
+  <tr><td>FR-048</td><td>الدرجة المركبة للتدريس</td><td>حساب الدرجة: 20% ذاتي + 30% أقران + 50% إشرافي</td><td>عالية</td></tr>
+  <tr><td>FR-049</td><td>خطط التطوير المهني</td><td>إنشاء خطط تطوير مهني للمعلمين بناءً على نتائج التقييم</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 9: المناخ المدرسي والاستبيانات (FR-050 إلى FR-052)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-050</td><td>استبيان المناخ المدرسي</td><td>إنشاء وتعبئة استبيانات المناخ (معلم، طالب، ولي أمر، إداري)</td><td>عالية</td></tr>
+  <tr><td>FR-051</td><td>فحص المرافق</td><td>تسجيل نتائج فحص المرافق المدرسية</td><td>متوسطة</td></tr>
+  <tr><td>FR-052</td><td>تقارير المناخ والمرافق</td><td>عرض تقارير المناخ المدرسي وفحص المرافق</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 10: التقارير والتحليلات (FR-053 إلى FR-068)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-053</td><td>مؤشر جودة التعليم EQI</td><td>حساب المؤشر المركب من 6 أبعاد</td><td>عالية</td></tr>
+  <tr><td>FR-054</td><td>EQI على مستوى المدرسة</td><td>حساب EQI لكل مدرسة</td><td>عالية</td></tr>
+  <tr><td>FR-055</td><td>EQI على مستوى الشعبة</td><td>حساب EQI لكل شعبة دراسية</td><td>عالية</td></tr>
+  <tr><td>FR-056</td><td>EQI على مستوى الطالب</td><td>حساب EQI لكل طالب</td><td>عالية</td></tr>
+  <tr><td>FR-057</td><td>خوارزمية إعادة توزيع الأوزان</td><td>تطبيق خوارزمية هجينة (50% تناسبي + 50% متساوٍ)</td><td>عالية</td></tr>
+  <tr><td>FR-058</td><td>تصنيف EQI</td><td>تصنيف: ممتاز (85+)، جيد جداً (70-84)، مقبول (50-69)، ضعيف (0-49)</td><td>عالية</td></tr>
+  <tr><td>FR-059</td><td>توصيات EQI</td><td>عرض توصيات محددة لكل بعد وتصنيف جودة</td><td>عالية</td></tr>
+  <tr><td>FR-060</td><td>قرارات الترفيع</td><td>حساب قرار الترفيع بثلاثة معايير إلزامية</td><td>عالية</td></tr>
+  <tr><td>FR-061</td><td>أنواع قرارات الترفيع</td><td>4 أنواع: مرفّع، معيد، ترفيع مشروط، قيد المراجعة</td><td>عالية</td></tr>
+  <tr><td>FR-062</td><td>اعتماد القرارات</td><td>اعتماد قرارات الترفيع بشكل فردي أو جماعي</td><td>عالية</td></tr>
+  <tr><td>FR-063</td><td>تجاوز قرار الترفيع</td><td>تمكين تجاوز القرار مع تسجيل المبرر</td><td>عالية</td></tr>
+  <tr><td>FR-064</td><td>خطط التحسين</td><td>إنشاء خطط تحسين للطلاب المرفوعين ترفيعاً مشروطاً</td><td>عالية</td></tr>
+  <tr><td>FR-065</td><td>التنبيهات الذكية</td><td>إنشاء تنبيهات من 10 أنواع (درجة منخفضة، غياب مرتفع، إلخ)</td><td>عالية</td></tr>
+  <tr><td>FR-066</td><td>إدارة التنبيهات</td><td>عرض وحل وتصدير التنبيهات الذكية</td><td>عالية</td></tr>
+  <tr><td>FR-067</td><td>تصدير Excel</td><td>تصدير التقارير إلى Excel عبر EqasXlsxWriter</td><td>عالية</td></tr>
+  <tr><td>FR-068</td><td>تصدير PDF</td><td>تصدير التقارير إلى PDF عبر TCPDF</td><td>عالية</td></tr>
+</table>
+
+<h4>الوحدة 11: الإشعارات والاتصال (FR-069 إلى FR-071)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-069</td><td>نظام الإشعارات</td><td>إرسال إشعارات النظام للمستخدمين حسب أدوارهم</td><td>متوسطة</td></tr>
+  <tr><td>FR-070</td><td>تفضيلات الإشعارات</td><td>تمكين المستخدم من تخصيص تفضيلات الإشعارات</td><td>منخفضة</td></tr>
+  <tr><td>FR-071</td><td>إقرارات ولي الأمر</td><td>تمكين ولي الأمر من الإقرار بالاطلاع على التقارير</td><td>متوسطة</td></tr>
+</table>
+
+<h4>الوحدة 12: واجهة ولي الأمر (FR-072 إلى FR-075)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-072</td><td>درجات الأبناء</td><td>عرض درجات ومعدلات أبناء ولي الأمر</td><td>عالية</td></tr>
+  <tr><td>FR-073</td><td>سلوك الأبناء</td><td>عرض السلوك والتوجهات السلوكية مع مؤشرات بصرية</td><td>عالية</td></tr>
+  <tr><td>FR-074</td><td>حضور الأبناء</td><td>عرض سجل الحضور بتقويم مرئي وتنبيهات</td><td>عالية</td></tr>
+  <tr><td>FR-075</td><td>مهارات وترفيع</td><td>عرض المهارات وقرارات الترفيع للأبناء</td><td>عالية</td></tr>
+</table>
+
+<h4>الوحدة 13: إعدادات النظام (FR-076 إلى FR-082)</h4>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>FR-076</td><td>إعدادات النظام</td><td>إدارة 96 إعداداً في 20 فئة</td><td>عالية</td></tr>
+  <tr><td>FR-077</td><td>إعدادات المدرسة</td><td>تمكين تجاوز الإعدادات العامة لكل مدرسة</td><td>عالية</td></tr>
+  <tr><td>FR-078</td><td>النسخ الاحتياطي</td><td>عمل نسخ احتياطي بثلاثة مستويات (كامل، قبل العملية، يدوي)</td><td>عالية</td></tr>
+  <tr><td>FR-079</td><td>استعادة النظام</td><td>استعادة النظام من نسخة احتياطية</td><td>عالية</td></tr>
+  <tr><td>FR-080</td><td>معالج التثبيت</td><td>توفير معالج تثبيت خطوة بخطوة (Setup Wizard)</td><td>عالية</td></tr>
+  <tr><td>FR-081</td><td>سجل النشاطات</td><td>تسجيل جميع نشاطات المستخدمين في سجل التدقيق (Audit Log)</td><td>عالية</td></tr>
+  <tr><td>FR-082</td><td>سجل تغييرات الدرجات</td><td>تسجيل جميع تغييرات الدرجات مع التوقيع الزمني والمستخدم</td><td>عالية</td></tr>
+</table>
+
+<h3>3.4.2 المتطلبات غير الوظيفية (NFR-001 إلى NFR-008)</h3>
+<table>
+  <tr><th>المعرف</th><th>العنوان</th><th>الوصف</th><th>أولوية</th></tr>
+  <tr><td>NFR-001</td><td>الأمان</td><td>CSRF، bcrypt (cost 12)، بصمة الجلسة، CSP، حماية القوة الغاشمة</td><td>عالية</td></tr>
+  <tr><td>NFR-002</td><td>الأداء</td><td>تحمل 50 مستخدماً متزامناً، استجابة أقل من 3 ثوانٍ</td><td>عالية</td></tr>
+  <tr><td>NFR-003</td><td>التوافقية</td><td>العمل على Chrome 80+، Firefox 75+، Edge 80+، Safari 13+</td><td>عالية</td></tr>
+  <tr><td>NFR-004</td><td>قابلية التوسع</td><td>دعم إضافة مدارس ومستخدمين جدد دون تغيير هيكل النظام</td><td>عالية</td></tr>
+  <tr><td>NFR-005</td><td>الاعتمادية</td><td>نسبة توفر 99% مع نسخ احتياطي بثلاثة مستويات</td><td>عالية</td></tr>
+  <tr><td>NFR-006</td><td>قابلية الصيانة</td><td>كود منظم وموثق مع اتباع معايير التسمية</td><td>عالية</td></tr>
+  <tr><td>NFR-007</td><td>سهولة الاستخدام</td><td>واجهة بالعربية مع تصميم RTL وأيقونات توضيحية</td><td>عالية</td></tr>
+  <tr><td>NFR-008</td><td>التوثيق</td><td>توثيق كامل (README، CHANGELOG، AGENTS.md، دليل مستخدم)</td><td>عالية</td></tr>
+</table>
+
+<h2>3.5 مواصفات معالجة الأخطاء</h2>
+<ul>
+  <li><strong>رسائل خطأ المستخدم:</strong> جميعها بالعربية ومفهومة للمستخدم العادي.</li>
+  <li><strong>تسجيل الأخطاء:</strong> جميع الأخطاء تُسجل في error_log مع معلومات التتبع.</li>
+  <li><strong>إزالة التكرار:</strong> جدول error_log_dedup لتجميع الأخطاء المتكررة.</li>
+  <li><strong>معالجة استثناءات PDO:</strong> استخدام try/catch في جميع استعلامات قاعدة البيانات.</li>
+  <li><strong>التحقق من صحة المدخلات:</strong> التحقق من جميع المدخلات (الطول، النوع، النطاق) قبل المعالجة.</li>
+  <li><strong>أنماط الأخطاء:</strong>
+    <ul>
+      <li>EP-001: وصول غير مصرح به ← توجيه للـ login مع رسالة</li>
+      <li>EP-002: انتهاء الجلسة ← إعادة توجيه مع رسالة \"انتهت صلاحية الجلسة\"</li>
+      <li>EP-003: إدخال غير صالح ← عرض خطأ بجانب الحقل</li>
+      <li>EP-004: فشل قاعدة البيانات ← رسالة \"حدث خطأ في النظام\"</li>
+      <li>EP-005: فشل CSRF ← رفض الطلب مع رسالة توضيحية</li>
+      <li>EP-006: كلمة مرور خاطئة ← زيادة عداد المحاولات، قفل بعد 5</li>
+    </ul>
+  </li>
+</ul>
+
+<h2>3.6 دورة حياة الفصل الدراسي (State Machine)</h2>
+<ul>
+  <li><strong>none:</strong> حالة البداية، جميع العمليات مسموحة.</li>
+  <li><strong>soft:</strong> قفل ناعم، يمنع الحذف ويسمح بالتعديل.</li>
+  <li><strong>hard:</strong> قفل صلب، يمنع الإضافة والتعديل والحذف.</li>
+  <li><strong>admin_handled:</strong> حالة خاصة بعد الحسم اليدوي من المدير.</li>
+</ul>
+<p>يتم تسجيل تغييرات الحالة في جدول <code>semester_status_log</code> مع توقيع المستخدم والتاريخ.</p>
+
+<h2>3.7 خوارزميات الحساب التفصيلية</h2>
+<h3>حساب المعدل التراكمي (GPA)</h3>
+<p dir="ltr" style="text-align:center; font-size:16pt; font-weight:bold; margin:15px 0;">GPA = &Sigma;(GP &times; H) / &Sigma;(H)</p>
+<ul>
+  <li>GP: نقطة الدرجة بناءً على مقياس 4.00</li>
+  <li>H: عدد ساعات المادة</li>
+</ul>
+
+<h3>حساب النسبة المئوية</h3>
+<p dir="ltr" style="text-align:center; font-size:16pt; font-weight:bold; margin:15px 0;">Final% = &Sigma;(weight &times; score) / &Sigma;(weight) &times; 100</p>
+<ul>
+  <li>لكل مادة، تُحسب كمتوسط موزون لجميع الاختبارات</li>
+  <li>توزيع الأوزان: أعمال سنة (30-50%) + اختبار نهائي (50-70%)</li>
+</ul>
+
+<h3>نظام النقاط السلوكية</h3>
+<ul>
+  <li>Point_Score = 100 + &Sigma;(positive) - &Sigma;(negative)</li>
+  <li>النسبة = min(Point_Score / 100 &times; 100, 100)</li>
+  <li>isPassing = النسبة &ge; 60%</li>
+  <li>الدمج مع EQI: 50% نقاط + 50% استمارة</li>
+</ul>
+
+<h3>مؤشر جودة التعليم (EQI) – الخوارزمية الهجينة</h3>
+<ul>
+  <li>EQI = &Sigma;(weight_i &times; score_i) للأبعاد المتاحة</li>
+  <li>الأبعاد: أكاديمي (35%) + تدريس (25%) + مناخ (15%) + سلوك (10%) + مهارات (10%) + حضور (5%)</li>
+  <li>للبيانات المفقودة: 50% توزيع نسبي + 50% توزيع متساوٍ</li>
+  <li>التصنيف: ممتاز &ge; 85، جيد جداً &ge; 70، مقبول &ge; 50، ضعيف &lt; 50</li>
+</ul>
+
+<h3>قرارات الترفيع</h3>
+<ul>
+  <li><strong>مرفّع:</strong> جميع المعايير الثلاثة مستوفاة (أكاديمي &ge; 50%، سلوك &ge; 60%، حضور &ge; 75%)</li>
+  <li><strong>معيد:</strong> معياران أو أكثر غير مستوفاة</li>
+  <li><strong>ترفيع مشروط:</strong> معيار واحد غير مستوفي (مع خطة تحسين)</li>
+  <li><strong>قيد المراجعة:</strong> بيانات غير مكتملة</li>
+</ul>
+
+<h2>3.8 مثال تطبيقي شامل</h2>
+<div style="border:1px solid #ddd; border-radius:5px; padding:15px; margin:10px 0; background:#f5f8fa; border-right:4px solid #17a2b8;">
+<p><strong>السيناريو:</strong> طالب في الصف التاسع الأساسي بمدرسة النموذجية.</p>
+<ol>
+  <li><strong>التسجيل:</strong> يسجل مدير المدرسة الطالب، ثم يسجله في شعبة الصف التاسع.</li>
+  <li><strong>الدرجات:</strong> يسجل المعلم الدرجات. النظام يحسب: النسبة 89.5%، GPA 3.58، الترتيب 5 من 35.</li>
+  <li><strong>السلوك:</strong> +5 إيجابي، -3 سلبي ← 102 نقاط ← نسبة 100%.</li>
+  <li><strong>الحضور:</strong> 42 يوم من 45 ← نسبة 93.3%.</li>
+  <li><strong>EQI:</strong> أكاديمي 89.5% + سلوك 100% + مهارات 85% + حضور 93.3% ← EQI = 88.2% ← ممتاز.</li>
+  <li><strong>الترفيع:</strong> جميع المعايير مستوفاة ← مرفّع.</li>
+  <li><strong>ولي الأمر:</strong> يتابع النتائج عبر البوابة.</li>
+</ol>
+</div>
+
+<h2>3.9 معالجة الحالات الخاصة</h2>
+<ul>
+  <li><strong>طالب بدون درجات:</strong> يُصنف \"قيد المراجعة\" حتى إدخال الدرجات.</li>
+  <li><strong>طالب منقول:</strong> تُحتسب الدرجات بناءً على المدة في كل شعبة.</li>
+  <li><strong>غياب كلي:</strong> إذا تجاوز 75% بدون عذر ← معيد تلقائياً.</li>
+  <li><strong>تعديل بعد القفل:</strong> يتطلب رفع lock_level إلى admin_handled مع المبرر.</li>
+  <li><strong>بيانات مفقودة في EQI:</strong> تطبق الخوارزمية الهجينة.</li>
+  <li><strong>تجاوز النتيجة السلوكية:</strong> متاح لمدير المدرسة مع تسجيل المبرر.</li>
+</ul>
+
+<h2>3.10 خطة الاختبار ومعايير القبول</h2>
+<h3>3.10.1 استراتيجية الاختبار</h3>
+<ul>
+  <li><strong>اختبار الوحدة:</strong> PHPUnit للدوال المساعدة، محرك التقييم، EQI.</li>
+  <li><strong>اختبار التكامل:</strong> تفاعل المكونات مع قاعدة البيانات.</li>
+  <li><strong>اختبار النظام:</strong> شامل لجميع الوحدات الـ 13.</li>
+  <li><strong>اختبار القبول:</strong> التحقق من استيفاء الـ 82 متطلباً وظيفياً.</li>
+  <li><strong>اختبار الأمان:</strong> XSS، CSRF، القوة الغاشمة، صلاحيات الأدوار.</li>
+  <li><strong>اختبار E2E:</strong> Playwright لسيناريوهات المستخدم الكاملة.</li>
+</ul>
+
+<h3>3.10.2 معايير القبول للمتطلبات الوظيفية</h3>
+<ul>
+  <li>اجتياز 100% من اختبارات الوحدة للوحدات الأساسية.</li>
+  <li>اجتياز جميع سيناريوهات الاختبار الوظيفي.</li>
+  <li>التحقق من صحة الحسابات الرياضية بمقارنة مع الحسابات اليدوية.</li>
+  <li>التأكد من عمل مستويات القفل (lock_level) كما هو موصوف.</li>
+  <li>التحقق من عزل البيانات بين المدارس.</li>
+</ul>
+
+<h3>3.10.3 معايير القبول للمتطلبات غير الوظيفية</h3>
+<ul>
+  <li>أمان: 0 ثغرات حرجة في XSS و CSRF.</li>
+  <li>أداء: استجابة &lt; 3 ثوانٍ تحت 50 مستخدماً متزامناً.</li>
+  <li>توافقية: يعمل على 4 متصفحات حديثة.</li>
+  <li>اعتمادية: متاح بنسبة &ge; 99%.</li>
+</ul>
+
+<h2>3.11 خطة النشر والتشغيل</h2>
+<h3>3.11.1 متطلبات بيئة الإنتاج</h3>
+<ul>
+  <li>Apache 2.4+ مع mod_rewrite</li>
+  <li>PHP 7.4+ مع PDO_mysql، mbstring، json، zip، gd</li>
+  <li>MySQL 5.7+ / MariaDB 10.3+</li>
+  <li>HTTPS مفعّل</li>
+  <li>صلاحية كتابة لمجلدات: backups/، temp/، uploads/</li>
+  <li>ذاكرة PHP: minimum 128MB، timeout: 30 ثانية</li>
+</ul>
+
+<h3>3.11.2 إجراءات النشر</h3>
+<ol>
+  <li>رفع ملفات النظام إلى مجلد الويب.</li>
+  <li>إنشاء قاعدة بيانات MySQL جديدة.</li>
+  <li>تشغيل معالج التثبيت (setup.php).</li>
+  <li>تعبئة معلومات الاتصال بقاعدة البيانات.</li>
+  <li>تشغيل اسكربتات إنشاء الجداول والبيانات الأساسية.</li>
+  <li>تحديث config.php مع إعدادات الإنتاج.</li>
+  <li>تعطيل عرض الأخطاء في PHP.</li>
+  <li>تفعيل HTTPS وإعداد CSP.</li>
+  <li>اختبار تسجيل الدخول بحساب المدير الافتراضي.</li>
+  <li>تغيير كلمة المرور الافتراضية فوراً.</li>
+</ol>
+
+<h3>3.11.3 خطة التراجع</h3>
+<ul>
+  <li>الاحتفاظ بنسخة احتياطية كاملة قبل أي تحديث.</li>
+  <li>الاحتفاظ بنسخة من مجلد النظام بالكامل.</li>
+  <li>في حال فشل التحديث، استعادة النسخة الاحتياطية.</li>
+</ul>
+
+<h3>3.11.4 جدول الصيانة الدورية</h3>
+<table>
+  <tr><th>النشاط</th><th>التكرار</th></tr>
+  <tr><td>نسخ احتياطي كامل</td><td>يومياً / تلقائياً</td></tr>
+  <tr><td>مراجعة سجلات الأخطاء</td><td>أسبوعياً</td></tr>
+  <tr><td>مراجعة صلاحيات المستخدمين</td><td>شهرياً</td></tr>
+  <tr><td>تدقيق سجل النشاطات</td><td>شهرياً</td></tr>
+  <tr><td>تنظيف الملفات المؤقتة</td><td>شهرياً</td></tr>
+</table>
+
+<h2>3.12 استراتيجية ترحيل البيانات</h2>
+<ul>
+  <li><strong>الترحيل اليدوي:</strong> إدخال البيانات الأساسية عبر واجهات النظام.</li>
+  <li><strong>الاستيراد من CSV:</strong> دعم استيراد الطلاب مع معاينة والتحقق.</li>
+  <li><strong>اسكربتات الترحيل:</strong> (migrate_v2.0.3.sql) للترقية بين الإصدارات.</li>
+  <li><strong>التحقق بعد الترحيل:</strong> تشغيل اختبارات التحقق من صحة البيانات.</li>
+</ul>
+
+<h2>3.13 مواصفات واجهة برمجة التطبيقات</h2>
+<table>
+  <tr><th>النقطة (Endpoint)</th><th>الطريقة</th><th>الوصف</th></tr>
+  <tr><td>api/check_username.php</td><td>POST</td><td>التحقق من عدم تكرار اسم المستخدم</td></tr>
+  <tr><td>api/search_students.php</td><td>GET</td><td>البحث عن الطلاب للتسجيل</td></tr>
+  <tr><td>api/notifications/check.php</td><td>GET</td><td>التحقق من الإشعارات الجديدة</td></tr>
+  <tr><td>api/notifications/mark_read.php</td><td>POST</td><td>تحديث حالة الإشعارات</td></tr>
+</table>
+<p>جميع نقاط API تستخدم PDO محضّرة وترجع JSON.</p>
+
+<h2>3.14 قواعد التحقق من البيانات</h2>
+<table>
+  <tr><th>الحقل</th><th>القاعدة</th><th>رسالة الخطأ</th></tr>
+  <tr><td>username</td><td>3-50 حرفاً، أحرف وأرقام و _ فقط</td><td>\"اسم المستخدم غير صحيح\"</td></tr>
+  <tr><td>password</td><td>8 أحرف على الأقل</td><td>\"كلمة المرور يجب أن تكون 8 أحرف\"</td></tr>
+  <tr><td>email</td><td>صيغة بريد صحيحة</td><td>\"البريد الإلكتروني غير صحيح\"</td></tr>
+  <tr><td>score</td><td>0-100 رقمي</td><td>\"الدرجة يجب أن تكون بين 0 و 100\"</td></tr>
+  <tr><td>reference_code</td><td>5 أحرف، فريد</td><td>\"الرمز المرجعي مكرر\"</td></tr>
+  <tr><td>percentage</td><td>0-100</td><td>\"النسبة خارج النطاق\"</td></tr>
+</table>
+<h1>الفصل الرابع: التصميم</h1>
+
+<h2>4.1 المقدمة</h2>
+<p>يُعنى هذا الفصل بتقديم التصميم التفصيلي للنظام، بما في ذلك مخططات تدفق البيانات، ومخطط العلاقات بين الكيانات، وقاموس البيانات، ومخططات حالات الاستخدام، ومخططات التسلسل، ومخططات النشاط، ومخطط الفئات. تمثل هذه المخططات الإطار المرجعي لبناء النظام وتوضح كيفية تفاعل المكونات المختلفة.</p>
+
+<h2>4.2 مخطط الوظائف الأعمال (BFD)</h2>
+<div class="figure-box">
+  <p>النظام ينقسم إلى 13 وحدة وظيفية رئيسية:</p>
+  <ol style="text-align:right; columns:2;">
+    <li>إدارة المستخدمين والصلاحيات</li>
+    <li>إدارة المدارس والبيانات الأساسية</li>
+    <li>إدارة الحضور</li>
+    <li>إدارة السلوك</li>
+    <li>إدارة الواجبات المنزلية</li>
+    <li>الاستمارات التقييمية الديناميكية</li>
+    <li>حساب الدرجات والتقييم الأكاديمي</li>
+    <li>تقييم جودة التدريس</li>
+    <li>المناخ المدرسي والاستبيانات</li>
+    <li>التقارير والتحليلات (EQI + ترفيع + تنبيهات)</li>
+    <li>الإشعارات والاتصال</li>
+    <li>واجهة ولي الأمر</li>
+    <li>إعدادات النظام</li>
+  </ol>
+  <div class="caption">شكل (1): مخطط الوظائف الأعمال للنظام</div>
+</div>
+
+<h2>4.3 مخططات تدفق البيانات (DFD)</h2>
+<h3>4.3.1 المستوى الصفري (Context Diagram)</h3>
+<div class="figure-box">
+  <p><strong>الكيانات الخارجية:</strong> group_admin، school_admin، teacher، parent</p>
+  <p><strong>النظام:</strong> EQAS – نظام التقييم الشامل لجودة التعليم المدرسي </p>
+  <p><strong>التدفقات الرئيسية:</strong> بيانات تسجيل دخول، مستخدمين، مدارس، طلاب، درجات، تقارير، إشعارات</p>
+  <div class="caption">مخطط (2): مخطط تدفق البيانات – المستوى الصفري</div>
+</div>
+
+<h3>4.3.2 المستوى الأول (DFD Level 1)</h3>
+<div class="figure-box">
+  <p>العمليات الرئيسية:</p>
+  <ol>
+    <li>معالجة المصادقة والجلسات</li>
+    <li>إدارة المستخدمين والمدارس</li>
+    <li>إدارة الطلاب والتسجيلات</li>
+    <li>إدارة التقويم الأكاديمي</li>
+    <li>تسجيل الحضور</li>
+    <li>إدارة السلوك</li>
+    <li>تقييم الاستمارات الديناميكية</li>
+    <li>حساب الدرجات</li>
+    <li>حساب EQI والترفيع</li>
+    <li>إنشاء التقارير</li>
+  </ol>
+  <div class="caption">مخطط (3): مخطط تدفق البيانات – المستوى الأول</div>
+</div>
+
+<h3>4.3.3 المستوى الثاني (DFD Level 2)</h3>
+<div class="figure-box">
+  <p><strong>تفصيل العملية 8: حساب الدرجات الأكاديمية</strong></p>
+  <ul>
+    <li>8.1: إدخال درجات الاختبارات</li>
+    <li>8.2: حساب النسبة المئوية لكل مادة</li>
+    <li>8.3: حساب المعدل التراكمي (GPA)</li>
+    <li>8.4: تحديد الدرجة الحرفية</li>
+    <li>8.5: حساب الترتيب في الشعبة</li>
+    <li>8.6: معالجة المواد الراسبة (Carry Over)</li>
+    <li>8.7: معالجة اختبارات التعويض (Makeup)</li>
+  </ul>
+  <div class="caption">مخطط (4): مخطط تدفق البيانات – المستوى الثاني</div>
+</div>
+
+<h2>4.4 مخطط العلاقات بين الكيانات (ERD)</h2>
+<table>
+  <tr><th>المرحلة</th><th>الوصف</th><th>عدد الجداول</th></tr>
+  <tr><td>1</td><td>إدارة النظام (أدوار، مدارس، مستخدمين، طلاب، صفوف، شعب)</td><td>13</td></tr>
+  <tr><td>2</td><td>محرك التقييم (استمارات، معايير، عناصر، ردود)</td><td>4</td></tr>
+  <tr><td>3</td><td>أنواع التقييم (مواد، درجات، سلوك، تدريس، مناخ، مرافق)</td><td>15</td></tr>
+  <tr><td>4</td><td>المؤشرات (EQI، تنبيهات، ترفيع)</td><td>7</td></tr>
+  <tr><td>5</td><td>المخرجات (شهادات، إشعارات، إقرارات)</td><td>4</td></tr>
+  <tr><td>6</td><td>التكامل (إعدادات، سجلات، نسخ احتياطي)</td><td>10</td></tr>
+</table>
+<p>العلاقات الرئيسية:</p>
+<ul>
+  <li><strong>schools</strong> 1→* <strong>users</strong>، <strong>students</strong>، <strong>classes</strong></li>
+  <li><strong>classes</strong> 1→* <strong>student_enrollments</strong></li>
+  <li><strong>students</strong> 1→* <strong>grades</strong>، <strong>behavior_scores</strong>، <strong>attendance_daily</strong></li>
+  <li><strong>assessment_forms</strong> 1→* <strong>assessment_criteria</strong> 1→* <strong>assessment_items</strong></li>
+  <li><strong>assessment_forms</strong> 1→* <strong>assessment_responses</strong></li>
+</ul>
+
+<h2>4.5 قاموس البيانات (Data Dictionary)</h2>
+<h3>جدول: users (المستخدمين)</h3>
+<table>
+  <tr><th>الحقل</th><th>النوع</th><th>الوصف</th><th>مفتاح</th></tr>
+  <tr><td>id</td><td>INT UNSIGNED</td><td>معرف المستخدم (تلقائي)</td><td>PK</td></tr>
+  <tr><td>username</td><td>VARCHAR(50)</td><td>اسم المستخدم (فريد)</td><td>UNIQUE</td></tr>
+  <tr><td>password_hash</td><td>VARCHAR(255)</td><td>كلمة المرور مشفرة بـ bcrypt</td><td>─</td></tr>
+  <tr><td>must_change_password</td><td>TINYINT(1)</td><td>إجبار تغيير كلمة المرور</td><td>─</td></tr>
+  <tr><td>full_name_ar</td><td>VARCHAR(200)</td><td>الاسم الكامل بالعربية</td><td>─</td></tr>
+  <tr><td>email</td><td>VARCHAR(100)</td><td>البريد الإلكتروني</td><td>─</td></tr>
+  <tr><td>role_id</td><td>INT UNSIGNED</td><td>رقم الدور (FK)</td><td>FK</td></tr>
+  <tr><td>school_id</td><td>INT UNSIGNED</td><td>رقم المدرسة (FK)</td><td>FK</td></tr>
+  <tr><td>is_active</td><td>TINYINT(1)</td><td>حالة المستخدم</td><td>─</td></tr>
+</table>
+
+<h3>جدول: schools (المدارس)</h3>
+<table>
+  <tr><th>الحقل</th><th>النوع</th><th>الوصف</th><th>مفتاح</th></tr>
+  <tr><td>id</td><td>INT UNSIGNED</td><td>معرف المدرسة</td><td>PK</td></tr>
+  <tr><td>name_ar</td><td>VARCHAR(200)</td><td>اسم المدرسة بالعربية</td><td>─</td></tr>
+  <tr><td>reference_code</td><td>VARCHAR(5)</td><td>الرمز المرجعي الفريد</td><td>UNIQUE</td></tr>
+  <tr><td>governorate</td><td>VARCHAR(100)</td><td>المحافظة</td><td>─</td></tr>
+  <tr><td>school_type</td><td>ENUM</td><td>basic/secondary/combined</td><td>─</td></tr>
+  <tr><td>is_active</td><td>TINYINT(1)</td><td>حالة المدرسة</td><td>─</td></tr>
+</table>
+
+<h3>جدول: students (الطلاب)</h3>
+<table>
+  <tr><th>الحقل</th><th>النوع</th><th>الوصف</th><th>مفتاح</th></tr>
+  <tr><td>id</td><td>INT UNSIGNED</td><td>معرف الطالب</td><td>PK</td></tr>
+  <tr><td>student_number</td><td>VARCHAR(20)</td><td>رقم القيد (فريد)</td><td>UNIQUE</td></tr>
+  <tr><td>full_name_ar</td><td>VARCHAR(200)</td><td>الاسم الكامل</td><td>─</td></tr>
+  <tr><td>school_id</td><td>INT UNSIGNED</td><td>رقم المدرسة</td><td>FK</td></tr>
+</table>
+
+<h2>4.6 مخططات حالات الاستخدام (Use Case)</h2>
+<div class="figure-box">
+  <p><strong>الممثلون (Actors):</strong> group_admin، school_admin، teacher، parent</p>
+  <p><strong>حالات الاستخدام الرئيسية:</strong></p>
+  <ul>
+    <li><strong>group_admin:</strong> إدارة النظام، إدارة المستخدمين، إدارة المدارس، إدارة التقويم الأكاديمي، النسخ الاحتياطي، إعدادات النظام</li>
+    <li><strong>school_admin:</strong> إدارة معلمي المدرسة، إدارة الطلاب، التسجيلات، الإشراف التربوي، اعتماد الترفيع</li>
+    <li><strong>teacher:</strong> إدخال الدرجات، تسجيل الحضور، تقييم السلوك، تقييم المهارات، تقييم التدريس</li>
+    <li><strong>parent:</strong> عرض الدرجات، عرض السلوك، عرض الحضور، عرض المهارات والترفيع</li>
+  </ul>
+  <div class="caption">مخطط (6-9): مخططات حالات الاستخدام للأدوار الأربعة</div>
+</div>
+
+<h2>4.7 مخططات التسلسل (Sequence)</h2>
+<div class="figure-box">
+  <p><strong>سيناريو: تسجيل الدخول</strong></p>
+  <p>المستخدم ← login.php ← (1) التحقق من CSRF ← (2) التحقق من القوة الغاشمة ← (3) التحقق من البيانات في DB ← (4) إنشاء الجلسة وتجديد ID ← (5) إنشاء بصمة الجلسة ← (6) تحديث last_login_at ← (7) التحقق من must_change_password ← (8) التوجيه إلى الصفحة المناسبة</p>
+  <div class="caption">مخطط (10): مخطط تسلسل تسجيل الدخول</div>
+</div>
+
+<div class="figure-box">
+  <p><strong>سيناريو: إدخال الدرجات</strong></p>
+  <p>المعلم ← academic_assessment/ ← (1) اختيار الشعبة والمادة ← (2) عرض قائمة الطلاب ← (3) إدخال الدرجات ← (4) التحقق من صحة المدخلات ← (5) حفظ في جدول grades ← (6) تحديث student_subject_summary ← (7) تسجيل في grade_change_log ← (8) عرض رسالة نجاح</p>
+  <div class="caption">مخطط (11): مخطط تسلسل إدخال الدرجات</div>
+</div>
+
+<h2>4.8 مخططات النشاط (Activity)</h2>
+<div class="figure-box">
+  <p><strong>دورة حياة الفصل الدراسي:</strong></p>
+  <p>[بداية الفصل] → lock_level = none → [انتهاء فترة الإدخال] → lock_level = soft → [اعتماد النتائج] → lock_level = hard → [تعديل استثنائي] → admin_handled → hard</p>
+  <div class="caption">مخطط (12): مخطط نشاط دورة حياة الفصل الدراسي</div>
+</div>
+
+<h2>4.9 مخطط الفئات (Class Diagram)</h2>
+<div class="figure-box">
+  <p><strong>الفئات الرئيسية (PHP Classes):</strong></p>
+  <ul>
+    <li><strong>AssessmentEngine</strong> – محرك التقييم الموحد بـ 10 أنواع أدوات</li>
+    <li><strong>AcademicCalculator</strong> – حساب GPA، النسبة المئوية، الترتيب، Carry Over، Makeup</li>
+    <li><strong>BehaviorCalculator</strong> – نظام النقاط السلوكية (100 نقطة أساس)</li>
+    <li><strong>PromotionEngine</strong> – محرك قرارات الترفيع بثلاثة معايير</li>
+    <li><strong>EQICalculator</strong> – الخوارزمية الهجينة لمؤشر جودة التعليم</li>
+    <li><strong>EqasXlsxWriter</strong> – مكتبة تصدير Excel المخصصة</li>
+  </ul>
+  <div class="caption">مخطط (13): مخطط الفئات الرئيسية (Class Diagram)</div>
+</div>
+
+<h2>4.10 ملخص الفصل</h2>
+<p>قدم هذا الفصل التصميم التفصيلي لنظام EQAS متضمناً: مخطط الوظائف الأعمال مقسماً إلى 13 وحدة وظيفية، ومخططات تدفق البيانات في ثلاثة مستويات، ومخطط العلاقات بين الكيانات بقاعدة بيانات من 71 جدولاً، وقاموس البيانات للجداول الرئيسية، ومخططات حالات الاستخدام للأدوار الأربعة، ومخططات التسلسل لعمليتي تسجيل الدخول وإدخال الدرجات، ومخطط النشاط لدورة حياة الفصل الدراسي، ومخطط الفئات للفئات الست الرئيسية.</p>
+<p>يمثل هذا التصميم الأساس الذي تم بموجبه بناء النظام، حيث يضمن الاتساق بين مكونات النظام المختلفة ويسهل عملية الصيانة والتطوير المستقبلية.</p>
+
+<h1>المراجع والمصادر</h1>
+<ol class="ref">
+  <li>مؤشر جودة التعليم - الهيئة ة للتقويم وضمان الجودة.</li>
+  <li>Moodle Documentation. (2024). Moodle LMS Architecture. https://docs.moodle.org/</li>
+  <li>PHP Documentation. (2024). PHP Manual. https://www.php.net/docs.php</li>
+  <li>MySQL Documentation. (2024). MySQL 5.7 Reference Manual. https://dev.mysql.com/doc/</li>
+  <li>Schwaber, K., & Sutherland, J. (2020). The Scrum Guide. https://scrumguides.org/</li>
+  <li>Chart.js Documentation. (2024). Chart.js. https://www.chartjs.org/docs/</li>
+  <li>TCPDF Documentation. (2024). TCPDF - PHP class for PDF. https://tcpdf.org/</li>
+  <li>OWASP. (2024). CSRF Prevention Cheat Sheet. https://cheatsheetseries.owasp.org/</li>
+  <li>OWASP. (2024). Password Storage Cheat Sheet. https://cheatsheetseries.owasp.org/</li>
+  <li>Font Awesome. (2024). Font Awesome Icons. https://fontawesome.com/</li>
+  <li>Google Fonts. (2024). Tajawal Font. https://fonts.google.com/</li>
+  <li>Microsoft. (2023). Open XML SDK - XLSX Format. https://learn.microsoft.com/</li>
+</ol>
+
+<h1>الملاحق</h1>
+<p><strong>ملحق أ:</strong> هيكل قاعدة البيانات الكامل (DDL) – موجود في ملف database/schema.sql (71 جدولاً + 1 view).</p>
+<p><strong>ملحق ب:</strong> اسكربتات التثبيت الأولية (Seed Data) – موجود في ملف database/seed.sql.</p>
+<p><strong>ملحق ج:</strong> إعدادات النظام الافتراضية (96 إعداداً) – موجودة في ملف database/settings_seed.sql.</p>
+<p><strong>ملحق د:</strong> سيناريوهات اختبار النظام – موجودة في ملف docs/testing/test-plan.md.</p>
+<p><strong>ملحق هـ:</strong> تقرير تقييم XSS والأمان – موجود في ملف docs/XSS_Audit_v2.0.3.md.</p>
+
+<button class="print-btn no-print" onclick="window.print()">طباعة المستند</button>
+
+</div>
+</body>
+</html>
+

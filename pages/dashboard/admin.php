@@ -1,0 +1,399 @@
+<?php
+/**
+ * ============================================================
+ * EQAS - لوحة تحكم مدير النظام
+ * نظام التقييم الشامل - Group Admin Dashboard
+ * ============================================================
+ * لوحة تحكم مدير النظام:
+ * - إحصائيات على مستوى النظام
+ * - مقارنة مؤشر جودة التعليم بين المدارس
+ * - وصول سريع لإدارة المستخدمين
+ * - تنبيهات النظام والأخطاء
+ * - حالة النسخ الاحتياطي
+ * - سجل النشاطات
+ * ============================================================
+ */
+
+$pageTitle = 'لوحة تحكم مدير النظام';
+$breadcrumb = ['الرئيسية' => null];
+
+require_once __DIR__ . '/../../includes/header.php';
+
+// التحقق من الدور
+requireRole('group_admin');
+
+// ═══════════════════════════════════════════
+// جلب الإحصائيات
+// ═══════════════════════════════════════════
+$stats = [
+    'schools' => 0, 'students' => 0, 'teachers' => 0,
+    'classes' => 0, 'users' => 0, 'active_alerts' => 0
+];
+
+try {
+    $stats['schools'] = $db->query("SELECT COUNT(*) FROM schools WHERE is_active = 1")->fetchColumn();
+    $stats['students'] = $db->query("SELECT COUNT(*) FROM students WHERE is_active = 1")->fetchColumn();
+    $stats['teachers'] = $db->query("SELECT COUNT(*) FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = 'teacher' AND u.is_active = 1")->fetchColumn();
+    $stats['classes'] = $db->query("SELECT COUNT(*) FROM classes WHERE is_active = 1")->fetchColumn();
+    $stats['users'] = $db->query("SELECT COUNT(*) FROM users WHERE is_active = 1")->fetchColumn();
+    $stats['active_alerts'] = $db->query("SELECT COUNT(*) FROM alerts WHERE is_active = 1 AND status = 'open'")->fetchColumn();
+} catch (Exception $e) { }
+
+// ═══════════════════════════════════════════
+// مقارنة مؤشر جودة التعليم بين المدارس
+// ═══════════════════════════════════════════
+$schoolEqi = [];
+try {
+    $stmt = $db->query("
+        SELECT s.id, s.name_ar,
+               COALESCE(eq.score, 0) as eqi_score,
+               eq.rating as eqi_rating
+        FROM schools s
+        LEFT JOIN eqi_calculations eq ON s.id = eq.school_id AND eq.is_active = 1
+        WHERE s.is_active = 1
+        ORDER BY eqi_score DESC
+        LIMIT 20
+    ");
+    $schoolEqi = $stmt->fetchAll();
+} catch (Exception $e) { }
+
+// ═══════════════════════════════════════════
+// حالة النسخ الاحتياطي
+// ═══════════════════════════════════════════
+$backupStats = ['last_full' => null, 'total_backups' => 0, 'total_size' => 0];
+try {
+    $stmt = $db->query("SELECT COUNT(*) as total, COALESCE(SUM(file_size),0) as total_size FROM backup_logs WHERE is_active = 1 AND status = 'completed'");
+    $row = $stmt->fetch();
+    $backupStats['total_backups'] = $row['total'];
+    $backupStats['total_size'] = $row['total_size'];
+
+    $stmt = $db->query("SELECT created_at FROM backup_logs WHERE backup_type = 'full' AND is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
+    $row = $stmt->fetch();
+    $backupStats['last_full'] = $row ? $row['created_at'] : null;
+} catch (Exception $e) { }
+
+// ═══════════════════════════════════════════
+// سجل النشاطات الأخيرة
+// ═══════════════════════════════════════════
+$recentActivities = [];
+try {
+    $stmt = $db->query("
+        SELECT al.*, u.full_name_ar as user_name
+        FROM activity_logs al
+        LEFT JOIN users u ON al.user_id = u.id
+        ORDER BY al.created_at DESC
+        LIMIT 15
+    ");
+    $recentActivities = $stmt->fetchAll();
+} catch (Exception $e) { }
+
+// ═══════════════════════════════════════════
+// إحصائيات المستخدمين حسب الدور
+// ═══════════════════════════════════════════
+$usersByRole = [];
+try {
+    $stmt = $db->query("
+        SELECT r.display_name_ar, r.name as role_name, COUNT(u.id) as count
+        FROM roles r
+        LEFT JOIN users u ON u.role_id = r.id AND u.is_active = 1
+        GROUP BY r.id
+        ORDER BY r.rank DESC
+    ");
+    $usersByRole = $stmt->fetchAll();
+} catch (Exception $e) { }
+
+// ═══════════════════════════════════════════
+// تنبيهات النظام
+// ═══════════════════════════════════════════
+$systemAlerts = [];
+if ($backupStats['last_full'] === null) {
+    $systemAlerts[] = ['type' => 'danger', 'icon' => '🚨', 'text' => 'لم يتم إنشاء أي نسخة احتياطية كاملة بعد!'];
+} else {
+    $daysSinceBackup = (time() - strtotime($backupStats['last_full'])) / 86400;
+    if ($daysSinceBackup > 3) {
+        $systemAlerts[] = ['type' => 'warning', 'icon' => '⚠️', 'text' => 'آخر نسخة احتياطية كاملة منذ ' . floor($daysSinceBackup) . ' يوم'];
+    }
+}
+if ($stats['active_alerts'] > 0) {
+    $systemAlerts[] = ['type' => 'warning', 'icon' => '🔔', 'text' => $stats['active_alerts'] . ' تنبيه نشط في النظام'];
+}
+if (empty($systemAlerts)) {
+    $systemAlerts[] = ['type' => 'success', 'icon' => '✅', 'text' => 'النظام يعمل بشكل طبيعي'];
+}
+?>
+
+<style>
+.dashboard-stat {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--border-light);
+    transition: all var(--transition-base);
+}
+.dashboard-stat:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+.dashboard-stat .stat-icon { font-size: 28px; margin-bottom: 8px; }
+.dashboard-stat .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.dashboard-stat .stat-label { font-size: 13px; color: var(--text-secondary); }
+</style>
+
+<div class="section">
+    <!-- إحصائيات عامة -->
+    <div class="grid grid-6 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));">
+        <div class="dashboard-stat" style="border-top:3px solid var(--primary);">
+            <div class="stat-icon">🏫</div>
+            <div class="stat-value" style="color:var(--primary);"><?= number_format($stats['schools']) ?></div>
+            <div class="stat-label">المدارس</div>
+        </div>
+        <div class="dashboard-stat" style="border-top:3px solid var(--info);">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" style="color:var(--info);"><?= number_format($stats['students']) ?></div>
+            <div class="stat-label">الطلاب</div>
+        </div>
+        <div class="dashboard-stat" style="border-top:3px solid var(--success);">
+            <div class="stat-icon">👨‍🏫</div>
+            <div class="stat-value" style="color:var(--success);"><?= number_format($stats['teachers']) ?></div>
+            <div class="stat-label">المعلمون</div>
+        </div>
+        <div class="dashboard-stat" style="border-top:3px solid var(--secondary);">
+            <div class="stat-icon">📚</div>
+            <div class="stat-value" style="color:var(--secondary);"><?= number_format($stats['classes']) ?></div>
+            <div class="stat-label">الفصول</div>
+        </div>
+        <div class="dashboard-stat" style="border-top:3px solid var(--accent);">
+            <div class="stat-icon">👤</div>
+            <div class="stat-value" style="color:var(--accent);"><?= number_format($stats['users']) ?></div>
+            <div class="stat-label">المستخدمون</div>
+        </div>
+        <div class="dashboard-stat" style="border-top:3px solid var(--danger);">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-value" style="color:var(--danger);"><?= number_format($stats['active_alerts']) ?></div>
+            <div class="stat-label">تنبيهات مفتوحة</div>
+        </div>
+    </div>
+
+    <div class="grid grid-2" style="grid-template-columns:repeat(auto-fill,minmax(400px,1fr));">
+        <!-- تنبيهات النظام -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🔔 تنبيهات النظام</h3>
+            </div>
+            <div class="card-body">
+                <?php foreach ($systemAlerts as $alert): ?>
+                <div class="alert alert-<?= $alert['type'] ?>" style="padding:10px 16px;">
+                    <?= $alert['icon'] ?> <?= $alert['text'] ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- حالة النسخ الاحتياطي -->
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h3 class="card-title">💾 حالة النسخ الاحتياطي</h3>
+                <a href="../backup_reports/index.php" class="btn btn-sm btn-light">التفاصيل</a>
+            </div>
+            <div class="card-body">
+                <div class="grid grid-3" style="gap:12px;font-size:14px;">
+                    <div style="text-align:center;">
+                        <div style="font-size:24px;font-weight:bold;color:var(--primary);"><?= $backupStats['total_backups'] ?></div>
+                        <div style="color:var(--text-secondary);font-size:12px;">إجمالي النسخ</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:24px;font-weight:bold;color:var(--info);">
+                            <?= $backupStats['total_size'] > 1048576 ? round($backupStats['total_size']/1048576, 1) . ' MB' : round($backupStats['total_size']/1024, 0) . ' KB' ?>
+                        </div>
+                        <div style="color:var(--text-secondary);font-size:12px;">الحجم الكلي</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:14px;font-weight:bold;color:<?= $backupStats['last_full'] ? 'var(--success)' : 'var(--danger)' ?>;">
+                            <?= $backupStats['last_full'] ? formatDateAr($backupStats['last_full'], 'short') : 'لا توجد' ?>
+                        </div>
+                        <div style="color:var(--text-secondary);font-size:12px;">آخر نسخة كاملة</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- المستخدمون حسب الدور -->
+        <div class="card">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <h3 class="card-title">👤 المستخدمون حسب الدور</h3>
+                <a href="../users/index.php" class="btn btn-sm btn-light">إدارة</a>
+            </div>
+            <div class="card-body">
+                <?php foreach ($usersByRole as $ur): ?>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);">
+                    <span><?= e($ur['display_name_ar']) ?></span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-weight:bold;"><?= $ur['count'] ?></span>
+                        <div style="width:60px;height:6px;background:var(--border-light);border-radius:var(--radius-full);">
+                            <div style="width:<?= $stats['users'] > 0 ? min(100, ($ur['count']/$stats['users'])*100) : 0 ?>%;height:100%;background:var(--primary);border-radius:var(--radius-full);"></div>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- سجل النشاطات -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📋 آخر النشاطات</h3>
+            </div>
+            <div class="card-body" style="padding:0;">
+                <div style="max-height:300px;overflow-y:auto;">
+                    <?php foreach ($recentActivities as $act): ?>
+                    <div style="padding:8px 16px;border-bottom:1px solid var(--border-light);font-size:13px;">
+                        <div style="display:flex;justify-content:space-between;">
+                            <strong><?= e($act['user_name'] ?? 'نظام') ?></strong>
+                            <span style="font-size:11px;color:var(--text-muted);"><?= formatDateAr($act['created_at'], 'short') ?></span>
+                        </div>
+                        <div style="color:var(--text-secondary);font-size:12px;"><?= e($act['description'] ?? $act['action']) ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مقارنة مؤشر جودة التعليم -->
+    <div class="card mt-6">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 class="card-title">📊 مقارنة مؤشر جودة التعليم بين المدارس</h3>
+            <a href="../eqi/compare.php" class="btn btn-sm btn-light">مقارنة مفصلة</a>
+        </div>
+        <div class="card-body">
+            <?php if (empty($schoolEqi) || empty(array_filter($schoolEqi, function($s) { return $s['eqi_score'] > 0; }))): ?>
+            <div style="text-align:center;padding:30px;color:var(--text-muted);">
+                <p>لم يتم حساب مؤشر جودة التعليم بعد. <a href="../eqi/calculate.php">بدء الحساب</a></p>
+            </div>
+            <?php else: ?>
+            <div style="max-height:400px;overflow-y:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>#</th><th>المدرسة</th><th>مؤشر الجودة</th><th>التقييم</th><th>الحالة</th></tr>
+                    </thead>
+                    <tbody>
+                        <?php $rank = 1; foreach ($schoolEqi as $s):
+                            if ($s['eqi_score'] <= 0) continue;
+                            $rating = getEqiRating($s['eqi_score']);
+                        ?>
+                        <tr>
+                            <td><strong><?= $rank++ ?></strong></td>
+                            <td><strong><?= e($s['name_ar']) ?></strong></td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div style="width:100px;height:8px;background:var(--border-light);border-radius:var(--radius-full);">
+                                        <div style="width:<?= $s['eqi_score'] ?>%;height:100%;background:<?= $rating[2] === 'success' ? 'var(--success)' : ($rating[2] === 'warning' ? 'var(--warning)' : 'var(--danger)') ?>;border-radius:var(--radius-full);"></div>
+                                    </div>
+                                    <strong><?= $s['eqi_score'] ?>%</strong>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-<?= $rating[1] ?>"><?= $rating[0] ?></span></td>
+                            <td>
+                                <?php if ($s['eqi_score'] < 50): ?>
+                                <span style="color:var(--danger);">⚠️ ضعيف</span>
+                                <?php elseif ($s['eqi_score'] < 70): ?>
+                                <span style="color:var(--warning);">مقبول</span>
+                                <?php else: ?>
+                                <span style="color:var(--success);">✅ جيد</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- رسوم بيانية -->
+    <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(400px,1fr));">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 توزيع المدارس حسب تقييم المؤشر</h3>
+            </div>
+            <div class="card-body" style="height:300px;">
+                <canvas id="eqiDistributionChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📈 المستخدمون حسب الدور</h3>
+            </div>
+            <div class="card-body" style="height:300px;">
+                <canvas id="usersRoleChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // توزيع المدارس حسب تقييم المؤشر
+    <?php
+    $eqiBuckets = ['ممتاز' => 0, 'جيد جداً' => 0, 'مقبول' => 0, 'ضعيف' => 0];
+    foreach ($schoolEqi as $s) {
+        if ($s['eqi_score'] <= 0) continue;
+        $r = getEqiRating($s['eqi_score']);
+        if (isset($eqiBuckets[$r[0]])) $eqiBuckets[$r[0]]++;
+    }
+    ?>
+    eqasPieChart('eqiDistributionChart', '',
+        <?= json_encode(array_keys($eqiBuckets), JSON_UNESCAPED_UNICODE) ?>,
+        <?= json_encode(array_values($eqiBuckets)) ?>,
+        ['#28a745', '#1a5632', '#ffc107', '#dc3545']
+    );
+
+    // المستخدمون حسب الدور
+    <?php
+    $roleLabels = []; $roleCounts = []; $roleColors = ['#1a5632','#c8a951','#17a2b8','#fd7e14'];
+    foreach ($usersByRole as $ur) { $roleLabels[] = $ur['display_name_ar']; $roleCounts[] = (int)$ur['count']; }
+    ?>
+    eqasBarChart('usersRoleChart', '',
+        <?= json_encode($roleLabels, JSON_UNESCAPED_UNICODE) ?>,
+        [{label: 'عدد المستخدمين', data: <?= json_encode($roleCounts) ?>, backgroundColor: <?= json_encode(array_slice($roleColors, 0, count($roleLabels))) ?>}]
+    );
+    </script>
+
+    <!-- إجراءات سريعة -->
+    <div class="card mt-6">
+        <div class="card-header">
+            <h3 class="card-title">⚡ إجراءات سريعة</h3>
+        </div>
+        <div class="card-body">
+            <div class="grid grid-auto" style="gap:12px;">
+                <a href="../users/add.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">👤</div>
+                    <div style="font-size:13px;">إضافة مستخدم</div>
+                </a>
+                <a href="../schools/add.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">🏫</div>
+                    <div style="font-size:13px;">إضافة مدرسة</div>
+                </a>
+                <a href="../backup_reports/create.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">💾</div>
+                    <div style="font-size:13px;">إنشاء نسخة احتياطية</div>
+                </a>
+                <a href="../eqi/calculate.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">📊</div>
+                    <div style="font-size:13px;">حساب مؤشر الجودة</div>
+                </a>
+                <a href="../alerts/run_checks.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">🚨</div>
+                    <div style="font-size:13px;">فحص التنبيهات</div>
+                </a>
+                <a href="../system/restore.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                    <div style="font-size:24px;">🔄</div>
+                    <div style="font-size:13px;">استعادة نسخة</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+require_once __DIR__ . '/../../includes/footer.php';

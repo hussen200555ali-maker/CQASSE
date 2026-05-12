@@ -1,0 +1,329 @@
+/* ============================================================
+   EQAS - Print Styles
+   نظام التقييم الشامل - أنماط الطباعة
+   ============================================================ */
+
+@media print {
+    /* Hide unnecessary elements */
+    .sidebar,
+    .sidebar-overlay,
+    .header,
+    .header-actions,
+    .footer,
+    .sidebar-toggle,
+    .btn,
+    .btn-group,
+    .pagination,
+    .toast-container,
+    .modal-overlay,
+    .modal-dialog,
+    .notification-dropdown,
+    .user-dropdown-menu,
+    .dropdown-menu,
+    .filter-bar,
+    .bulk-action-bar,
+    .quick-actions,
+    .no-print,
+    .header-search,
+    .header-action-btn,
+    .sidebar-toggle,
+    nav,
+    .nav,
+    .tabs,
+    .tab-content .tab-pane:not(.active) {
+        display: none !important;
+    }
+
+    /* Reset layout */
+    .page-wrapper {
+        display: block !important;
+    }
+
+    .main-content {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .main-content-inner {
+        padding: 0 !important;
+    }
+
+    /* Body */
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12pt !important;
+        line-height: 1.5 !important;
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: black !important;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    p, li, td, th {
+        color: black !important;
+    }
+
+    a {
+        color: black !important;
+        text-decoration: none !important;
+    }
+
+    /* Show link URLs for important links */
+    a[href]::after {
+        content: " (" attr(href) ")";
+        font-size: 9pt;
+        color: #666;
+    }
+
+    a[href^="#"]::after,
+    a[href^="javascript"]::after {
+        content: "";
+    }
+
+    /* Cards */
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 12pt !important;
+    }
+
+    .card-header {
+        border-bottom: 1px solid #999 !important;
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .card-footer {
+        border-top: 1px solid #999 !important;
+        background: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Tables */
+    .data-table {
+        font-size: 10pt !important;
+        width: 100% !important;
+    }
+
+    .data-table thead {
+        display: table-header-group !important;
+        background: white !important;
+        color: black !important;
+    }
+
+    .data-table thead th {
+        background: #f0f0f0 !important;
+        color: black !important;
+        border: 1px solid #999 !important;
+        padding: 6pt 8pt !important;
+        font-weight: bold !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .data-table tbody td {
+        border: 1px solid #ccc !important;
+        padding: 4pt 8pt !important;
+    }
+
+    .data-table tbody tr:nth-child(even) {
+        background: #f9f9f9 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .data-table tbody tr:hover {
+        background: transparent !important;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .stat-card-icon {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Badges */
+    .badge {
+        border: 1px solid #999 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Progress Bars */
+    .progress {
+        border: 1px solid #999 !important;
+        height: 12pt !important;
+    }
+
+    .progress-bar {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Alerts */
+    .alert {
+        border: 1px solid #999 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Charts - make sure they render */
+    .chart-container canvas {
+        max-height: none !important;
+        page-break-inside: avoid;
+    }
+
+    /* Page Breaks */
+    .page-break-before {
+        page-break-before: always;
+        break-before: always;
+    }
+
+    .page-break-after {
+        page-break-after: always;
+        break-after: always;
+    }
+
+    .page-break-avoid {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    /* A4 Optimization */
+    @page {
+        size: A4;
+        margin: 15mm 15mm 15mm 15mm;
+    }
+
+    /* Print Header */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 20pt;
+        padding-bottom: 10pt;
+        border-bottom: 2px solid black;
+    }
+
+    .print-header h1 {
+        font-size: 18pt;
+        margin-bottom: 6pt;
+    }
+
+    .print-header p {
+        font-size: 10pt;
+        color: #666;
+    }
+
+    /* Print Footer */
+    .print-footer {
+        display: block !important;
+        text-align: center;
+        font-size: 8pt;
+        color: #999;
+        padding-top: 10pt;
+        border-top: 1px solid #ccc;
+        margin-top: 20pt;
+    }
+
+    /* EQI Score */
+    .eqi-score-value {
+        color: black !important;
+    }
+
+    /* Section */
+    .section {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* Print Only Content */
+    .print-only {
+        display: block !important;
+    }
+
+    /* Grid adjustments */
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+        display: block !important;
+    }
+
+    .grid-2 > *,
+    .grid-3 > *,
+    .grid-4 > * {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 12pt;
+    }
+
+    /* Remove animations */
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    /* Remove shadows */
+    .shadow,
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg,
+    .shadow-xl {
+        box-shadow: none !important;
+    }
+
+    /* Assessment Cards */
+    .assessment-card {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+        break-inside: avoid;
+    }
+
+    .assessment-card-header {
+        background: #e8e8e8 !important;
+        color: black !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Smart Alerts */
+    .smart-alert {
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+    }
+
+    /* Margin adjustments for print */
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+/* Print-only elements (hidden in screen, shown in print) */
+.print-only {
+    display: none;
+}
+
+/* Print header/footer (only visible in print) */
+.print-header,
+.print-footer {
+    display: none;
+}

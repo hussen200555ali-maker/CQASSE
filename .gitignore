@@ -1,0 +1,26 @@
+# Credentials — must never be committed
+docs/DEFAULT_CREDENTIALS.md
+
+# Backups
+backups/
+
+# Temp files
+temp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHP dependencies
+vendor/
+
+# PHPUnit cache
+.phpunit.cache/
+
+# Composer lock (optional, commit if you want deterministic installs)
+composer.lock
