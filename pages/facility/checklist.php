@@ -12,6 +12,7 @@ $pageTitle = 'فحص المرافق المدرسية';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'فحص المرافق' => 'index.php', 'فحص جديد' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -34,12 +35,9 @@ try {
 } catch (Exception $e) {}
 
 $academicYears = [];
-$semesters = [];
 try {
     $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC");
     $academicYears = $stmt->fetchAll();
-    $stmt = $db->query("SELECT id, name_ar, academic_year_id FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 $categoryIcons = [
@@ -97,7 +95,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $schoolIdPost = (int)($_POST['school_id'] ?? 0);
             $academicYearId = (int)($_POST['academic_year_id'] ?? 0);
-            $semesterId = (int)($_POST['semester_id'] ?? 0);
+            $semesterVal = (int)($_POST['semester_id'] ?? 0);
+            $semesterId = 0;
+            if ($semesterVal && $academicYearId) {
+                $semName = semesterValueToNameAr($semesterVal);
+                if ($semName) {
+                    $sStmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
+                    $sStmt->execute([$semName, $academicYearId]);
+                    $semesterId = (int)$sStmt->fetchColumn();
+                }
+            }
             $notes = trim($_POST['notes'] ?? '');
             
             // بيانات الصور (عناصر نائبة)
@@ -192,9 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label">الفصل الدراسي <span class="required">*</span></label>
                         <select name="semester_id" class="form-control" required>
                             <option value="">-- اختر الفصل الدراسي --</option>
-                            <?php foreach ($semesters as $sem): ?>
-                                <option value="<?php echo $sem['id']; ?>"><?php echo e($sem['name_ar']); ?></option>
-                            <?php endforeach; ?>
+                            <option value="1">الفصل الدراسي الأول</option>
+                            <option value="2">الفصل الدراسي الثاني</option>
                         </select>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ $pageTitle = 'فحص المرافق المدرسية';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'فحص المرافق' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -24,7 +25,7 @@ $userRole = $_SESSION['user']['role'];
 $schoolId = $_SESSION['user']['school_id'] ?? null;
 
 $filterSchool = $_GET['school_id'] ?? '';
-$filterSemester = $_GET['semester_id'] ?? '';
+$filterSemester = $_GET['semester_id'] ?? '0';
 
 $sql = "SELECT fc.*, s.name_ar as school_name, u.full_name_ar as evaluator_name,
         sem.name_ar as semester_name, ay.name as year_name
@@ -38,7 +39,11 @@ $params = [];
 
 if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND fc.school_id = ?"; $params[] = $schoolId; }
 if ($filterSchool) { $sql .= " AND fc.school_id = ?"; $params[] = $filterSchool; }
-if ($filterSemester) { $sql .= " AND fc.semester_id = ?"; $params[] = $filterSemester; }
+if ($filterSemester && $filterSemester !== '0') {
+    $sq = buildSemesterSubquery($filterSemester, 'fc');
+    $sql .= $sq['sql'];
+    $params = array_merge($params, $sq['params']);
+}
 
 $sql .= " ORDER BY fc.evaluation_date DESC";
 
@@ -56,11 +61,7 @@ try {
     $stmt = $db->prepare($sql); $stmt->execute($p); $schools = $stmt->fetchAll();
 } catch (Exception $e) {}
 
-$semesters = [];
-try {
-    $stmt = $db->query("SELECT id, name_ar FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
-} catch (Exception $e) {}
+
 
 // إحصائيات عامة
 $totalChecklists = count($checklists);
@@ -197,10 +198,9 @@ if (!empty($checklists)) {
                 <div class="form-group">
                     <label class="form-label">الفصل الدراسي:</label>
                     <select name="semester_id" class="form-control" style="width:auto;">
-                        <option value="">الكل</option>
-                        <?php foreach ($semesters as $sem): ?>
-                            <option value="<?php echo $sem['id']; ?>" <?php echo $filterSemester == $sem['id'] ? 'selected' : ''; ?>><?php echo e($sem['name_ar']); ?></option>
-                        <?php endforeach; ?>
+                        <option value="0" <?php echo $filterSemester == '0' ? 'selected' : ''; ?>>جميع الفصول</option>
+                        <option value="1" <?php echo $filterSemester == '1' ? 'selected' : ''; ?>>الفصل الدراسي الأول</option>
+                        <option value="2" <?php echo $filterSemester == '2' ? 'selected' : ''; ?>>الفصل الدراسي الثاني</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">بحث</button>

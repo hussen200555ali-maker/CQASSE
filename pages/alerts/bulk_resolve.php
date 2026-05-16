@@ -162,14 +162,14 @@ $typeLabels = ['academic' => 'أكاديمي', 'behavior' => 'سلوكي', 'atte
 </div>
 
 <?php
-$pageJs = "
-function toggleAll(el) {
+$pageJs = <<<'JS'
+window.toggleAll = function(el) {
     document.querySelectorAll('.alert-checkbox').forEach(cb => cb.checked = el.checked);
-}
-function confirmAction(action) {
+};
+window.confirmAction = function(action) {
     var checked = document.querySelectorAll('.alert-checkbox:checked').length;
     if (checked === 0) { alert('يرجى اختيار تنبيه واحد على الأقل.'); return false; }
-    return confirm('هل تريد " + action + " " + checked + " تنبيه؟');
-}
-";
+    return confirm('هل تريد ' + action + ' ' + checked + ' تنبيه؟');
+};
+JS;
 require_once __DIR__ . '/../../includes/footer.php';

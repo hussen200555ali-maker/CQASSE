@@ -631,7 +631,6 @@ class AssessmentEngine {
         return $icons[$formType] ?? '📋';
     }
     
-    /** @deprecated-v2.0.3 Candidate for removal — verify no callers before deleting */
     /**
      * حفظ استجابة تقييم في الجدول الموحد
      * 

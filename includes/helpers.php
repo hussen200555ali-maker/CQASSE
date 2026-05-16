@@ -176,15 +176,44 @@ function formatNumberAr($num) {
 // ============================================================================
 
 /**
- * الحصول على تقييم مؤشر جودة التعليم
+ * تقييم درجة مؤشر الجودة
  *
  * @param float $score درجة المؤشر
  * @return array [التقييم، صنف CSS، اللون]
  */
 function getEqiRating($score) {
-    if ($score >= 85) return ['ممتاز', 'eqi-rating-excellent', 'success'];
-    if ($score >= 70) return ['جيد جداً', 'eqi-rating-good', 'primary'];
-    if ($score >= 50) return ['مقبول', 'eqi-rating-fair', 'warning'];
+    static $thresholds = null;
+    if ($thresholds === null) {
+        $thresholds = [
+            'excellent' => 85,
+            'very_good' => 70,
+            'fair'      => 50,
+        ];
+        global $db;
+        if (isset($db)) {
+            try {
+                $stmt = $db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('policy_color_green_from','policy_color_yellow_from','policy_color_red_to')");
+                $rows = $stmt->fetchAll();
+                $settings = [];
+                foreach ($rows as $row) {
+                    $settings[$row['setting_key']] = (int)$row['setting_value'];
+                }
+                if (isset($settings['policy_color_green_from'])) {
+                    $thresholds['excellent'] = $settings['policy_color_green_from'];
+                }
+                if (isset($settings['policy_color_yellow_from'])) {
+                    $thresholds['very_good'] = $settings['policy_color_yellow_from'];
+                }
+                if (isset($settings['policy_color_red_to'])) {
+                    $thresholds['fair'] = $settings['policy_color_red_to'] + 1;
+                }
+            } catch (Exception $e) {}
+        }
+    }
+
+    if ($score >= $thresholds['excellent']) return ['ممتاز', 'eqi-rating-excellent', 'success'];
+    if ($score >= $thresholds['very_good']) return ['جيد جداً', 'eqi-rating-good', 'primary'];
+    if ($score >= $thresholds['fair']) return ['مقبول', 'eqi-rating-fair', 'warning'];
     return ['ضعيف', 'eqi-rating-poor', 'danger'];
 }
 
@@ -1284,7 +1313,7 @@ function getAvailableSchools($db, $role, $schoolId = null) {
  */
 function getAvailableSemesters($db, $academicYearId, $schoolId = null) {
     try {
-        $stmt = $db->prepare("SELECT id, name_ar, status, start_date, end_date FROM semesters WHERE academic_year_id = ? AND is_active = 1 ORDER BY start_date");
+        $stmt = $db->prepare("SELECT id, name_ar, lock_level, start_date, end_date FROM semesters WHERE academic_year_id = ? AND is_active = 1 ORDER BY start_date");
         $stmt->execute([$academicYearId]);
         return $stmt->fetchAll();
     } catch (Exception $e) {

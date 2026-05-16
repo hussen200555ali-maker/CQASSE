@@ -11,6 +11,7 @@ $breadcrumb = ['مركز التصدير' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/export.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 // التحقق من الصلاحيات
 if (!hasPermission('school_admin')) {
@@ -87,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
     $format = $_POST['format'] ?? 'xlsx';
     $schoolId = $_POST['school_id'] ?? '';
     $academicYearId = $_POST['academic_year_id'] ?? getCurrentAcademicYearId($db);
-    $semesterId = $_POST['semester_id'] ?? '';
+    $semesterId = $_POST['semester_id'] ?? '0';
 
     if (!isset($exportTypes[$exportType])) {
         setFlash('نوع تصدير غير صالح', 'danger');
@@ -125,7 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
                     WHERE g.is_active = 1";
             $params = [];
             if ($academicYearId) { $sql .= " AND g.academic_year_id = ?"; $params[] = $academicYearId; }
-            if ($semesterId) { $sql .= " AND g.semester_id = ?"; $params[] = $semesterId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND g.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
             if ($schoolId) { $sql .= " AND s.school_id = ?"; $params[] = $schoolId; }
             $sql .= " ORDER BY s.full_name_ar, sub.name_ar";
             $stmt = $db->prepare($sql);
@@ -141,7 +145,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
                     WHERE a.is_active = 1";
             $params = [];
             if ($academicYearId) { $sql .= " AND a.academic_year_id = ?"; $params[] = $academicYearId; }
-            if ($semesterId) { $sql .= " AND a.semester_id = ?"; $params[] = $semesterId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND a.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
             $sql .= " ORDER BY a.date DESC, s.full_name_ar";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -158,7 +165,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
                     WHERE ar.is_active = 1"; // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
             $params = [];
             if ($academicYearId) { $sql .= " AND ar.academic_year_id = ?"; $params[] = $academicYearId; }
-            if ($semesterId) { $sql .= " AND ar.semester_id = ?"; $params[] = $semesterId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND ar.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
             $sql .= " ORDER BY ar.response_date DESC";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
@@ -228,12 +238,9 @@ if (hasPermission('group_admin')) {
     $schools = $stmt->fetchAll();
 }
 
-// جلب السنوات والفصول
+// جلب السنوات
 $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC");
 $academicYears = $stmt->fetchAll();
-
-$stmt = $db->query("SELECT id, name_ar, academic_year_id FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-$semesters = $stmt->fetchAll();
 
 // إحصائيات التصدير
 $recentExports = [];
@@ -356,7 +363,7 @@ foreach ($exportTypes as $type => $info) {
 
                         <div class="form-group">
                             <label class="form-label">السنة الأكاديمية</label>
-                            <select name="academic_year_id" id="academic_year_id" class="form-control" onchange="loadSemesters(this.value)">
+                            <select name="academic_year_id" id="academic_year_id" class="form-control">
                                 <option value="">الكل</option>
                                 <?php foreach ($academicYears as $year): ?>
                                 <option value="<?php echo $year['id']; ?>"><?php echo e($year['name']); ?></option>
@@ -367,10 +374,9 @@ foreach ($exportTypes as $type => $info) {
                         <div class="form-group">
                             <label class="form-label">الفصل الدراسي</label>
                             <select name="semester_id" id="semester_id" class="form-control">
-                                <option value="">الكل</option>
-                                <?php foreach ($semesters as $sem): ?>
-                                <option value="<?php echo $sem['id']; ?>" data-year="<?php echo $sem['academic_year_id']; ?>"><?php echo e($sem['name_ar']); ?></option>
-                                <?php endforeach; ?>
+                                <option value="0">جميع الفصول</option>
+                                <option value="1">الفصل الدراسي الأول</option>
+                                <option value="2">الفصل الدراسي الثاني</option>
                             </select>
                         </div>
                     </div>
@@ -645,21 +651,6 @@ function saveSchedule() {
 
 function closeScheduleModal() {
     document.getElementById('schedule-modal').style.display = 'none';
-}
-
-// تحميل الفصول الدراسية حسب السنة
-function loadSemesters(yearId) {
-    const semesterSelect = document.getElementById('semester_id');
-    const options = semesterSelect.querySelectorAll('option');
-    options.forEach(opt => {
-        if (!opt.value) return;
-        const optYear = opt.getAttribute('data-year');
-        opt.style.display = (!yearId || optYear === yearId) ? '' : 'none';
-    });
-    if (yearId) {
-        const hasVisible = Array.from(options).some(o => o.value && o.style.display !== 'none');
-        if (!hasVisible) semesterSelect.value = '';
-    }
 }
 
 // تهيئة التقدير عند تحميل الصفحة

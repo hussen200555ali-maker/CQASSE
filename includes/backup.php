@@ -266,8 +266,8 @@ class BackupManager {
 
         // تصفية حسب الحالة
         if (!empty($filters['status'])) {
-            $sql .= " AND bl.status = ?";
-            $params[] = $filters['status'];
+            $sql .= " AND bl.is_active = ?";
+            $params[] = $filters['status'] == 'active' ? 1 : 0;
         }
 
         // تصفية حسب التاريخ

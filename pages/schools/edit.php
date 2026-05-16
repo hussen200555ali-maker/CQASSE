@@ -132,7 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- رمز المدرسة (للقراءة فقط) -->
             <div class="form-group">
                 <label class="form-label">رمز المدرسة</label>
-                <input type="text" class="form-control" value="<?= e($school['code']) ?>" disabled>
+                <input type="text" class="form-control" value="<?= e($school['code'] ?? ($school['reference_code'] ?? '—')) ?>" disabled>
+
                 <div class="form-text">لا يمكن تغيير رمز المدرسة بعد الإنشاء</div>
             </div>
 

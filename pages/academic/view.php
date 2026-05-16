@@ -83,11 +83,24 @@ $lockLevelBadges = [
 <div class="card mb-6">
     <div class="card-header">
         <div class="flex items-center justify-between flex-wrap gap-3">
-            <h3 class="card-title">📅 <?= e($year['name']) ?></h3>
+            <h3 class="card-title">📅 <?= e($year['name']) ?>
+                <?php if (!$year['is_active']): ?>
+                    <span class="badge badge-secondary">مؤرشفة</span>
+                <?php endif; ?>
+            </h3>
             <div class="flex gap-2">
-                <?php if (hasPermission('group_admin') && $year['status'] !== 'closed'): ?>
-                    <a href="edit.php?id=<?= $yearId ?>" class="btn btn-warning btn-sm">✏️ تعديل</a>
-                    <a href="lock.php?year_id=<?= $yearId ?>" class="btn btn-secondary btn-sm">🔒 إدارة القفل</a>
+                <?php if ($year['is_active']): ?>
+                    <?php if (hasPermission('group_admin') && $year['status'] !== 'closed'): ?>
+                        <a href="edit.php?id=<?= $yearId ?>" class="btn btn-warning btn-sm">✏️ تعديل</a>
+                        <a href="lock.php?year_id=<?= $yearId ?>" class="btn btn-secondary btn-sm">🔒 إدارة القفل</a>
+                    <?php endif; ?>
+                    <?php if (hasPermission('group_admin')): ?>
+                        <a href="delete.php?id=<?= $yearId ?>" class="btn btn-danger btn-sm">🗑️ أرشفة</a>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <?php if (hasPermission('group_admin')): ?>
+                        <a href="delete.php?id=<?= $yearId ?>&restore=1" class="btn btn-success btn-sm">🔄 استعادة</a>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <a href="semesters.php?year_id=<?= $yearId ?>" class="btn btn-info btn-sm">📚 إدارة الفصول</a>
                 <a href="index.php" class="btn btn-light btn-sm">↩ القائمة</a>

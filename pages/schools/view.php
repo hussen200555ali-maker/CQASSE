@@ -93,7 +93,8 @@ $schoolTypeAr = ['basic' => 'أساسية', 'secondary' => 'ثانوية', 'comb
                     <tbody>
                         <tr><td style="font-weight:600;width:140px;">الاسم بالعربية</td><td><?= e($school['name_ar']) ?></td></tr>
                         <tr><td style="font-weight:600;">الاسم بالإنجليزية</td><td><?= e($school['name_en'] ?? '—') ?></td></tr>
-                        <tr><td style="font-weight:600;">الرمز</td><td><code><?= e($school['code']) ?></code></td></tr>
+                        <tr><td style="font-weight:600;">الرمز</td><td><code><?= e($school['code'] ?? ($school['reference_code'] ?? '—')) ?></code></td></tr>
+
                         <tr><td style="font-weight:600;">النوع</td><td><span class="badge badge-info"><?= $schoolTypeAr[$school['school_type']] ?? $school['school_type'] ?></span></td></tr>
                     </tbody>
                 </table>

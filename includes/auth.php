@@ -162,10 +162,11 @@ function login($username, $password, $remember = false) {
         ];
         $_SESSION['school_id'] = $user['school_id'];
         $_SESSION['last_activity'] = time();
-        $_SESSION['fingerprint'] = hash('sha256', // [إصلاح v2.0.3] MD5 → SHA256
-            $_SERVER['HTTP_USER_AGENT'] .
-            ($_SERVER['REMOTE_ADDR'] ?? '') .
-            (defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203') // [إصلاح v2.0.3] MD5 → SHA256
+        $_SESSION['session_nonce'] = bin2hex(random_bytes(16));
+        $_SESSION['fingerprint'] = hash('sha256',
+            ($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown') .
+            $_SESSION['session_nonce'] .
+            (defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203')
         );
         $_SESSION['password_hash_sig'] = hash('sha256', $user['password_hash']); // [إصلاح v2.0.3] MD5 → SHA256
         $_SESSION['regenerated_at'] = time();

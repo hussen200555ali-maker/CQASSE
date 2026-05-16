@@ -1190,7 +1190,7 @@ function buildEqiReport($db, $schoolId, $academicYearId) {
     $rows = [];
 
     try {
-        $sql = "SELECT s.name_ar, COALESCE(eq.score, 0) as eqi_score,
+        $sql = "SELECT s.name_ar, COALESCE(eq.overall_eqi, 0) as eqi_score,
                        eq.academic_score, eq.teaching_score, eq.climate_score,
                        eq.behavior_score, eq.skills_score, eq.attendance_score
                 FROM schools s

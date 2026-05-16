@@ -20,6 +20,9 @@ class BehaviorCalculator {
     /** @var PDO اتصال قاعدة البيانات */
     private $db;
     
+    /** @var AlertEngine محرك التنبيهات */
+    private $alertEngine;
+    
     /** @var int نقاط البداية (100 نقطة = سلوك ممتاز) */
     private $startingPoints = 100;
     
@@ -35,9 +38,12 @@ class BehaviorCalculator {
     /**
      * إنشاء كائن محسب السلوك
      * @param PDO $db اتصال قاعدة البيانات
+     * @param AlertEngine|null $alertEngine محرك التنبيهات (يُؤشأ تلقائياً إذا لم يُمرر)
      */
-    public function __construct($db) {
+    public function __construct($db, $alertEngine = null) {
         $this->db = $db;
+        require_once __DIR__ . '/alerts.php';
+        $this->alertEngine = $alertEngine ?: new AlertEngine($this->db);
         $this->loadSettings();
     }
     
@@ -46,7 +52,7 @@ class BehaviorCalculator {
      */
     private function loadSettings() {
         try {
-            $stmt = $this->db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key LIKE 'behavior_%'");
+            $stmt = $this->db->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key LIKE 'behavior_%' OR setting_key LIKE 'alert_threshold_behavior_%'");
             while ($row = $stmt->fetch()) {
                 switch ($row['setting_key']) {
                     case 'behavior_starting_points':
@@ -56,9 +62,11 @@ class BehaviorCalculator {
                         $this->maxPoints = (int)$row['setting_value'];
                         break;
                     case 'behavior_passing_threshold':
+                    case 'alert_threshold_behavior_pass':
                         $this->passingThreshold = (float)$row['setting_value'];
                         break;
                     case 'behavior_alert_threshold':
+                    case 'alert_threshold_behavior_alert':
                         $this->alertThreshold = (float)$row['setting_value'];
                         break;
                 }
@@ -953,10 +961,11 @@ class BehaviorCalculator {
      */
     private function createBehaviorAlert($studentId, $classId, $academicYearId, $semesterId, $percentage) {
         try {
-            // جلب بيانات الطالب والمدرسة
+            // الحصول على معلومات الطالب
             $stmt = $this->db->prepare("
-                SELECT s.full_name_ar, s.student_number, s.school_id
-                FROM students s WHERE s.id = ?
+                SELECT s.id, s.full_name_ar, s.student_number, s.school_id
+                FROM students s
+                WHERE s.id = :student_id AND s.is_active = 1
             ");
             $stmt->execute([$studentId]);
             $student = $stmt->fetch();
@@ -971,25 +980,23 @@ class BehaviorCalculator {
                 $severity = 'danger';
             }
             
-            // إنشاء التنبيه
-            $sql = "INSERT INTO alerts 
-                    (school_id, student_id, alert_type, severity, title_ar, message_ar, is_active, created_at)
-                    VALUES (:school_id, :student_id, 'behavior', :severity, :title, :message, 1, NOW())";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':school_id' => $student['school_id'],
-                ':student_id' => $studentId,
-                ':severity' => $severity,
-                ':title' => 'تنبيه سلوكي - ' . $student['full_name_ar'],
-                ':message' => sprintf(
+            // إنشاء التنبيه عبر AlertEngine (يتضمن منع التكرار + إنشاء الإشعارات)
+            $alertId = $this->alertEngine->createAlert([
+                'school_id' => $student['school_id'],
+                'student_id' => $studentId,
+                'alert_type' => 'behavior',
+                'severity' => $severity,
+                'title_ar' => 'تنبيه سلوكي - ' . $student['full_name_ar'],
+                'message_ar' => sprintf(
                     'انخفضت النسبة السلوكية للطالب %s (رقم: %s) إلى %.2f%% وهي أقل من الحد المطلوب (%.0f%%). يرجى اتخاذ الإجراءات اللازمة.',
                     $student['full_name_ar'],
                     $student['student_number'],
                     $percentage,
                     $this->passingThreshold
-                )
+                ),
             ]);
+            
+            return $alertId !== false;
         } catch (Exception $e) {
             error_log('BehaviorCalculator::createBehaviorAlert - ' . $e->getMessage());
             return false;

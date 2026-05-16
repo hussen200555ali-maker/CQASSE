@@ -11,8 +11,9 @@ $pageTitle = 'عرض استبيان المناخ';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيان المناخ' => 'index.php', 'عرض الاستبيان' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
-if (!hasPermission('school_admin')) {
+if (!hasPermission('group_admin') && !hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
 }
@@ -46,9 +47,10 @@ $items = [];
 $categoryScores = [];
 try {
     $stmt = $db->prepare("
-        SELECT ci.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
+        SELECT ci.id, ci.survey_id, ci.item_id, ci.numeric_value, ci.normalized_value AS score, ci.is_active,
+               ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
         FROM climate_items ci JOIN assessment_items ai ON ci.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
+        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
         WHERE ci.survey_id = ? AND ci.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$surveyId]);

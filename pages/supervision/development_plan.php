@@ -15,18 +15,29 @@ $breadcrumb = ['التقييمات الإشرافية' => 'index.php', 'خطة �
 
 require_once __DIR__ . '/../../includes/header.php';
 
-if (!hasPermission('school_admin')) {
+if (!hasPermission('school_admin') && !hasPermission('group_admin')) {
     setFlash('ليس لديك صلاحية الوصول.', 'danger');
     redirect(baseUrl('index.php'));
 }
 
-$schoolId = currentSchoolId();
+// تحديد المدرسة حسب الدور
+$userRole = $_SESSION['user']['role'] ?? '';
+if ($userRole === 'group_admin') {
+    $schoolId = isset($_GET['school_id']) ? (int)$_GET['school_id'] : 0;
+    if ($schoolId === 0) {
+        setFlash('يرجى اختيار مدرسة أولاً.', 'warning');
+        redirect(baseUrl('pages/supervision/teaching_dashboard.php'));
+    }
+} else {
+    $schoolId = currentSchoolId();
+}
+$schoolIdExpr = (int)$schoolId;
 
 // إنشاء الجدول إذا لم يكن موجوداً
 $db->exec("CREATE TABLE IF NOT EXISTS teacher_development_plans (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     teacher_id INT UNSIGNED NOT NULL,
-    school_id INT UNSIGNED NOT NULL,
+    school_id INT UNSIGNED NOT NULL DEFAULT 0,
     weaknesses TEXT,
     goals TEXT,
     strategies TEXT,
@@ -86,7 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('تم إلغاء الخطة.', 'warning');
         }
 
-        redirect('development_plan.php');
+        $redirectUrl = 'development_plan.php';
+        if ($userRole === 'group_admin') {
+            $redirectUrl .= '?school_id=' . $schoolId;
+        }
+        redirect($redirectUrl);
     }
 }
 
@@ -94,9 +109,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $teachers = $db->query("
     SELECT u.id, u.full_name_ar
     FROM users u JOIN roles r ON u.role_id = r.id
-    WHERE r.name = 'teacher' AND u.is_active = 1 AND u.school_id = {$schoolId}
+    WHERE r.name = 'teacher' AND u.is_active = 1 AND u.school_id = {$schoolIdExpr}
     ORDER BY u.full_name_ar
 ")->fetchAll();
+
+// جلب قائمة المدارس (لمدير المجموعة)
+$allSchools = [];
+if ($userRole === 'group_admin') {
+    $allSchools = $db->query("SELECT id, name_ar FROM schools WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+}
+
+// جلب بيانات المدرسة الحالية
+$schoolStmt = $db->prepare("SELECT id, name_ar FROM schools WHERE id = ? AND is_active = 1");
+$schoolStmt->execute([$schoolId]);
+$currentSchool = $schoolStmt->fetch();
 
 // جلب الخطط
 $stmt = $db->prepare("
@@ -106,7 +132,7 @@ $stmt = $db->prepare("
     WHERE tdp.school_id = ? AND tdp.is_active = 1
     ORDER BY tdp.status ASC, tdp.created_at DESC
 ");
-$stmt->execute([$schoolId]);
+$stmt->execute([$schoolIdExpr]);
 $plans = $stmt->fetchAll();
 
 // المعلمون الذين يحتاجون خطط تطوير
@@ -148,9 +174,20 @@ $statusColors = ['active' => 'var(--warning)', 'completed' => 'var(--success)', 
 
 <div class="section">
     <div class="card mb-6">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 class="card-title">🎯 خطة تطوير المعلم</h2>
-            <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة جديدة</button>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <h2 class="card-title">🎯 خطة تطوير المعلم — <?= $currentSchool ? e($currentSchool['name_ar']) : '' ?></h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <?php if ($userRole === 'group_admin'): ?>
+                <form method="GET" style="display:flex;gap:4px;align-items:center;">
+                    <select name="school_id" class="form-control" style="max-width:200px;font-size:13px;" onchange="this.form.submit();">
+                        <?php foreach ($allSchools as $as): ?>
+                        <option value="<?= $as['id'] ?>" <?= $as['id'] == $schoolId ? 'selected' : '' ?>><?= e($as['name_ar']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+                <?php endif; ?>
+                <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة جديدة</button>
+            </div>
         </div>
         <div class="card-body">
             <?php if (!empty($teachersNeedingPlan)): ?>

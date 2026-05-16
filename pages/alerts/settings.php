@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $newSettings = [
             'academic_pass' => (float)($_POST['academic_pass'] ?? 50),
             'behavior_pass' => (float)($_POST['behavior_pass'] ?? 60),
+            'behavior_alert' => (float)($_POST['behavior_alert'] ?? 50),
             'attendance_pass' => (float)($_POST['attendance_pass'] ?? 75),
             'sudden_drop_percentage' => (float)($_POST['sudden_drop_percentage'] ?? 20),
             'consecutive_absence_days' => (int)($_POST['consecutive_absence_days'] ?? 3),
@@ -68,6 +69,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="number" name="behavior_pass" class="form-control" 
                                value="<?= e($settings['behavior_pass']) ?>" min="0" max="100" step="1" required>
                         <span class="form-text">الحد الأدنى لدرجة السلوك. الطلاب أقل من هذا الحد سيحصلون على تنبيه.</span>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">حد التحذير السلوكي (%) <span class="required">*</span></label>
+                        <input type="number" name="behavior_alert" class="form-control" 
+                               value="<?= e($settings['behavior_alert']) ?>" min="0" max="100" step="1" required>
+                        <span class="form-text">الحد التحذيري قبل الرسوب. عندما تقترب درجة السلوك من هذا الحد.</span>
                     </div>
                     <div class="form-group">
                         <label class="form-label">حد الحضور المطلوب (%) <span class="required">*</span></label>

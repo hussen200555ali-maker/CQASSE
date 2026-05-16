@@ -80,79 +80,59 @@ function menuActiveClass($sections, $currentSection, $currentScript) {
 // القائمة تحدد أي الأدوار يمكنها رؤية كل قسم
 
 $menuPermissions = [
-    // الرئيسية
-    'dashboard'           => ['group_admin', 'school_admin', 'teacher', 'parent'],
+     // الرئيسية
+     'dashboard'           => ['group_admin', 'school_admin', 'teacher', 'parent'],
 
-    // الإدارة
-    'users'               => ['group_admin'],
-    'schools'             => ['group_admin'],
-    'academic_years'      => ['group_admin', 'school_admin'],
-    'students'            => ['group_admin', 'school_admin'],
-    'enrollments'         => ['group_admin', 'school_admin'],
+     // الإدارة
+     'users'               => ['group_admin'],
+     'schools'             => ['group_admin'],
+     'academic_years'      => ['group_admin', 'school_admin'],
+     'students'            => ['group_admin', 'school_admin'],
+     'enrollments'         => ['group_admin', 'school_admin'],
 
-    // الإعدادات الهيكلية
-    'setup'               => ['group_admin', 'school_admin'],
+     // الإعدادات الهيكلية
+     'setup'               => ['group_admin', 'school_admin'],
 
-    // التقييمات
-    'assessment'          => ['group_admin', 'school_admin', 'teacher'],
-    'assessment_manage'   => ['group_admin', 'school_admin'],
+     // التقييمات
+     'assessment'          => ['group_admin', 'school_admin', 'teacher'],
+     'assessment_manage'   => ['group_admin', 'school_admin'],
 
-    // التقييم الأكاديمي
-    'academic_assessment' => ['group_admin', 'school_admin', 'teacher'],
+     // التقييم الأكاديمي
+     'academic_assessment' => ['group_admin', 'school_admin', 'teacher'],
 
-    // الحضور
-    'attendance'          => ['group_admin', 'school_admin', 'teacher'],
-    'attendance_settings' => ['group_admin', 'school_admin'],
+     // الحضور
+     'attendance'          => ['group_admin', 'school_admin', 'teacher'],
+     'attendance_settings' => ['group_admin', 'school_admin'],
 
-    // السلوك
-    'behavior'            => ['group_admin', 'school_admin', 'teacher'],
-    'behavior_override'   => ['group_admin', 'school_admin'],
+     // السلوك
+     'behavior'            => ['group_admin', 'school_admin', 'teacher'],
+     'behavior_override'   => ['group_admin', 'school_admin'],
 
-    // المهارات
-    'skills'              => ['group_admin', 'school_admin', 'teacher'],
+     // المهارات
+     'skills'              => ['group_admin', 'school_admin', 'teacher'],
 
-    // التدريس
-    'teaching'            => ['group_admin', 'school_admin', 'teacher'],
-    'teaching_admin'      => ['group_admin', 'school_admin'],
+     // التدريس
+     'teaching'            => ['group_admin', 'school_admin', 'teacher'],
+     'teaching_admin'      => ['group_admin', 'school_admin'],
 
-    // الإشراف
-    'supervision'         => ['group_admin', 'school_admin'],
+     // الإشراف
+     'supervision'         => ['group_admin', 'school_admin'],
 
-    // البيئة المدرسية
-    'climate'             => ['group_admin', 'school_admin'],
-    'facility'            => ['group_admin', 'school_admin'],
+     // البيئة المدرسية
+     'climate'             => ['group_admin', 'school_admin'],
+     'facility'            => ['group_admin', 'school_admin'],
 
-    // المؤشرات
-    'alerts'              => ['group_admin', 'school_admin', 'teacher'],
-    'eqi'                 => ['group_admin', 'school_admin', 'teacher'],
-    'eqi_settings'        => ['group_admin'],
-    'alerts_settings'     => ['group_admin'],
+     // المؤشرات
+     'alerts'              => ['group_admin', 'school_admin', 'teacher'],
+     'eqi'                 => ['group_admin', 'school_admin', 'teacher'],
+     'eqi_settings'        => ['group_admin'],
+     'alerts_settings'     => ['group_admin'],
+     'permissions_matrix'  => ['group_admin'],
 
-    // الترفيع
-    'promotion'           => ['group_admin', 'school_admin', 'teacher'],
-    'promotion_approve'   => ['group_admin', 'school_admin'],
-
-    // المخرجات
-    'grade_sheets'        => ['group_admin', 'school_admin'],
-    'export'              => ['group_admin', 'school_admin'],
-    'backup'              => ['group_admin'],
-
-    // التواصل
-    'notifications'       => ['group_admin', 'school_admin', 'teacher', 'parent'],
-    'notes'               => ['group_admin', 'school_admin', 'teacher'],
-    'parent_ack'          => ['group_admin', 'school_admin', 'teacher', 'parent'],
-
-    // بيانات الأبناء (ولي الأمر)
-    'parent_grades'       => ['parent'],
-    'parent_behavior'     => ['parent'],
-    'parent_attendance'   => ['parent'],
-    'parent_skills'       => ['parent'],
-    'parent_promotion'    => ['parent'],
-
-    // النظام
-    'settings'            => ['group_admin', 'school_admin'],
-    'system_restore'      => ['group_admin'],
-];
+     // النظام
+     'settings'            => ['group_admin', 'school_admin'],
+     'system_restore'      => ['group_admin'],
+ ];
 
 /**
  * التحقق مما إذا كان الدور الحالي يملك صلاحية رؤية عنصر القائمة
@@ -194,7 +174,196 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
 
     <!-- Navigation Menu -->
     <nav class="sidebar-nav" aria-label="القائمة الرئيسية">
+<?php if ($isGroupAdmin): ?>
+<!-- ============================================================
+     شريط القيادة الاستراتيجي - group_admin v2.0
+     ============================================================ -->
 
+<!-- 📊 لوحة القيادة -->
+<div class="sidebar-section-title">لوحة القيادة</div>
+<a href="<?php echo baseUrl('pages/dashboard/admin.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['dashboard'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-chart-pie"></i></span>
+    <span class="menu-text">الرئيسية</span>
+</a>
+
+<!-- 🏫 الإدارة -->
+<div class="sidebar-section-title">الإدارة</div>
+<a href="<?php echo baseUrl('pages/schools/index.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['schools'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-school"></i></span>
+    <span class="menu-text">المدارس</span>
+</a>
+<a href="<?php echo baseUrl('pages/users/index.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['users'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-users-cog"></i></span>
+    <span class="menu-text">المستخدمون</span>
+</a>
+<a href="<?php echo baseUrl('pages/academic/index.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['academic'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-calendar-alt"></i></span>
+    <span class="menu-text">التقويم الأكاديمي</span>
+</a>
+
+<!-- 📈 التحليلات -->
+<div class="sidebar-section-title">التحليلات</div>
+<button class="sidebar-menu-link <?php echo menuActiveClass(['analytics'], $currentSection, $currentScript); ?>"
+        data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['analytics'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-analytics-ga" id="btn-analytics-ga">
+    <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+    <span class="menu-text">مركز التحليلات</span>
+    <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+</button>
+<div class="sidebar-submenu <?php echo isSubmenuExpanded(['analytics'], $currentSection, $currentScript); ?>" id="submenu-analytics-ga" role="region" aria-labelledby="btn-analytics-ga">
+    <a href="<?php echo baseUrl('pages/analytics/index.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && $currentPage === 'index') ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-th-large"></i></span>
+        <span class="menu-text">لوحة التحليلات</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/analytics/trends.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'trends') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-chart-area"></i></span>
+        <span class="menu-text">اتجاهات الأداء</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/analytics/school.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'school.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-school"></i></span>
+        <span class="menu-text">تحليل المدرسة</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/analytics/compare.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'compare.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-balance-scale"></i></span>
+        <span class="menu-text">مقارنة المدارس</span>
+    </a>
+</div>
+<a href="<?php echo baseUrl('pages/alerts/index.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['alerts'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-bell"></i></span>
+    <span class="menu-text">الإنذارات الذكية</span>
+</a>
+
+<!-- 📊 مؤشر جودة التعليم -->
+<div class="sidebar-section-title">مؤشر جودة التعليم</div>
+<button class="sidebar-menu-link <?php echo menuActiveClass(['eqi'], $currentSection, $currentScript); ?>"
+        data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['eqi'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-eqi-ga" id="btn-eqi-ga">
+    <span class="menu-icon"><i class="fas fa-chart-bar"></i></span>
+    <span class="menu-text">مؤشر الجودة (EQI)</span>
+    <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+</button>
+<div class="sidebar-submenu <?php echo isSubmenuExpanded(['eqi'], $currentSection, $currentScript); ?>" id="submenu-eqi-ga" role="region" aria-labelledby="btn-eqi-ga">
+    <a href="<?php echo baseUrl('pages/eqi/dashboard.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'dashboard') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+        <span class="menu-text">مركز القيادة</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/eqi/index.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && $currentPage === 'index') ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+        <span class="menu-text">لوحة المؤشر</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/eqi/calculate.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'calculate') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-calculator"></i></span>
+        <span class="menu-text">حساب المؤشر</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/eqi/compare.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'compare.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-balance-scale"></i></span>
+        <span class="menu-text">مقارنة المؤشر</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/eqi/report.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'report.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
+        <span class="menu-text">تقارير المؤشر</span>
+    </a>
+    <?php if (canSeeMenu('eqi_settings', $userRole, $menuPermissions)): ?>
+    <a href="<?php echo baseUrl('pages/eqi/settings.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'settings.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-sliders-h"></i></span>
+        <span class="menu-text">إعدادات الأوزان</span>
+    </a>
+    <?php endif; ?>
+</div>
+
+<!-- ⭐ الجودة والإشراف -->
+<div class="sidebar-section-title">الجودة والإشراف</div>
+<a href="<?php echo baseUrl('pages/climate/dashboard.php'); ?>"
+   class="sidebar-menu-link <?php echo menuActiveClass(['climate'], $currentSection, $currentScript); ?>">
+    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+    <span class="menu-text">لوحة المناخ الاستراتيجية</span>
+</a>
+<a href="<?php echo baseUrl('pages/climate/school.php'); ?>"
+   class="sidebar-menu-link <?php echo ($currentSection === 'climate' && strpos($currentScript, 'school.php') !== false) ? 'active' : ''; ?>">
+    <span class="menu-icon"><i class="fas fa-school"></i></span>
+    <span class="menu-text">تحليل مناخ المدرسة</span>
+</a>
+<a href="<?php echo baseUrl('pages/supervision/teaching_dashboard.php'); ?>"
+   class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'teaching_dashboard') !== false) ? 'active' : ''; ?>">
+    <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+    <span class="menu-text">مركز قيادة تقييم المعلمين</span>
+</a>
+<a href="<?php echo baseUrl('pages/supervision/improvement_plan.php'); ?>"
+   class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'improvement_plan') !== false) ? 'active' : ''; ?>">
+    <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+    <span class="menu-text">خطط التحسين المدرسية</span>
+</a>
+
+<!-- ⚙️ السياسات والحوكمة -->
+<div class="sidebar-section-title">السياسات والحوكمة</div>
+<button class="sidebar-menu-link <?php echo menuActiveClass(['settings', 'backup_reports'], $currentSection, $currentScript); ?>"
+        data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['settings', 'backup_reports'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-policies-ga" id="btn-policies-ga">
+    <span class="menu-icon"><i class="fas fa-file-contract"></i></span>
+    <span class="menu-text">سياسات المجموعة</span>
+    <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+</button>
+<div class="sidebar-submenu <?php echo isSubmenuExpanded(['settings', 'backup_reports'], $currentSection, $currentScript); ?>" id="submenu-policies-ga" role="region" aria-labelledby="btn-policies-ga">
+    <a href="<?php echo baseUrl('pages/settings/group_policy.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'settings' && strpos($currentScript, 'group_policy') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-file-contract"></i></span>
+        <span class="menu-text">سياسات المجموعة</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/parent_ack/index.php'); ?>"
+       class="sidebar-menu-link <?php echo menuActiveClass(['parent_ack'], $currentSection, $currentScript); ?>">
+        <span class="menu-icon"><i class="fas fa-check-circle"></i></span>
+        <span class="menu-text">إقرارات أولياء الأمور</span>
+    </a>
+</div>
+<button class="sidebar-menu-link <?php echo menuActiveClass(['backup_reports', 'settings'], $currentSection, $currentScript); ?>"
+        data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['backup_reports', 'settings'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-governance-ga" id="btn-governance-ga">
+    <span class="menu-icon"><i class="fas fa-shield-alt"></i></span>
+    <span class="menu-text">حوكمة النظام</span>
+    <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+</button>
+<div class="sidebar-submenu <?php echo isSubmenuExpanded(['backup_reports', 'settings'], $currentSection, $currentScript); ?>" id="submenu-governance-ga" role="region" aria-labelledby="btn-governance-ga">
+    <a href="<?php echo baseUrl('pages/settings/index.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'settings' && $currentPage === 'index') ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-cog"></i></span>
+        <span class="menu-text">إعدادات النظام</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/backup_reports/index.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'backup_reports' && $currentPage === 'index') ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-database"></i></span>
+        <span class="menu-text">النسخ الاحتياطي</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/backup_reports/activity_log.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'backup_reports' && strpos($currentScript, 'activity_log') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-history"></i></span>
+        <span class="menu-text">سجل النشاطات</span>
+    </a>
+    <a href="<?php echo baseUrl('pages/backup_reports/restore.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'backup_reports' && strpos($currentScript, 'restore.php') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-undo-alt"></i></span>
+        <span class="menu-text">استعادة النسخ</span>
+    </a>
+    <?php if (canSeeMenu('permissions_matrix', $userRole, $menuPermissions)): ?>
+    <a href="<?php echo baseUrl('pages/permissions/matrix.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'permissions_matrix') ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-lock"></i></span>
+        <span class="menu-text">مصفوفة الصلاحيات</span>
+    </a>
+    <?php endif; ?>
+</div>
+
+<?php else: ?>
         <!-- ════════════════════════════════════════════
              الرئيسية - Dashboard
              ════════════════════════════════════════════ -->
@@ -531,10 +700,10 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
                 <span class="menu-icon"><i class="fas fa-building"></i></span>
                 <span class="menu-text">تقرير المرافق</span>
             </a>
-            <a href="<?php echo baseUrl('pages/supervision/teaching_eval.php'); ?>"
-               class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'teaching_eval') !== false) ? 'active' : ''; ?>">
-                <span class="menu-icon"><i class="fas fa-user-check"></i></span>
-                <span class="menu-text">تقييم المعلمين</span>
+            <a href="<?php echo baseUrl('pages/supervision/teaching_school.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'teaching_school') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-school"></i></span>
+                <span class="menu-text">تحليل أداء المعلمين</span>
             </a>
             <a href="<?php echo baseUrl('pages/supervision/improvement_plan.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'improvement_plan') !== false) ? 'active' : ''; ?>">
@@ -546,6 +715,13 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
                 <span class="menu-icon"><i class="fas fa-seedling"></i></span>
                 <span class="menu-text">خطة تطوير المعلم</span>
             </a>
+            <?php if (hasPermission('group_admin')): ?>
+            <a href="<?php echo baseUrl('pages/supervision/improvement_dashboard.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'improvement_dashboard') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                <span class="menu-text">لوحة متابعة الخطط</span>
+            </a>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -587,11 +763,78 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         </a>
         <?php endif; ?>
         <?php if (canSeeMenu('eqi', $userRole, $menuPermissions)): ?>
+        <?php $isSchoolAdminEqi = ($userRole === 'school_admin' || $userRole === 'teacher'); ?>
+        <?php if ($isSchoolAdminEqi): ?>
+        <button class="sidebar-menu-link <?php echo menuActiveClass(['eqi'], $currentSection, $currentScript); ?>"
+                data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['eqi'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-eqi-sa" id="btn-eqi-sa">
+            <span class="menu-icon"><i class="fas fa-chart-area"></i></span>
+            <span class="menu-text">مؤشر جودة التعليم</span>
+            <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+        </button>
+        <div class="sidebar-submenu <?php echo isSubmenuExpanded(['eqi'], $currentSection, $currentScript); ?>" id="submenu-eqi-sa" role="region" aria-labelledby="btn-eqi-sa">
+            <a href="<?php echo baseUrl('pages/eqi/index.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && $currentPage === 'index') ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
+                <span class="menu-text">لوحة المؤشر</span>
+            </a>
+            <?php if ($userRole === 'school_admin'): ?>
+            <a href="<?php echo baseUrl('pages/eqi/calculate.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'calculate') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-calculator"></i></span>
+                <span class="menu-text">حساب المؤشر</span>
+            </a>
+            <a href="<?php echo baseUrl('pages/eqi/compare.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'compare.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-balance-scale"></i></span>
+                <span class="menu-text">مقارنة المؤشر</span>
+            </a>
+            <a href="<?php echo baseUrl('pages/eqi/report.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'report.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
+                <span class="menu-text">تقارير المؤشر</span>
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php else: ?>
         <a href="<?php echo baseUrl('pages/eqi/index.php'); ?>"
            class="sidebar-menu-link <?php echo menuActiveClass(['eqi'], $currentSection, $currentScript); ?>">
             <span class="menu-icon"><i class="fas fa-chart-area"></i></span>
             <span class="menu-text">مؤشر جودة التعليم</span>
         </a>
+        <?php endif; ?>
+        <?php endif; ?>
+
+        <!-- التحليلات - Analytics -->
+        <?php if (canSeeMenu('analytics', $userRole, $menuPermissions)): ?>
+        <div class="sidebar-section-title">التحليلات</div>
+        <button class="sidebar-menu-link <?php echo menuActiveClass(['analytics'], $currentSection, $currentScript); ?>"
+                data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['analytics'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-analytics" id="btn-analytics">
+            <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+            <span class="menu-text">التحليلات</span>
+            <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
+        </button>
+        <div class="sidebar-submenu <?php echo isSubmenuExpanded(['analytics'], $currentSection, $currentScript); ?>" id="submenu-analytics" role="region" aria-labelledby="btn-analytics">
+            <a href="<?php echo baseUrl('pages/analytics/index.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'index.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-th-large"></i></span>
+                <span class="menu-text">لوحة التحليلات</span>
+            </a>
+            <a href="<?php echo baseUrl('pages/analytics/trends.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'trends.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-chart-area"></i></span>
+                <span class="menu-text">الاتجاهات الزمنية</span>
+            </a>
+            <a href="<?php echo baseUrl('pages/analytics/school.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'school.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-school"></i></span>
+                <span class="menu-text">تحليل المدرسة</span>
+            </a>
+            <a href="<?php echo baseUrl('pages/analytics/compare.php'); ?>"
+               class="sidebar-menu-link <?php echo ($currentSection === 'analytics' && strpos($currentScript, 'compare.php') !== false) ? 'active' : ''; ?>">
+                <span class="menu-icon"><i class="fas fa-balance-scale"></i></span>
+                <span class="menu-text">مقارنة المدارس</span>
+            </a>
+        </div>
         <?php endif; ?>
 
         <!-- قرارات الترفيع - Promotion -->
@@ -748,6 +991,7 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         </a>
         <?php endif; ?>
         <?php endif; ?>
+<?php endif; ?>
 
     </nav>
 

@@ -11,6 +11,7 @@ $pageTitle = 'تقييم ذاتي للتدريس';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الذاتي' => 'self_index.php', 'تقييم جديد' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -24,12 +25,9 @@ $userId = $_SESSION['user']['id'];
 
 // جلب البيانات الأساسية
 $academicYears = [];
-$semesters = [];
 try {
     $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC");
     $academicYears = $stmt->fetchAll();
-    $stmt = $db->query("SELECT id, name_ar, academic_year_id FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 // جلب نموذج التقييم الذاتي
@@ -60,7 +58,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->beginTransaction();
             
             $academicYearId = (int)($_POST['academic_year_id'] ?? 0);
-            $semesterId = (int)($_POST['semester_id'] ?? 0);
+            $semesterVal = (int)($_POST['semester_id'] ?? 0);
+            $semesterId = 0;
+            if ($semesterVal && $academicYearId) {
+                $semName = semesterValueToNameAr($semesterVal);
+                if ($semName) {
+                    $sStmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
+                    $sStmt->execute([$semName, $academicYearId]);
+                    $semesterId = (int)$sStmt->fetchColumn();
+                }
+            }
             $notes = trim($_POST['notes'] ?? '');
             
             if (!$academicYearId || !$semesterId) {
@@ -84,22 +91,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $overallScore = $engine->calculateScore($responses);
             
-            $stmt = $db->prepare("
-                INSERT INTO teaching_self_evaluations 
-                (teacher_id, academic_year_id, semester_id, evaluation_date, overall_score, notes, is_active)
-                VALUES (?, ?, ?, CURDATE(), ?, ?, 1)
-            ");
-            $stmt->execute([$userId, $academicYearId, $semesterId, $overallScore, $notes ?: null]);
-            $evaluationId = $db->lastInsertId();
-            
-            $stmt = $db->prepare("INSERT INTO teaching_self_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
             foreach ($itemScores as $itemId => $scores) {
-                $stmt->execute([$evaluationId, $itemId, $scores['normalized'], null]);
+                $engine->saveResponse([
+                    'form_id' => $formRow['id'],
+                    'item_id' => $itemId,
+                    'teacher_id' => $userId,
+                    'school_id' => $_SESSION['user']['school_id'] ?? null,
+                    'academic_year_id' => $academicYearId,
+                    'semester_id' => $semesterId,
+                    'numeric_value' => $scores['normalized'],
+                    'responded_by' => $userId,
+                ]);
             }
             
             $db->commit();
             setFlash('تم حفظ التقييم الذاتي بنجاح - الدرجة: ' . number_format($overallScore, 1) . '%', 'success');
-            redirect('self_view.php?id=' . $evaluationId);
+            redirect('self_index.php');
         } catch (Exception $e) {
             $db->rollBack();
             setFlash('خطأ: ' . $e->getMessage(), 'danger');
@@ -129,9 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label">الفصل الدراسي <span class="required">*</span></label>
                         <select name="semester_id" class="form-control" required>
                             <option value="">-- اختر الفصل الدراسي --</option>
-                            <?php foreach ($semesters as $sem): ?>
-                                <option value="<?php echo $sem['id']; ?>"><?php echo e($sem['name_ar']); ?></option>
-                            <?php endforeach; ?>
+                            <option value="1">الفصل الدراسي الأول</option>
+                            <option value="2">الفصل الدراسي الثاني</option>
                         </select>
                     </div>
                 </div>

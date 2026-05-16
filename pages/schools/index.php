@@ -51,8 +51,12 @@ if (!empty($typeFilter)) {
 }
 
 if ($statusFilter !== '') {
-    $conditions[] = 's.is_active = ?';
-    $params[] = intval($statusFilter);
+    if ($statusFilter === 'archived') {
+        $conditions[] = 's.deleted_at IS NOT NULL';
+    } else {
+        $conditions[] = 's.is_active = ?';
+        $params[] = intval($statusFilter);
+    }
 }
 
 $whereClause = implode(' AND ', $conditions);
@@ -126,12 +130,13 @@ function getSchoolTypeAr($type) {
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group mb-0">
-                <select name="status" class="form-control">
-                    <option value="">جميع الحالات</option>
-                    <option value="1" <?= $statusFilter === '1' ? 'selected' : '' ?>>نشطة</option>
-                    <option value="0" <?= $statusFilter === '0' ? 'selected' : '' ?>>غير نشطة</option>
-                </select>
+<div class="form-group mb-0">
+                    <select name="status" class="form-control">
+                        <option value="">جميع الحالات</option>
+                        <option value="1" <?= $statusFilter === '1' ? 'selected' : '' ?>>نشطة</option>
+                        <option value="0" <?= $statusFilter === '0' ? 'selected' : '' ?>>غير نشطة</option>
+                        <option value="archived" <?= $statusFilter === 'archived' ? 'selected' : '' ?>>مؤرشفة</option>
+                    </select>
             </div>
             <button type="submit" class="btn btn-primary">🔍 بحث</button>
             <a href="index.php" class="btn btn-light">↻ إعادة تعيين</a>
@@ -170,8 +175,9 @@ function getSchoolTypeAr($type) {
                                         <?= e($school['name_ar']) ?>
                                     </a>
                                 </td>
-                                <td><code><?= e($school['code']) ?></code></td>
+                                <td><code><?= e($school['code'] ?? ($school['reference_code'] ?? '—')) ?></code></td>
                                 <td><span class="badge badge-info"><?= getSchoolTypeAr($school['school_type']) ?></span></td>
+
                                 <td><?= e($school['governorate'] ?? '—') ?></td>
                                 <td><?= formatNumberAr($school['student_count']) ?></td>
                                 <td>

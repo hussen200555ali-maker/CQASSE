@@ -22,11 +22,21 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', 1);           // رفض معرفات الجلسة غير المهيأة
     ini_set('session.cookie_samesite', 'Lax');       // حماية من CSRF
     ini_set('session.use_only_cookies', 1);          // استخدام الكوكيز فقط
-    ini_set('session.gc_maxlifetime', 7200);         // أقصى عمر للجلسة (ساعتان)
+    ini_set('session.cookie_lifetime', 86400);       // عمر الكوكي 24 ساعة
+    ini_set('session.gc_maxlifetime', 86400);        // أقصى عمر للجلسة (24 ساعة)
 
     // تفعيل الكوكي الآمن في بيئة HTTPS
     if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
         ini_set('session.cookie_secure', 1);
+    }
+
+    // ضبط مسار الجلسات داخل المشروع (تجنب مشكلة المسار المزدوج)
+    $sessionPath = defined('SESSION_SAVE_PATH') ? SESSION_SAVE_PATH : __DIR__ . '/../temp/sessions';
+    if (!is_dir($sessionPath)) {
+        @mkdir($sessionPath, 0777, true);
+    }
+    if (is_writable($sessionPath)) {
+        ini_set('session.save_path', $sessionPath);
     }
 
     // ضبط اسم الجلسة
@@ -58,13 +68,20 @@ $_SESSION['last_activity'] = time();
 // ============================================================================
 // التحقق من بصمة الجلسة (منع اختطاف الجلسة)
 // ============================================================================
+/**
+ * NOTE: REMOTE_ADDR removed from fingerprint.
+ * Rationale: IPv6 privacy extensions, NAT, and proxy environments cause
+ * legitimate IP changes during a session. Protection is maintained via:
+ * - HttpOnly + SameSite=Lax cookies
+ * - session.use_strict_mode=1
+ * - Periodic session_regenerate_id()
+ * - Session nonce (random per-session identifier)
+ */
 if (isset($_SESSION['fingerprint'])) {
-    // [إصلاح v2.0.3] md5 → sha256 + توحيد SALT مع auth.php
-    $currentFingerprint = hash('sha256',
-        $_SERVER['HTTP_USER_AGENT'] .
-        ($_SERVER['REMOTE_ADDR'] ?? '') .
-        (defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203')
-    );
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    $nonce = $_SESSION['session_nonce'] ?? '';
+    $salt = defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203';
+    $currentFingerprint = hash('sha256', $ua . $nonce . $salt);
 
     // مقارنة البصمة المحفوظة بالحالية
     if ($_SESSION['fingerprint'] !== $currentFingerprint) {
@@ -78,13 +95,11 @@ if (isset($_SESSION['fingerprint'])) {
         exit;
     }
 } else {
-    // إنشاء بصمة جديدة للمستخدم
-    // [إصلاح v2.0.3] md5 → sha256 + توحيد SALT مع auth.php
-    $_SESSION['fingerprint'] = hash('sha256',
-        $_SERVER['HTTP_USER_AGENT'] .
-        ($_SERVER['REMOTE_ADDR'] ?? '') .
-        (defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203')
-    );
+    // إنشاء بصمة جديدة للمستخدم مع nonce عشوائي
+    $_SESSION['session_nonce'] = bin2hex(random_bytes(16));
+    $ua = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+    $salt = defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203';
+    $_SESSION['fingerprint'] = hash('sha256', $ua . $_SESSION['session_nonce'] . $salt);
 }
 
 // ============================================================================

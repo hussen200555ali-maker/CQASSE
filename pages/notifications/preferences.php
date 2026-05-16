@@ -42,33 +42,41 @@ $frequencyOptions = [
     'weekly' => ['label' => 'ملخص أسبوعي', 'desc' => 'استلام ملخص أسبوعي بالإشعارات', 'icon' => '📆'],
 ];
 
-// جلب التفضيلات الحالية
-$stmt = $db->prepare("SELECT notification_type, is_enabled FROM notification_preferences WHERE user_id = ?");
+// جلب التفضيلات الحالية (is_enabled للقيم البوليانية، value_string للنصوص)
+$stmt = $db->prepare("SELECT notification_type, is_enabled, value_string FROM notification_preferences WHERE user_id = ?");
 $stmt->execute([$userId]);
-$preferences = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-
-// تعيين القيم الافتراضية
-foreach ($notifierTypes as $type => $info) {
-    if (!isset($preferences[$type])) {
-        $preferences[$type] = 1; // مفعّل افتراضياً
+$prefRows = $stmt->fetchAll();
+$prefsBool = []; // boolean values
+$prefsStr = [];  // string values
+foreach ($prefRows as $row) {
+    $prefsBool[$row['notification_type']] = (int)$row['is_enabled'];
+    if ($row['value_string'] !== null) {
+        $prefsStr[$row['notification_type']] = $row['value_string'];
     }
 }
 
-// إعداد البريد الإلكتروني
-$emailEnabled = isset($preferences['email']) ? (bool)$preferences['email'] : true;
-$inAppEnabled = isset($preferences['in_app']) ? (bool)$preferences['in_app'] : true;
+// تعيين القيم الافتراضية للأنواع البوليانية
+foreach ($notifierTypes as $type => $info) {
+    if (!isset($prefsBool[$type])) {
+        $prefsBool[$type] = 1; // مفعّل افتراضياً
+    }
+}
 
-// إعدادات متقدمة
-$quietHoursFrom = $preferences['quiet_from'] ?? '22:00';
-$quietHoursTo = $preferences['quiet_to'] ?? '07:00';
-$dndMode = isset($preferences['dnd']) ? (bool)$preferences['dnd'] : false;
-$frequency = $preferences['frequency'] ?? 'immediate';
+// إعداد البريد الإلكتروني والتطبيق
+$emailEnabled = isset($prefsBool['email']) ? (bool)$prefsBool['email'] : true;
+$inAppEnabled = isset($prefsBool['in_app']) ? (bool)$prefsBool['in_app'] : true;
+
+// إعدادات متقدمة (تقرأ من value_string أو fallback للقيم الافتراضية)
+$quietHoursFrom = $prefsStr['quiet_from'] ?? '22:00';
+$quietHoursTo = $prefsStr['quiet_to'] ?? '07:00';
+$dndMode = isset($prefsBool['dnd']) ? (bool)$prefsBool['dnd'] : false;
+$frequency = $prefsStr['frequency'] ?? 'immediate';
 
 // إعدادات الأدوار
 $roleSettings = [];
 foreach ($roleLabels as $roleId => $roleInfo) {
     $key = 'role_' . $roleId;
-    $roleSettings[$roleId] = isset($preferences[$key]) ? (bool)$preferences[$key] : true;
+    $roleSettings[$roleId] = isset($prefsBool[$key]) ? (bool)$prefsBool[$key] : true;
 }
 
 // معالجة الحفظ
@@ -102,34 +110,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
     $stmt->execute([$userId, $inAppVal, $inAppVal]);
 
-    // ساعات الهدوء
+    // ساعات الهدوء (تخزن في value_string)
     $quietFrom = $_POST['quiet_from'] ?? '22:00';
     $quietTo = $_POST['quiet_to'] ?? '07:00';
-    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'quiet_from', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
+    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
+                          VALUES (?, 'quiet_from', 1, ?, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
     $stmt->execute([$userId, $quietFrom, $quietFrom]);
-    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'quiet_to', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
+    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
+                          VALUES (?, 'quiet_to', 1, ?, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
     $stmt->execute([$userId, $quietTo, $quietTo]);
 
-    // وضع عدم الإزعاج
+    // وضع عدم الإزعاج (قيمة بوليانية في is_enabled)
     $dndVal = isset($_POST['dnd_mode']) ? 1 : 0;
     $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
                           VALUES (?, 'dnd', ?, NOW(), NOW())
                           ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
     $stmt->execute([$userId, $dndVal, $dndVal]);
 
-    // تكرار الإشعارات
+    // تكرار الإشعارات (يخزن في value_string)
     $freqVal = $_POST['frequency'] ?? 'immediate';
     if (!in_array($freqVal, ['immediate', 'daily', 'weekly'])) $freqVal = 'immediate';
-    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'frequency', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
+    $stmt = $db->prepare("INSERT INTO notification_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
+                          VALUES (?, 'frequency', 1, ?, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
     $stmt->execute([$userId, $freqVal, $freqVal]);
 
-    // إعدادات الأدوار
+    // إعدادات الأدوار (قيم بوليانية في is_enabled)
     foreach ($roleLabels as $roleId => $roleInfo) {
         $key = 'role_' . $roleId;
         $roleVal = isset($_POST['role_' . $roleId]) ? 1 : 0;

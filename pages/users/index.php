@@ -62,8 +62,12 @@ if (!empty($schoolFilter) && !$isSchoolAdmin) {
 }
 
 if ($statusFilter !== '') {
-    $conditions[] = 'u.is_active = ?';
-    $params[] = intval($statusFilter);
+    if ($statusFilter === 'archived') {
+        $conditions[] = 'u.deleted_at IS NOT NULL';
+    } else {
+        $conditions[] = 'u.is_active = ?';
+        $params[] = intval($statusFilter);
+    }
 }
 
 $whereClause = implode(' AND ', $conditions);
@@ -153,12 +157,13 @@ function getRoleBadgeClass($roleName) {
                 </select>
             </div>
             <?php endif; ?>
-            <div class="form-group mb-0">
-                <select name="status" class="form-control">
-                    <option value="">جميع الحالات</option>
-                    <option value="1" <?= $statusFilter === '1' ? 'selected' : '' ?>>نشط</option>
-                    <option value="0" <?= $statusFilter === '0' ? 'selected' : '' ?>>غير نشط</option>
-                </select>
+<div class="form-group mb-0">
+                    <select name="status" class="form-control">
+                        <option value="">جميع الحالات</option>
+                        <option value="1" <?= $statusFilter === '1' ? 'selected' : '' ?>>نشط</option>
+                        <option value="0" <?= $statusFilter === '0' ? 'selected' : '' ?>>غير نشط</option>
+                        <option value="archived" <?= $statusFilter === 'archived' ? 'selected' : '' ?>>مؤرشف</option>
+                    </select>
             </div>
             <button type="submit" class="btn btn-primary">🔍 بحث</button>
             <a href="index.php" class="btn btn-light">↻ إعادة تعيين</a>

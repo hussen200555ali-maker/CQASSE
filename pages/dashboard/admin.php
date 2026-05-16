@@ -42,19 +42,67 @@ try {
 // ═══════════════════════════════════════════
 // مقارنة مؤشر جودة التعليم بين المدارس
 // ═══════════════════════════════════════════
+require_once __DIR__ . '/../../includes/contextual_adjustment.php';
+
+$currentYearId = currentAcademicYearId();
+$currentSemId = currentSemesterId();
+
 $schoolEqi = [];
+$yearlyTrends = [];
 try {
-    $stmt = $db->query("
+    // جلب مؤشرات الفصل الحالي
+    $stmt = $db->prepare("
         SELECT s.id, s.name_ar,
-               COALESCE(eq.score, 0) as eqi_score,
-               eq.rating as eqi_rating
+               COALESCE(eq.overall_eqi, 0) as eqi_score,
+               eq.overall_eqi as raw_eqi
         FROM schools s
-        LEFT JOIN eqi_calculations eq ON s.id = eq.school_id AND eq.is_active = 1
+        LEFT JOIN equi_results eq ON s.id = eq.school_id
+            AND eq.semester_id = ?
+            AND eq.academic_year_id = ?
+            AND eq.is_active = 1
         WHERE s.is_active = 1
         ORDER BY eqi_score DESC
         LIMIT 20
     ");
+    $stmt->execute([$currentSemId, $currentYearId]);
     $schoolEqi = $stmt->fetchAll();
+
+    // جلب مؤشرات نفس الفصل من العام السابق للمقارنة السنوية
+    if (!empty($schoolEqi)) {
+        $prevYearId = null;
+        $prevStmt = $db->prepare("
+            SELECT id FROM academic_years
+            WHERE id < ? AND is_active = 1
+            ORDER BY start_date DESC LIMIT 1
+        ");
+        $prevStmt->execute([$currentYearId]);
+        $prevYearId = $prevStmt->fetchColumn();
+
+        if ($prevYearId !== false) {
+            $prevSemStmt = $db->prepare("
+                SELECT s2.id FROM semesters s2
+                JOIN semesters s1 ON s1.id = ?
+                WHERE s2.academic_year_id = ?
+                    AND s2.name_ar = s1.name_ar
+                    AND s2.is_active = 1
+                LIMIT 1
+            ");
+            $prevSemStmt->execute([$currentSemId, $prevYearId]);
+            $prevSemId = $prevSemStmt->fetchColumn();
+
+            if ($prevSemId !== false) {
+                $trendStmt = $db->prepare("
+                    SELECT school_id, overall_eqi
+                    FROM equi_results
+                    WHERE semester_id = ? AND academic_year_id = ? AND is_active = 1
+                ");
+                $trendStmt->execute([$prevSemId, $prevYearId]);
+                while ($row = $trendStmt->fetch()) {
+                    $yearlyTrends[$row['school_id']] = $row['overall_eqi'];
+                }
+            }
+        }
+    }
 } catch (Exception $e) { }
 
 // ═══════════════════════════════════════════
@@ -175,6 +223,139 @@ if (empty($systemAlerts)) {
         </div>
     </div>
 
+    <!-- 🔍 بحث سريع عن طالب -->
+    <div class="card mb-6">
+        <div class="card-header">
+            <h3 class="card-title">🔍 بحث عن طالب</h3>
+        </div>
+        <div class="card-body">
+            <div style="position:relative;">
+                <input type="text" id="studentSearchInput" class="form-control" placeholder="ابحث باسم الطالب أو رقم الهوية..." autocomplete="off" style="padding:12px 16px;font-size:15px;">
+                <div id="studentSearchResults" style="position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border-light);border-radius:var(--radius-md);max-height:320px;overflow-y:auto;display:none;z-index:1000;box-shadow:var(--shadow-lg);"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    #studentSearchResults .search-result-item {
+        padding:10px 14px;
+        cursor:pointer;
+        border-bottom:1px solid var(--border-light);
+        display:flex;
+        align-items:center;
+        gap:10px;
+        transition:background 0.15s;
+    }
+    #studentSearchResults .search-result-item:hover,
+    #studentSearchResults .search-result-item.highlighted {
+        background:var(--primary-light);
+    }
+    #studentSearchResults .search-result-item:last-child {
+        border-bottom:none;
+    }
+    #studentSearchResults .result-name {
+        font-weight:600;
+        font-size:14px;
+    }
+    #studentSearchResults .result-meta {
+        font-size:12px;
+        color:var(--text-secondary);
+    }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('studentSearchInput');
+        const results = document.getElementById('studentSearchResults');
+        let debounceTimer = null;
+        let selectedIndex = -1;
+        let currentData = [];
+
+        input.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const q = this.value.trim();
+            if (q.length < 2) { results.style.display = 'none'; return; }
+            debounceTimer = setTimeout(function() {
+                fetch('<?php echo baseUrl('pages/students/search_ajax.php'); ?>?q=' + encodeURIComponent(q))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        currentData = data;
+                        selectedIndex = -1;
+                        if (!data || data.length === 0) {
+                            results.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px;">لا توجد نتائج</div>';
+                            results.style.display = 'block';
+                            return;
+                        }
+                        var html = '';
+                        for (var i = 0; i < data.length; i++) {
+                            html += '<div class="search-result-item" data-id="' + data[i].id + '" data-index="' + i + '">' +
+                                '<div style="width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">' +
+                                (data[i].name_ar ? data[i].name_ar.charAt(0) : '?') + '</div>' +
+                                '<div><div class="result-name">' + escapeHtml(data[i].name_ar) + '</div>' +
+                                '<div class="result-meta">' + (data[i].school_name ? escapeHtml(data[i].school_name) : '') + (data[i].student_id ? ' · ' + escapeHtml(data[i].student_id) : '') + '</div></div></div>';
+                        }
+                        results.innerHTML = html;
+                        results.style.display = 'block';
+                        attachResultClickHandlers();
+                    })
+                    .catch(function() { results.style.display = 'none'; });
+            }, 300);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            var items = results.querySelectorAll('.search-result-item');
+            if (items.length === 0) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateHighlight(items);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                var id = items[selectedIndex].getAttribute('data-id');
+                if (id) window.location.href = '<?php echo baseUrl('pages/students/view.php'); ?>?id=' + id;
+            } else if (e.key === 'Escape') {
+                results.style.display = 'none';
+                selectedIndex = -1;
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+
+        function updateHighlight(items) {
+            for (var i = 0; i < items.length; i++) {
+                items[i].classList.toggle('highlighted', i === selectedIndex);
+            }
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                items[selectedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function attachResultClickHandlers() {
+            results.querySelectorAll('.search-result-item').forEach(function(item) {
+                item.addEventListener('click', function() {
+                    var id = this.getAttribute('data-id');
+                    if (id) window.location.href = '<?php echo baseUrl('pages/students/view.php'); ?>?id=' + id;
+                });
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+    });
+    </script>
+
     <div class="grid grid-2" style="grid-template-columns:repeat(auto-fill,minmax(400px,1fr));">
         <!-- تنبيهات النظام -->
         <div class="card">
@@ -275,12 +456,48 @@ if (empty($systemAlerts)) {
             <div style="max-height:400px;overflow-y:auto;">
                 <table class="data-table">
                     <thead>
-                        <tr><th>#</th><th>المدرسة</th><th>مؤشر الجودة</th><th>التقييم</th><th>الحالة</th></tr>
+                        <tr>
+                            <th>#</th>
+                            <th>المدرسة</th>
+                            <th>مؤشر الجودة</th>
+                            <th>التقييم</th>
+                            <th>الاتجاه السنوي</th>
+                            <th>المعدّل سياقياً</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        <?php $rank = 1; foreach ($schoolEqi as $s):
+                        <?php
+                        $rank = 1;
+                        $adjustService = new ContextualAdjustmentService($db);
+                        foreach ($schoolEqi as $s):
                             if ($s['eqi_score'] <= 0) continue;
                             $rating = getEqiRating($s['eqi_score']);
+
+                            // الاتجاه السنوي
+                            $trendText = '—';
+                            $trendClass = 'trend-neutral';
+                            $prevScore = $yearlyTrends[$s['id']] ?? null;
+                            if ($prevScore !== null && $prevScore > 0) {
+                                $diff = $s['eqi_score'] - $prevScore;
+                                $pct = ($diff / $prevScore) * 100;
+                                if ($pct > 1) {
+                                    $trendText = '▲ +' . number_format($pct, 1) . '%';
+                                    $trendClass = 'trend-up';
+                                } elseif ($pct < -1) {
+                                    $trendText = '▼ ' . number_format(abs($pct), 1) . '%';
+                                    $trendClass = 'trend-down';
+                                } else {
+                                    $trendText = '→ مستقر';
+                                    $trendClass = 'trend-neutral';
+                                }
+                            } elseif ($prevScore === null) {
+                                $trendText = 'لا يوجد';
+                                $trendClass = 'trend-neutral';
+                            }
+
+                            // التعديل السياقي
+                            $adj = $adjustService->calculateAdjustedSQIWithDetails($s['id'], $currentYearId, $s['raw_eqi']);
+                            $adjValue = $adj['adjusted_sqi'] ?? null;
                         ?>
                         <tr>
                             <td><strong><?= $rank++ ?></strong></td>
@@ -290,17 +507,25 @@ if (empty($systemAlerts)) {
                                     <div style="width:100px;height:8px;background:var(--border-light);border-radius:var(--radius-full);">
                                         <div style="width:<?= $s['eqi_score'] ?>%;height:100%;background:<?= $rating[2] === 'success' ? 'var(--success)' : ($rating[2] === 'warning' ? 'var(--warning)' : 'var(--danger)') ?>;border-radius:var(--radius-full);"></div>
                                     </div>
-                                    <strong><?= $s['eqi_score'] ?>%</strong>
+                                    <strong><?= number_format($s['eqi_score'], 1) ?>%</strong>
                                 </div>
                             </td>
                             <td><span class="badge badge-<?= $rating[1] ?>"><?= $rating[0] ?></span></td>
-                            <td>
-                                <?php if ($s['eqi_score'] < 50): ?>
-                                <span style="color:var(--danger);">⚠️ ضعيف</span>
-                                <?php elseif ($s['eqi_score'] < 70): ?>
-                                <span style="color:var(--warning);">مقبول</span>
+                            <td style="text-align:center;">
+                                <span style="font-weight:bold;font-size:13px;" class="<?= $trendClass ?>"><?= $trendText ?></span>
+                            </td>
+                            <td style="text-align:center;">
+                                <?php if ($adjValue !== null): ?>
+                                <div><strong style="font-size:14px;color:#333;"><?= number_format($adjValue, 1) ?></strong></div>
+                                <div style="font-size:10px;color:var(--text-muted);">
+                                    <?php if ($adj['has_context']): ?>
+                                    تحد: <?= number_format($adj['challenge_index'], 0) ?>
+                                    <?php else: ?>
+                                    بدون سياق
+                                    <?php endif; ?>
+                                </div>
                                 <?php else: ?>
-                                <span style="color:var(--success);">✅ جيد</span>
+                                <span class="text-secondary">-</span>
                                 <?php endif; ?>
                             </td>
                         </tr>
@@ -312,52 +537,54 @@ if (empty($systemAlerts)) {
         </div>
     </div>
 
-    <!-- رسوم بيانية -->
-    <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(400px,1fr));">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">📊 توزيع المدارس حسب تقييم المؤشر</h3>
-            </div>
-            <div class="card-body" style="height:300px;">
-                <canvas id="eqiDistributionChart"></canvas>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">📈 المستخدمون حسب الدور</h3>
-            </div>
-            <div class="card-body" style="height:300px;">
-                <canvas id="usersRoleChart"></canvas>
-            </div>
-        </div>
-    </div>
+     <!-- رسوم بيانية -->
+     <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(400px,1fr));">
+         <div class="card">
+             <div class="card-header">
+                 <h3 class="card-title">📊 توزيع المدارس حسب تقييم المؤشر</h3>
+             </div>
+             <div class="card-body" style="height:300px;">
+                 <canvas id="eqiDistributionChart"></canvas>
+             </div>
+         </div>
+         <div class="card">
+             <div class="card-header">
+                 <h3 class="card-title">📈 المستخدمون حسب الدور</h3>
+             </div>
+             <div class="card-body" style="height:300px;">
+                 <canvas id="usersRoleChart"></canvas>
+             </div>
+         </div>
+     </div>
 
-    <script>
-    // توزيع المدارس حسب تقييم المؤشر
-    <?php
-    $eqiBuckets = ['ممتاز' => 0, 'جيد جداً' => 0, 'مقبول' => 0, 'ضعيف' => 0];
-    foreach ($schoolEqi as $s) {
-        if ($s['eqi_score'] <= 0) continue;
-        $r = getEqiRating($s['eqi_score']);
-        if (isset($eqiBuckets[$r[0]])) $eqiBuckets[$r[0]]++;
-    }
-    ?>
-    eqasPieChart('eqiDistributionChart', '',
-        <?= json_encode(array_keys($eqiBuckets), JSON_UNESCAPED_UNICODE) ?>,
-        <?= json_encode(array_values($eqiBuckets)) ?>,
-        ['#28a745', '#1a5632', '#ffc107', '#dc3545']
-    );
+     <script>
+     document.addEventListener('DOMContentLoaded', function() {
+         // توزيع المدارس حسب تقييم المؤشر
+         <?php
+         $eqiBuckets = ['ممتاز' => 0, 'جيد جداً' => 0, 'مقبول' => 0, 'ضعيف' => 0];
+         foreach ($schoolEqi as $s) {
+             if ($s['eqi_score'] <= 0) continue;
+             $r = getEqiRating($s['eqi_score']);
+             if (isset($eqiBuckets[$r[0]])) $eqiBuckets[$r[0]]++;
+         }
+         ?>
+         eqasPieChart('eqiDistributionChart', '',
+             <?= json_encode(array_keys($eqiBuckets), JSON_UNESCAPED_UNICODE) ?>,
+             <?= json_encode(array_values($eqiBuckets)) ?>,
+             ['#28a745', '#1a5632', '#ffc107', '#dc3545']
+         );
 
-    // المستخدمون حسب الدور
-    <?php
-    $roleLabels = []; $roleCounts = []; $roleColors = ['#1a5632','#c8a951','#17a2b8','#fd7e14'];
-    foreach ($usersByRole as $ur) { $roleLabels[] = $ur['display_name_ar']; $roleCounts[] = (int)$ur['count']; }
-    ?>
-    eqasBarChart('usersRoleChart', '',
-        <?= json_encode($roleLabels, JSON_UNESCAPED_UNICODE) ?>,
-        [{label: 'عدد المستخدمين', data: <?= json_encode($roleCounts) ?>, backgroundColor: <?= json_encode(array_slice($roleColors, 0, count($roleLabels))) ?>}]
-    );
-    </script>
+         // المستخدمون حسب الدور
+         <?php
+         $roleLabels = []; $roleCounts = []; $roleColors = ['#1a5632','#c8a951','#17a2b8','#fd7e14'];
+         foreach ($usersByRole as $ur) { $roleLabels[] = $ur['display_name_ar']; $roleCounts[] = (int)$ur['count']; }
+         ?>
+         eqasBarChart('usersRoleChart', '',
+             <?= json_encode($roleLabels, JSON_UNESCAPED_UNICODE) ?>,
+             [{label: 'عدد المستخدمين', data: <?= json_encode($roleCounts) ?>, backgroundColor: <?= json_encode(array_slice($roleColors, 0, count($roleLabels))) ?>}]
+         );
+     });
+     </script>
 
     <!-- إجراءات سريعة -->
     <div class="card mt-6">

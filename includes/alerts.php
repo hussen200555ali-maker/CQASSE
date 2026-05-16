@@ -16,11 +16,12 @@ class AlertEngine {
     
     // حدود العتبات الافتراضية
     private $thresholds = [
-        'academic_pass' => ACADEMIC_PASS_RATE,      // 50%
-        'behavior_pass' => BEHAVIOR_PASS_RATE,      // 60%
-        'attendance_pass' => ATTENDANCE_PASS_RATE,  // 75%
-        'sudden_drop_percentage' => 20,              // انخفاض مفاجئ 20%
-        'consecutive_absence_days' => 3,             // غياب متتالي 3 أيام
+        'academic_pass' => ACADEMIC_PASS_RATE,          // 50%
+        'behavior_pass' => BEHAVIOR_PASS_RATE,          // 60%
+        'behavior_alert' => 50,                          // حد التحذير السلوكي (قبل الرسوب)
+        'attendance_pass' => ATTENDANCE_PASS_RATE,      // 75%
+        'sudden_drop_percentage' => 20,                  // انخفاض مفاجئ 20%
+        'consecutive_absence_days' => 3,                 // غياب متتالي 3 أيام
     ];
     
     // أنواع التنبيهات بالعربية
@@ -30,6 +31,9 @@ class AlertEngine {
         'attendance'=> 'حضور',
         'eqi'       => 'مؤشر الجودة',
         'promotion' => 'ترفيع',
+        'climate'   => 'المناخ المدرسي',
+        'teaching'  => 'تقييم المعلمين',
+        'improvement_plan' => 'خطط التحسين',
     ];
     
     // مستويات الخطورة بالعربية
@@ -271,6 +275,476 @@ class AlertEngine {
         return 'info';
     }
     
+    /**
+     * فحص حدود المناخ المدرسي - متوسط مناخ أقل من 50% أو مشاركة أقل من 60%
+     */
+    public function checkClimateThresholds($schoolId, $academicYearId, $semesterId) {
+        $alertsCreated = 0;
+
+        try {
+            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score, COUNT(id) as survey_count FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt->execute([$schoolId, $academicYearId, $semesterId]);
+            $row = $stmt->fetch();
+            $avgScore = $row['avg_score'] !== null ? round((float)$row['avg_score'], 1) : null;
+            $surveyCount = (int)$row['survey_count'];
+
+            $tStmt = $this->db->prepare("SELECT COUNT(*) FROM users WHERE school_id = ? AND is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'teacher')");
+            $tStmt->execute([$schoolId]);
+            $expected = (int)$tStmt->fetchColumn();
+            $sStmt = $this->db->prepare("SELECT COUNT(*) FROM students WHERE school_id = ? AND is_active = 1");
+            $sStmt->execute([$schoolId]);
+            $expected += (int)$sStmt->fetchColumn();
+
+            $participationRate = $expected > 0 ? round(($surveyCount / $expected) * 100, 1) : 0;
+            if ($participationRate > 100) $participationRate = 100;
+
+            $schoolStmt = $this->db->prepare("SELECT name_ar FROM schools WHERE id = ?");
+            $schoolStmt->execute([$schoolId]);
+            $schoolName = $schoolStmt->fetchColumn();
+
+            // القاعدة 1: مناخ منخفض
+            if ($avgScore !== null && $avgScore < 50) {
+                $severity = $avgScore < 30 ? 'critical' : 'danger';
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'student_id' => null,
+                    'alert_type' => 'climate',
+                    'severity' => $severity,
+                    'title_ar' => 'مناخ مدرسي منخفض',
+                    'message_ar' => sprintf(
+                        '🚨 المناخ المدرسي في %s منخفض جداً (%.1f%%). مطلوب تدخل عاجل.',
+                        $schoolName,
+                        $avgScore
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+
+            // القاعدة 2: مشاركة منخفضة
+            if ($participationRate < 60 && $surveyCount > 0) {
+                $sev = $participationRate < 40 ? 'danger' : 'warning';
+                $alertData2 = [
+                    'school_id' => $schoolId,
+                    'student_id' => null,
+                    'alert_type' => 'climate',
+                    'severity' => $sev,
+                    'title_ar' => 'مشاركة ضعيفة في استبيان المناخ',
+                    'message_ar' => sprintf(
+                        '⚠️ نسبة المشاركة في استبيان المناخ في %s منخفضة (%.1f%%).',
+                        $schoolName,
+                        $participationRate
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData2)) {
+                    $this->createAlert($alertData2);
+                    $alertsCreated++;
+                }
+            }
+        } catch (Exception $e) {
+            error_log('AlertEngine::checkClimateThresholds - ' . $e->getMessage());
+        }
+
+        return $alertsCreated;
+    }
+
+    /**
+     * فحص حدود مؤشر جودة التعليم (EQI)
+     * القاعدة 1: EQI منخفض — أقل من 50 نقطة
+     * القاعدة 2: تراجع حاد — انخفاض > 15% عن نفس الفصل من العام السابق
+     * القاعدة 3: تحسين كبير — زيادة > 10 نقاط عن الفصل السابق
+     */
+    public function checkEQIThresholds($schoolId, $academicYearId, $semesterId) {
+        $alertsCreated = 0;
+
+        try {
+            // الحصول على EQI الحالي للمدرسة
+            $stmt = $this->db->prepare("
+                SELECT overall_eqi FROM equi_results
+                WHERE school_id = :school_id
+                  AND academic_year_id = :year_id
+                  AND semester_id = :semester_id
+                  AND is_active = 1
+                LIMIT 1
+            ");
+            $stmt->execute([
+                ':school_id' => $schoolId,
+                ':year_id' => $academicYearId,
+                ':semester_id' => $semesterId,
+            ]);
+            $currentEqi = $stmt->fetchColumn();
+
+            if ($currentEqi === null || $currentEqi === false) {
+                return 0;
+            }
+
+            $currentEqi = (float)$currentEqi;
+
+            $stmt = $this->db->prepare("SELECT name_ar FROM schools WHERE id = ?");
+            $stmt->execute([$schoolId]);
+            $schoolName = $stmt->fetchColumn();
+
+            // القاعدة 1: EQI منخفض — أقل من 50 نقطة
+            if ($currentEqi < 50) {
+                $severity = $currentEqi < 30 ? 'critical' : 'danger';
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'student_id' => null,
+                    'alert_type' => 'eqi',
+                    'severity' => $severity,
+                    'title_ar' => 'مؤشر جودة منخفض',
+                    'message_ar' => sprintf(
+                        '🚨 مؤشر جودة التعليم في %s منخفض جداً (%.1f نقطة). مطلوب تدخل عاجل لتحسين الأداء.',
+                        $schoolName,
+                        $currentEqi
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+
+            // القاعدة 2: تراجع حاد — نسبة الانخفاض > 15% عن نفس الفصل من العام السابق
+            $semStmt = $this->db->prepare("SELECT name_ar, start_date FROM semesters WHERE id = ?");
+            $semStmt->execute([$semesterId]);
+            $semInfo = $semStmt->fetch();
+
+            if ($semInfo) {
+                $prevStmt = $this->db->prepare("
+                    SELECT eq.overall_eqi
+                    FROM equi_results eq
+                    JOIN semesters s ON eq.semester_id = s.id
+                    WHERE eq.school_id = :school_id
+                      AND s.name_ar = :name_ar
+                      AND s.start_date < :start_date
+                      AND s.is_active = 1
+                      AND eq.is_active = 1
+                    ORDER BY s.start_date DESC
+                    LIMIT 1
+                ");
+                $prevStmt->execute([
+                    ':school_id' => $schoolId,
+                    ':name_ar' => $semInfo['name_ar'],
+                    ':start_date' => $semInfo['start_date'],
+                ]);
+                $prevEqi = $prevStmt->fetchColumn();
+
+                if ($prevEqi !== null && $prevEqi !== false && (float)$prevEqi > 0) {
+                    $prevEqi = (float)$prevEqi;
+                    $declinePct = (($prevEqi - $currentEqi) / $prevEqi) * 100;
+
+                    if ($declinePct > 15) {
+                        $alertData = [
+                            'school_id' => $schoolId,
+                            'student_id' => null,
+                            'alert_type' => 'eqi',
+                            'severity' => 'danger',
+                            'title_ar' => 'تراجع حاد في مؤشر الجودة',
+                            'message_ar' => sprintf(
+                                '⚠️ تراجع حاد في مؤشر جودة التعليم في %s بنسبة %.1f%% (من %.1f إلى %.1f نقطة).',
+                                $schoolName,
+                                $declinePct,
+                                $prevEqi,
+                                $currentEqi
+                            ),
+                        ];
+
+                        if (!$this->alertExists($alertData)) {
+                            $this->createAlert($alertData);
+                            $alertsCreated++;
+                        }
+                    }
+                }
+
+                // القاعدة 3: تحسين كبير — زيادة > 10 نقاط عن الفصل السابق
+                // نبحث عن أقرب فصل سابق (أي فصل، وليس بالضرورة نفس الاسم)
+                $prevAnyStmt = $this->db->prepare("
+                    SELECT eq.overall_eqi
+                    FROM equi_results eq
+                    JOIN semesters s ON eq.semester_id = s.id
+                    WHERE eq.school_id = :school_id
+                      AND s.start_date < :start_date
+                      AND s.is_active = 1
+                      AND eq.is_active = 1
+                    ORDER BY s.start_date DESC
+                    LIMIT 1
+                ");
+                $prevAnyStmt->execute([
+                    ':school_id' => $schoolId,
+                    ':start_date' => $semInfo['start_date'],
+                ]);
+                $prevAnyEqi = $prevAnyStmt->fetchColumn();
+
+                if ($prevAnyEqi !== null && $prevAnyEqi !== false && (float)$prevAnyEqi > 0) {
+                    $prevAnyEqi = (float)$prevAnyEqi;
+                    $improvement = $currentEqi - $prevAnyEqi;
+
+                    if ($improvement > 10) {
+                        $alertData = [
+                            'school_id' => $schoolId,
+                            'student_id' => null,
+                            'alert_type' => 'eqi',
+                            'severity' => 'info',
+                            'title_ar' => 'تحسين كبير في مؤشر الجودة',
+                            'message_ar' => sprintf(
+                                '✅ تحسن كبير في مؤشر جودة التعليم في %s بمقدار %.1f نقطة (من %.1f إلى %.1f).',
+                                $schoolName,
+                                $improvement,
+                                $prevAnyEqi,
+                                $currentEqi
+                            ),
+                        ];
+
+                        if (!$this->alertExists($alertData)) {
+                            $this->createAlert($alertData);
+                            $alertsCreated++;
+                        }
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log('AlertEngine::checkEQIThresholds - ' . $e->getMessage());
+        }
+
+        return $alertsCreated;
+    }
+
+    /**
+     * فحص حدود تقييم المعلمين
+     * القاعدة 1: متوسط combined_score للمدرسة أقل من 50%
+     * القاعدة 2: معلمون تقييمهم < 60% ولا توجد خطة تطوير نشطة
+     */
+    public function checkTeachingThresholds($schoolId, $academicYearId, $semesterId) {
+        $alertsCreated = 0;
+
+        try {
+            // القاعدة 1: متوسط combined_score للمدرسة < 50%
+            $stmt = $this->db->prepare("
+                SELECT AVG(tes.combined_score) AS school_avg
+                FROM teaching_evaluation_summary tes
+                JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
+                WHERE tes.academic_year_id = :year_id
+                  AND tes.semester_id = :semester_id
+                  AND tes.is_active = 1
+            ");
+            $stmt->execute([
+                ':school_id' => $schoolId,
+                ':year_id' => $academicYearId,
+                ':semester_id' => $semesterId,
+            ]);
+            $schoolAvg = $stmt->fetchColumn();
+
+            if ($schoolAvg !== null && $schoolAvg < 50) {
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'alert_type' => 'teaching',
+                    'severity' => 'danger',
+                    'title_ar' => 'تراجع أداء التدريس',
+                    'message_ar' => sprintf(
+                        'متوسط تقييم أداء المعلمين في المدرسة %.1f%% وهو أقل من 50%%.',
+                        round($schoolAvg, 1)
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+
+            // القاعدة 2: معلمون تقييمهم < 60% بدون خطة تطوير نشطة
+            $stmt = $this->db->prepare("
+                SELECT tes.teacher_id, u.full_name_ar, tes.combined_score
+                FROM teaching_evaluation_summary tes
+                JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
+                LEFT JOIN teacher_development_plans tdp
+                    ON tdp.teacher_id = tes.teacher_id
+                    AND tdp.status = 'active'
+                    AND tdp.is_active = 1
+                WHERE tes.academic_year_id = :year_id
+                  AND tes.semester_id = :semester_id
+                  AND tes.is_active = 1
+                  AND tes.combined_score < 60
+                  AND tdp.id IS NULL
+            ");
+            $stmt->execute([
+                ':school_id' => $schoolId,
+                ':year_id' => $academicYearId,
+                ':semester_id' => $semesterId,
+            ]);
+
+            while ($row = $stmt->fetch()) {
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'teacher_id' => $row['teacher_id'],
+                    'alert_type' => 'teaching',
+                    'severity' => 'warning',
+                    'title_ar' => 'خطة تطوير مفقودة',
+                    'message_ar' => sprintf(
+                        'المعلم/ة %s تقييمه %.1f%% (أقل من 60%%) وليس لديه خطة تطوير نشطة.',
+                        $row['full_name_ar'],
+                        $row['combined_score']
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+        } catch (Exception $e) {
+            error_log('AlertEngine::checkTeachingThresholds - ' . $e->getMessage());
+        }
+
+        return $alertsCreated;
+    }
+
+    /**
+     * فحص خطط التحسين المتأخرة (تجاوزت موعد المتابعة)
+     * القاعدة 1: خطة معلم متأخرة عن موعد المتابعة
+     * القاعدة 2: خطة طالب متأخرة عن موعد المتابعة
+     */
+    public function checkImprovementPlanOverdue($schoolId) {
+        $alertsCreated = 0;
+
+        try {
+            $schoolStmt = $this->db->prepare("SELECT name_ar FROM schools WHERE id = ?");
+            $schoolStmt->execute([$schoolId]);
+            $schoolName = $schoolStmt->fetchColumn();
+
+            // القاعدة 1: خطط معلمين متأخرة
+            $stmt = $this->db->prepare("
+                SELECT tdp.id, tdp.follow_up_date, tdp.progress,
+                       u.full_name_ar AS teacher_name,
+                       DATEDIFF(NOW(), tdp.follow_up_date) AS days_overdue
+                FROM teacher_development_plans tdp
+                JOIN users u ON tdp.teacher_id = u.id
+                WHERE tdp.school_id = :school_id
+                  AND tdp.status = 'active'
+                  AND tdp.is_active = 1
+                  AND tdp.follow_up_date IS NOT NULL
+                  AND tdp.follow_up_date < CURDATE()
+                ORDER BY tdp.follow_up_date ASC
+            ");
+            $stmt->execute([':school_id' => $schoolId]);
+
+            while ($row = $stmt->fetch()) {
+                $severity = $row['days_overdue'] > 14 ? 'danger' : 'warning';
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'alert_type' => 'improvement_plan',
+                    'severity' => $severity,
+                    'title_ar' => 'خطة تطوير معلم متأخرة',
+                    'message_ar' => sprintf(
+                        '⏰ خطة تطوير المعلم/ة %s في %s متأخرة بـ %d يوم (موعد المتابعة: %s). التقدم: %d%%.',
+                        $row['teacher_name'],
+                        $schoolName,
+                        $row['days_overdue'],
+                        $row['follow_up_date'],
+                        $row['progress']
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+
+            // القاعدة 2: خطط طلاب متأخرة
+            $stmt = $this->db->prepare("
+                SELECT ip.id, ip.follow_up_date, ip.status AS plan_status,
+                       s.full_name_ar AS student_name,
+                       DATEDIFF(NOW(), ip.follow_up_date) AS days_overdue
+                FROM improvement_plans ip
+                JOIN students s ON ip.student_id = s.id
+                WHERE s.school_id = :school_id
+                  AND ip.status = 'active'
+                  AND ip.is_active = 1
+                  AND ip.follow_up_date IS NOT NULL
+                  AND ip.follow_up_date < CURDATE()
+                ORDER BY ip.follow_up_date ASC
+            ");
+            $stmt->execute([':school_id' => $schoolId]);
+
+            while ($row = $stmt->fetch()) {
+                $severity = $row['days_overdue'] > 14 ? 'danger' : 'warning';
+                $alertData = [
+                    'school_id' => $schoolId,
+                    'alert_type' => 'improvement_plan',
+                    'severity' => $severity,
+                    'title_ar' => 'خطة تحسين طالب متأخرة',
+                    'message_ar' => sprintf(
+                        '⏰ خطة تحسين الطالب/ة %s في %s متأخرة بـ %d يوم (موعد المتابعة: %s).',
+                        $row['student_name'],
+                        $schoolName,
+                        $row['days_overdue'],
+                        $row['follow_up_date']
+                    ),
+                ];
+
+                if (!$this->alertExists($alertData)) {
+                    $this->createAlert($alertData);
+                    $alertsCreated++;
+                }
+            }
+        } catch (Exception $e) {
+            error_log('AlertEngine::checkImprovementPlanOverdue - ' . $e->getMessage());
+        }
+
+        return $alertsCreated;
+    }
+
+    /**
+     * فحص خطط تحسين المدرسة التي تحتاج إنشاء (المناخ أو المرافق < 55%)
+     */
+    public function checkSchoolImprovementNeeded($schoolId, $academicYearId, $semesterId) {
+        $alertsCreated = 0;
+
+        try {
+            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt->execute([$schoolId, $academicYearId, $semesterId]);
+            $climateScore = $stmt->fetchColumn();
+
+            $schoolStmt = $this->db->prepare("SELECT name_ar FROM schools WHERE id = ?");
+            $schoolStmt->execute([$schoolId]);
+            $schoolName = $schoolStmt->fetchColumn();
+
+            if ($climateScore !== null && $climateScore < 55) {
+                $hasPlan = $this->db->prepare("SELECT COUNT(*) FROM school_improvement_plans WHERE school_id = ? AND status = 'active' AND is_active = 1");
+                $hasPlan->execute([$schoolId]);
+                if ((int)$hasPlan->fetchColumn() === 0) {
+                    $alertData = [
+                        'school_id' => $schoolId,
+                        'alert_type' => 'improvement_plan',
+                        'severity' => 'danger',
+                        'title_ar' => 'مطلوب خطة تحسين مدرسة',
+                        'message_ar' => sprintf(
+                            '🚨 المناخ المدرسي في %s منخفض (%.1f%%) ولا توجد خطة تحسين نشطة. يُرجى إنشاء خطة تحسين فوراً.',
+                            $schoolName,
+                            $climateScore
+                        ),
+                    ];
+
+                    if (!$this->alertExists($alertData)) {
+                        $this->createAlert($alertData);
+                        $alertsCreated++;
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log('AlertEngine::checkSchoolImprovementNeeded - ' . $e->getMessage());
+        }
+
+        return $alertsCreated;
+    }
+
     // ========================================================================
     // المصدر الثاني: تنبيهات الاتجاه (Trend-based Alerts)
     // ========================================================================
@@ -560,6 +1034,22 @@ class AlertEngine {
         return $dropDetected;
     }
     
+    /**
+     * خريطة أنواع التنبيهات للتطابق مع القيم القديمة والجديدة
+     */
+    private function getTypeMap() {
+        return [
+            'academic'   => ['academic', 'low_grade', 'failing_subject'],
+            'behavior'   => ['behavior', 'poor_behavior', 'behavior_below_threshold'],
+            'attendance' => ['attendance', 'high_absence', 'consecutive_absence', 'attendance_below_threshold'],
+            'eqi'        => ['eqi', 'eqi_decline'],
+            'promotion'  => ['promotion', 'promotion_risk'],
+            'climate'    => ['climate'],
+            'teaching'   => ['teaching'],
+            'improvement_plan' => ['improvement_plan'],
+        ];
+    }
+
     // ========================================================================
     // إدارة التنبيهات
     // ========================================================================
@@ -687,8 +1177,15 @@ class AlertEngine {
             $params[':student_id'] = $filters['student_id'];
         }
         if (!empty($filters['alert_type'])) {
-            $where[] = 'a.alert_type = :alert_type';
-            $params[':alert_type'] = $filters['alert_type'];
+            $typeMap = $this->getTypeMap();
+            $validTypes = $typeMap[$filters['alert_type']] ?? [$filters['alert_type']];
+            $placeholders = [];
+            foreach ($validTypes as $i => $t) {
+                $key = ':alert_type_' . $i;
+                $placeholders[] = $key;
+                $params[$key] = $t;
+            }
+            $where[] = 'a.alert_type IN (' . implode(',', $placeholders) . ')';
         }
         if (!empty($filters['severity'])) {
             $where[] = 'a.severity = :severity';
@@ -734,7 +1231,7 @@ class AlertEngine {
     }
     
     /**
-     * الحصول على عدد التنبيهات
+     * الحصول على عدد التنبيهات (متوافق مع getAlerts)
      */
     public function getAlertsCount($filters = []) {
         $where = [];
@@ -745,8 +1242,15 @@ class AlertEngine {
             $params[':school_id'] = $filters['school_id'];
         }
         if (!empty($filters['alert_type'])) {
-            $where[] = 'alert_type = :alert_type';
-            $params[':alert_type'] = $filters['alert_type'];
+            $typeMap = $this->getTypeMap();
+            $validTypes = $typeMap[$filters['alert_type']] ?? [$filters['alert_type']];
+            $placeholders = [];
+            foreach ($validTypes as $i => $t) {
+                $key = ':alert_type_' . $i;
+                $placeholders[] = $key;
+                $params[$key] = $t;
+            }
+            $where[] = 'alert_type IN (' . implode(',', $placeholders) . ')';
         }
         if (!empty($filters['severity'])) {
             $where[] = 'severity = :severity';
@@ -809,7 +1313,7 @@ class AlertEngine {
         try {
             if (empty($alertIds)) return 0;
             $placeholders = implode(',', array_fill(0, count($alertIds), '?'));
-            $stmt = $this->db->prepare("UPDATE alerts SET is_read = 1 WHERE id IN ({$placeholders}) AND is_read = 0");
+            $stmt = $this->db->prepare("UPDATE alerts SET is_read = 1 WHERE id IN ({$placeholders})");
             $stmt->execute($alertIds);
             return $stmt->rowCount();
         } catch (Exception $e) {
@@ -840,7 +1344,7 @@ class AlertEngine {
         try {
             if (empty($alertIds)) return 0;
             $placeholders = implode(',', array_fill(0, count($alertIds), '?'));
-            $params = array_merge($alertIds, [$resolvedBy]);
+            $params = array_merge([$resolvedBy], $alertIds);
             $stmt = $this->db->prepare("UPDATE alerts SET is_resolved = 1, resolved_by = ?, resolved_at = NOW() WHERE id IN ({$placeholders}) AND is_resolved = 0");
             $stmt->execute($params);
             return $stmt->rowCount();
@@ -854,9 +1358,7 @@ class AlertEngine {
      */
     public function getUnreadCount($userId = null) {
         try {
-            // الحصول على المدرسة المرتبطة بالمستخدم
-            $schoolFilter = '';
-            $params = [];
+            $schoolId = null;
             
             if ($userId) {
                 $stmt = $this->db->prepare("SELECT school_id, role_id FROM users WHERE id = :id");
@@ -868,16 +1370,19 @@ class AlertEngine {
                     $roleStmt->execute([':id' => $user['role_id']]);
                     $role = $roleStmt->fetchColumn();
                     
-                    if ($role === 'school_admin' && $user['school_id']) {
-                        $schoolFilter = ' AND school_id = ' . (int)$user['school_id'];
-                    } elseif ($role === 'teacher' && $user['school_id']) {
-                        $schoolFilter = ' AND school_id = ' . (int)$user['school_id'];
+                    if (in_array($role, ['school_admin', 'teacher']) && $user['school_id']) {
+                        $schoolId = (int)$user['school_id'];
                     }
                 }
             }
             
-            $sql = "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0 {$schoolFilter}";
-            $stmt = $this->db->query($sql);
+            if ($schoolId) {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0 AND school_id = ?");
+                $stmt->execute([$schoolId]);
+            } else {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0");
+                $stmt->execute();
+            }
             return (int)$stmt->fetchColumn();
         } catch (Exception $e) {
             return 0;
@@ -900,26 +1405,44 @@ class AlertEngine {
             $schoolFilter = $schoolId ? " AND school_id = " . (int)$schoolId : '';
             
             // الإجمالي
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_active = 1 {$schoolFilter}");
+            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE 1=1 {$schoolFilter}");
             $stats['total'] = (int)$stmt->fetchColumn();
             
             // غير المقروءة
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_active = 1 AND is_read = 0 {$schoolFilter}");
+            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_read = 0 {$schoolFilter}");
             $stats['unread'] = (int)$stmt->fetchColumn();
             
             // غير المحلولة
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_active = 1 AND is_resolved = 0 {$schoolFilter}");
+            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_resolved = 0 {$schoolFilter}");
             $stats['unresolved'] = (int)$stmt->fetchColumn();
             
             // حسب النوع
-            $sql = "SELECT alert_type, COUNT(*) AS cnt FROM alerts WHERE is_active = 1 {$schoolFilter} GROUP BY alert_type";
+            $sql = "SELECT alert_type, COUNT(*) AS cnt FROM alerts WHERE 1=1 {$schoolFilter} GROUP BY alert_type";
             $stmt = $this->db->query($sql);
+            $oldToNew = [
+                'low_grade' => 'academic',
+                'failing_subject' => 'academic',
+                'poor_behavior' => 'behavior',
+                'behavior_below_threshold' => 'behavior',
+                'high_absence' => 'attendance',
+                'consecutive_absence' => 'attendance',
+                'attendance_below_threshold' => 'attendance',
+                'eqi_decline' => 'eqi',
+                'promotion_risk' => 'promotion',
+                'climate' => 'climate',
+                'teaching' => 'teaching',
+                'improvement_plan' => 'improvement_plan',
+            ];
             while ($row = $stmt->fetch()) {
-                $stats['by_type'][$row['alert_type']] = (int)$row['cnt'];
+                $normalized = $oldToNew[$row['alert_type']] ?? $row['alert_type'];
+                if (!isset($stats['by_type'][$normalized])) {
+                    $stats['by_type'][$normalized] = 0;
+                }
+                $stats['by_type'][$normalized] += (int)$row['cnt'];
             }
             
             // حسب الخطورة
-            $sql = "SELECT severity, COUNT(*) AS cnt FROM alerts WHERE is_active = 1 {$schoolFilter} GROUP BY severity";
+            $sql = "SELECT severity, COUNT(*) AS cnt FROM alerts WHERE 1=1 {$schoolFilter} GROUP BY severity";
             $stmt = $this->db->query($sql);
             while ($row = $stmt->fetch()) {
                 $stats['by_severity'][$row['severity']] = (int)$row['cnt'];
@@ -939,7 +1462,7 @@ class AlertEngine {
             $sql = "SELECT a.*, sc.name_ar AS school_name
                     FROM alerts a
                     LEFT JOIN schools sc ON sc.id = a.school_id
-                    WHERE a.student_id = :student_id AND a.is_active = 1";
+                    WHERE a.student_id = :student_id";
             $params = [':student_id' => $studentId];
             
             if ($excludeId) {
@@ -988,6 +1511,11 @@ class AlertEngine {
             'academic_thresholds' => 0,
             'behavior_thresholds' => 0,
             'attendance_thresholds' => 0,
+            'climate_thresholds' => 0,
+            'teaching_thresholds' => 0,
+            'eqi_thresholds' => 0,
+            'improvement_plan_overdue' => 0,
+            'improvement_plan_needed' => 0,
             'declining_trends' => 0,
             'absence_patterns' => 0,
             'sudden_drops' => 0,
@@ -999,6 +1527,13 @@ class AlertEngine {
             $results['academic_thresholds'] = $this->checkAcademicThresholds($schoolId, $academicYearId, $semesterId);
             $results['behavior_thresholds'] = $this->checkBehaviorThresholds($schoolId, $academicYearId, $semesterId);
             $results['attendance_thresholds'] = $this->checkAttendanceThresholds($schoolId, $academicYearId, $semesterId);
+            $results['climate_thresholds'] = $this->checkClimateThresholds($schoolId, $academicYearId, $semesterId);
+            $results['eqi_thresholds'] = $this->checkEQIThresholds($schoolId, $academicYearId, $semesterId);
+            $results['teaching_thresholds'] = $this->checkTeachingThresholds($schoolId, $academicYearId, $semesterId);
+            
+            // 2. فحص خطط التحسين
+            $results['improvement_plan_overdue'] = $this->checkImprovementPlanOverdue($schoolId);
+            $results['improvement_plan_needed'] = $this->checkSchoolImprovementNeeded($schoolId, $academicYearId, $semesterId);
             
             // 2. فحص الاتجاهات والأنماط لكل الطلاب
             $stmt = $this->db->prepare("SELECT id FROM students WHERE school_id = :school_id AND is_active = 1");
@@ -1020,7 +1555,10 @@ class AlertEngine {
             }
             
             $results['total_new'] = $results['academic_thresholds'] + $results['behavior_thresholds'] 
-                + $results['attendance_thresholds'] + $results['declining_trends'] 
+                + $results['attendance_thresholds'] + $results['climate_thresholds']
+                + $results['eqi_thresholds'] + $results['teaching_thresholds']
+                + $results['improvement_plan_overdue'] + $results['improvement_plan_needed']
+                + $results['declining_trends'] 
                 + $results['absence_patterns'] + $results['sudden_drops'];
                 
         } catch (Exception $e) {
@@ -1058,6 +1596,21 @@ class AlertEngine {
                         ':value' => $value,
                         ':value2' => $value,
                     ]);
+                    
+                    // كتابة مفتاح إضافي لتوافق BehaviorCalculator
+                    $altKey = null;
+                    if ($key === 'behavior_pass') $altKey = 'behavior_passing_threshold';
+                    if ($key === 'behavior_alert') $altKey = 'behavior_alert_threshold';
+                    if ($altKey) {
+                        $stmt2 = $this->db->prepare("INSERT INTO system_settings (setting_key, setting_value, setting_type) 
+                                                     VALUES (:key, :value, 'number')
+                                                     ON DUPLICATE KEY UPDATE setting_value = :value2");
+                        $stmt2->execute([
+                            ':key' => $altKey,
+                            ':value' => $value,
+                            ':value2' => $value,
+                        ]);
+                    }
                 }
             }
             return true;
@@ -1067,6 +1620,28 @@ class AlertEngine {
         }
     }
     
+    /**
+     * تنظيف الإشعارات والتنبيهات القديمة (أكثر من 90 يوماً والمقروءة)
+     * @return array عدد المحذوفات
+     */
+    public function cleanupOldRecords() {
+        $result = ['notifications' => 0, 'alerts' => 0];
+        try {
+            // حذف الإشعارات المقروءة الأقدم من 90 يوماً
+            $stmt = $this->db->prepare("DELETE FROM notifications WHERE is_read = 1 AND created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+            $stmt->execute();
+            $result['notifications'] = $stmt->rowCount();
+
+            // حذف التنبيهات المقروءة والمحلولة الأقدم من 90 يوماً
+            $stmt = $this->db->prepare("DELETE FROM alerts WHERE is_read = 1 AND is_resolved = 1 AND created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+            $stmt->execute();
+            $result['alerts'] = $stmt->rowCount();
+        } catch (Exception $e) {
+            error_log('AlertEngine::cleanupOldRecords - ' . $e->getMessage());
+        }
+        return $result;
+    }
+
     /**
      * تصدير التنبيهات كتقرير
      */

@@ -29,6 +29,7 @@ const EQAS = {
         this.initDataTables();
         this.initModals();
         this.initAlertDismiss();
+        this.initSessionKeepAlive();
     },
 
     /**
@@ -96,6 +97,13 @@ function eqasAjax(url, method = 'GET', data = null, callback = null, errorCallba
 
     fetch(url, options)
         .then(response => {
+            if (response.status === 401) {
+                if (!EQAS._isRedirectingToLogin) {
+                    EQAS._isRedirectingToLogin = true;
+                    window.location.href = EQAS.baseUrl + '/login.php';
+                }
+                return;
+            }
             if (!response.ok) {
                 throw new Error(`خطأ في الخادم: ${response.status}`);
             }
@@ -104,7 +112,11 @@ function eqasAjax(url, method = 'GET', data = null, callback = null, errorCallba
         .then(result => {
             if (loadingEl) loadingEl.style.display = 'none';
 
-            if (result.success === false) {
+            if (result && result.logged_out) {
+                return;
+            }
+
+            if (result && result.success === false) {
                 const errorMsg = result.message || 'حدث خطأ غير متوقع';
                 if (errorCallback) {
                     errorCallback(errorMsg);
@@ -114,7 +126,7 @@ function eqasAjax(url, method = 'GET', data = null, callback = null, errorCallba
                 return;
             }
 
-            if (callback) {
+            if (callback && result) {
                 callback(result);
             }
         })
@@ -648,6 +660,52 @@ function checkNotifications() {
         }
     });
 }
+
+// ============================================================
+// 7b. SESSION KEEP-ALIVE & EXPIRY WARNING
+// ============================================================
+
+/**
+ * Initialize session keep-alive
+ * Pings the server every 5 minutes to maintain the session
+ * Shows a warning toast 5 minutes before session expiry
+ */
+EQAS.initSessionKeepAlive = function() {
+    if (!EQAS.baseUrl) return;
+
+    setInterval(function() {
+        fetch(EQAS.baseUrl + '/api/session/ping.php')
+            .then(function(r) { return r.json(); })
+            .then(function(result) {
+                if (result.expires_in !== undefined && result.expires_in < 300) {
+                    var msg = 'جلستك على وشك الانتهاء خلال أقل من 5 دقائق. ';
+                    msg += '<button onclick="EQAS.extendSession()" style="background:var(--warning);color:#000;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;margin-right:8px;font-weight:bold;">تمديد الجلسة</button>';
+                    showToast(msg, 'warning', 10000);
+                }
+            })
+            .catch(function() {});
+    }, 120000); // every 2 minutes check expiry
+};
+
+/**
+ * Extend the session by pinging server with extend=1
+ */
+EQAS.extendSession = function() {
+    fetch(EQAS.baseUrl + '/api/session/ping.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extend: true })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(result) {
+        if (result.ok) {
+            showToast('تم تمديد الجلسة بنجاح', 'success', 3000);
+        }
+    })
+    .catch(function() {
+        showToast('فشل تمديد الجلسة. يرجى تحديث الصفحة.', 'danger');
+    });
+};
 
 // ============================================================
 // 8. MODALS
@@ -1871,7 +1929,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             eqasConfirm('\u0647\u0644 \u0623\u0646\u062A \u0645\u062A\u0623\u0643\u062F \u0645\u0646 \u0647\u0630\u0647 \u0627\u0644\u0639\u0645\u0644\u064A\u0629 \u0627\u0644\u062E\u0637\u064A\u0631\u0629\u061F', function() {
-                eval(originalOnclick.replace(/confirm\s*\([^)]*\)\s*&&\s*/, ''));
+                var remaining = originalOnclick.replace(/^(?:return\s+)?confirm\s*\([^)]*\)\s*(?:&&\s*)?/, '');
+                if (remaining.trim()) {
+                    eval(remaining);
+                } else if (btn.tagName === 'A' && btn.href) {
+                    window.location.href = btn.href;
+                }
             });
         });
     });

@@ -90,6 +90,17 @@ function createTestDB(): PDO {
         is_active INTEGER DEFAULT 1
     )");
 
+    $db->exec("CREATE TABLE IF NOT EXISTS school_context (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id INTEGER, academic_year_id INTEGER,
+        location_type TEXT, total_students INTEGER, student_teacher_ratio REAL,
+        socioeconomic_index REAL, parent_education_level REAL,
+        students_with_special_needs_pct REAL, infrastructure_score REAL,
+        student_mobility_rate REAL, challenge_index REAL,
+        is_active INTEGER DEFAULT 1,
+        UNIQUE(school_id, academic_year_id)
+    )");
+
     $db->exec("CREATE TABLE IF NOT EXISTS eqi_dimension_weights (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         dimension_name TEXT UNIQUE, dimension_name_ar TEXT,
@@ -121,10 +132,22 @@ function createTestDB(): PDO {
     )");
 
     // جداول الطلاب والتسجيلات
+    $db->exec("CREATE TABLE IF NOT EXISTS roles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        display_name_ar TEXT
+    )");
+    $db->exec("INSERT OR IGNORE INTO roles (id, name, display_name_ar) VALUES
+        (1, 'group_admin', 'مدير المجموعة'),
+        (2, 'school_admin', 'مدير المدرسة'),
+        (3, 'teacher', 'معلم'),
+        (4, 'parent', 'ولي أمر'),
+        (5, 'student', 'طالب')
+    ");
     $db->exec("CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT, password_hash TEXT, full_name_ar TEXT,
-        email TEXT, role TEXT, school_id INTEGER,
+        email TEXT, role TEXT, role_id INTEGER DEFAULT 1, school_id INTEGER,
         must_change_password INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1
     )");
@@ -155,28 +178,20 @@ function createTestDB(): PDO {
         teacher_id INTEGER, subject_id INTEGER, class_id INTEGER,
         school_id INTEGER DEFAULT 1, academic_year_id INTEGER, is_active INTEGER DEFAULT 1
     )");
-    $db->exec("CREATE TABLE IF NOT EXISTS teaching_self_evaluations (
+    // جدول ملخص تقييم التدريس
+    $db->exec("CREATE TABLE IF NOT EXISTS teaching_evaluation_summary (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        teacher_id INTEGER, school_id INTEGER DEFAULT 1,
-        academic_year_id INTEGER DEFAULT 1, semester_id INTEGER DEFAULT 1,
-        overall_score REAL DEFAULT 0,
-        tool_type TEXT, numeric_value REAL, is_active INTEGER DEFAULT 1
-    )");
-    $db->exec("CREATE TABLE IF NOT EXISTS teaching_peer_evaluations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        teacher_id INTEGER, evaluatee_id INTEGER DEFAULT 0, evaluator_id INTEGER DEFAULT 0,
-        school_id INTEGER DEFAULT 1,
-        academic_year_id INTEGER DEFAULT 1, semester_id INTEGER DEFAULT 1,
-        overall_score REAL DEFAULT 0,
-        tool_type TEXT, numeric_value REAL, is_active INTEGER DEFAULT 1
-    )");
-    $db->exec("CREATE TABLE IF NOT EXISTS teaching_admin_evaluations (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        teacher_id INTEGER, evaluatee_id INTEGER DEFAULT 0,
-        school_id INTEGER DEFAULT 1,
-        academic_year_id INTEGER DEFAULT 1, semester_id INTEGER DEFAULT 1,
-        overall_score REAL DEFAULT 0,
-        tool_type TEXT, numeric_value REAL, is_active INTEGER DEFAULT 1
+        teacher_id INTEGER NOT NULL,
+        academic_year_id INTEGER NOT NULL,
+        semester_id INTEGER NOT NULL,
+        self_score REAL DEFAULT NULL,
+        peer_score REAL DEFAULT NULL,
+        admin_score REAL DEFAULT NULL,
+        combined_score REAL DEFAULT NULL,
+        adjusted_score REAL DEFAULT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(teacher_id, academic_year_id, semester_id)
     )");
 
     // جداول المناخ المدرسي

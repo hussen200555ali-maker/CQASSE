@@ -15,14 +15,40 @@ $breadcrumb = ['التقييمات الإشرافية' => 'index.php', 'خطة �
 
 require_once __DIR__ . '/../../includes/header.php';
 
-if (!hasPermission('school_admin')) {
+// الصلاحيات: school_admin + group_admin
+$userRole = $_SESSION['user']['role'] ?? '';
+if (!hasPermission('school_admin') && !hasPermission('group_admin')) {
     setFlash('ليس لديك صلاحية الوصول.', 'danger');
     redirect(baseUrl('index.php'));
 }
 
-$schoolId = currentSchoolId();
+// تحديد المدرسة حسب الدور
+if ($userRole === 'group_admin') {
+    $schoolId = intval($_GET['school_id'] ?? 0);
+    if ($schoolId === 0) {
+        setFlash('يرجى اختيار مدرسة أولاً.', 'warning');
+        redirect(baseUrl('pages/supervision/index.php'));
+    }
+} else {
+    $schoolId = currentSchoolId();
+}
 
-// إنشاء الجدول إذا لم يكن موجوداً
+// جلب بيانات المدرسة
+$schoolStmt = $db->prepare("SELECT id, name_ar FROM schools WHERE id = ? AND is_active = 1");
+$schoolStmt->execute([$schoolId]);
+$currentSchool = $schoolStmt->fetch();
+if (!$currentSchool) {
+    setFlash('المدرسة غير موجودة أو غير نشطة.', 'danger');
+    redirect(baseUrl('pages/supervision/index.php'));
+}
+
+// جلب قائمة المدارس (لمدير المجموعة)
+$allSchools = [];
+if ($userRole === 'group_admin') {
+    $allSchools = $db->query("SELECT id, name_ar FROM schools WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+}
+
+// إنشاء الجدول إذا لم يكن موجوداً (للتوافق مع قواعد البيانات القديمة)
 $db->exec("CREATE TABLE IF NOT EXISTS school_improvement_plans (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id INT UNSIGNED NOT NULL,
@@ -53,13 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $goals = trim($_POST['goals'] ?? '');
             $strategies = trim($_POST['strategies'] ?? '');
             $timeline = trim($_POST['timeline'] ?? '');
-            $responsible = trim($_POST['responsible'] ?? '');
+            $responsibleUserId = intval($_POST['responsible_user_id'] ?? 0);
+            if ($responsibleUserId === 0) $responsibleUserId = null;
 
             if (empty($weaknesses) || empty($goals) || empty($strategies)) {
                 setFlash('يرجى ملء الحقول المطلوبة (نقاط الضعف، الأهداف، الاستراتيجيات).', 'warning');
             } else {
-                $stmt = $db->prepare("INSERT INTO school_improvement_plans (school_id, trigger_type, weaknesses, goals, strategies, timeline, responsible, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$schoolId, $triggerType, $weaknesses, $goals, $strategies, $timeline, $responsible, $_SESSION['user']['id']]);
+                $stmt = $db->prepare("INSERT INTO school_improvement_plans (school_id, trigger_type, weaknesses, goals, strategies, timeline, responsible_user_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$schoolId, $triggerType, $weaknesses, $goals, $strategies, $timeline, $responsibleUserId, $_SESSION['user']['id']]);
                 logActivity($db, $_SESSION['user']['id'], 'improvement_plan_create', "إنشاء خطة تحسين المدرسة", 'school_improvement_plans', $db->lastInsertId());
                 setFlash('تم إنشاء خطة التحسين بنجاح.', 'success');
             }
@@ -87,14 +114,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             setFlash('تم إكمال الخطة بنجاح! 🎉', 'success');
         }
 
-        redirect('improvement_plan.php');
+        $redirectUrl = 'improvement_plan.php';
+        if ($userRole === 'group_admin') {
+            $redirectUrl .= '?school_id=' . $schoolId;
+        }
+        redirect($redirectUrl);
     }
 }
 
 // جلب الخطط
-$stmt = $db->prepare("SELECT * FROM school_improvement_plans WHERE school_id = ? AND is_active = 1 ORDER BY status ASC, created_at DESC");
+$stmt = $db->prepare("
+    SELECT sip.*, u.full_name_ar AS responsible_name
+    FROM school_improvement_plans sip
+    LEFT JOIN users u ON sip.responsible_user_id = u.id
+    WHERE sip.school_id = ? AND sip.is_active = 1
+    ORDER BY sip.status ASC, sip.created_at DESC
+");
 $stmt->execute([$schoolId]);
 $plans = $stmt->fetchAll();
+
+// جلب المستخدمين المسؤولين
+$usersStmt = $db->query("SELECT id, full_name_ar, role_name FROM users WHERE is_active = 1 ORDER BY full_name_ar");
+$availableUsers = $usersStmt->fetchAll();
 
 // هل تحتاج خطة؟
 $climateScore = null;
@@ -103,12 +144,12 @@ try {
     $stmt = $db->prepare("SELECT AVG(ar.numeric_value) as avg FROM assessment_responses ar JOIN assessment_forms af ON ar.form_id = af.id WHERE af.form_key = 'climate_survey' AND ar.school_id = ? AND ar.is_active = 1");
     $stmt->execute([$schoolId]);
     $r = $stmt->fetch();
-    if ($r) $climateScore = round($r['avg'], 1);
+    if ($r && $r['avg'] !== null) $climateScore = round($r['avg'], 1);
 
     $stmt = $db->prepare("SELECT AVG(ar.numeric_value) as avg FROM assessment_responses ar JOIN assessment_forms af ON ar.form_id = af.id WHERE af.form_key = 'facility_checklist' AND ar.school_id = ? AND ar.is_active = 1");
     $stmt->execute([$schoolId]);
     $r = $stmt->fetch();
-    if ($r) $facilityScore = round($r['avg'], 1);
+    if ($r && $r['avg'] !== null) $facilityScore = round($r['avg'], 1);
 } catch (Exception $e) { }
 
 $needsPlan = ($climateScore !== null && $climateScore < 55) || ($facilityScore !== null && $facilityScore < 55);
@@ -121,11 +162,23 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
 
 <div class="section">
     <div class="card mb-6">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-            <h2 class="card-title">📈 خطة تحسين المدرسة</h2>
-            <?php if ($needsPlan && !$hasActivePlan): ?>
-            <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة تحسين</button>
-            <?php endif; ?>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <h2 class="card-title">📈 خطة تحسين المدرسة — <?= e($currentSchool['name_ar']) ?></h2>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <?php if ($userRole === 'group_admin'): ?>
+                <form method="GET" style="display:flex;gap:4px;align-items:center;">
+                    <select name="school_id" class="form-control" style="max-width:200px;font-size:13px;" onchange="this.form.submit();">
+                        <?php foreach ($allSchools as $as): ?>
+                        <option value="<?= $as['id'] ?>" <?= $as['id'] == $schoolId ? 'selected' : '' ?>><?= e($as['name_ar']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
+                <?php endif; ?>
+                <?php if ($needsPlan && !$hasActivePlan): ?>
+                <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة تحسين</button>
+                <?php endif; ?>
+                <button type="button" class="btn btn-light btn-sm" onclick="window.print()">🖨️ طباعة</button>
+            </div>
         </div>
         <div class="card-body">
             <?php if ($needsPlan && !$hasActivePlan): ?>
@@ -173,8 +226,13 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
                                     <input type="text" name="timeline" class="form-control" placeholder="مثال: خلال 3 أشهر">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">المسؤول</label>
-                                    <input type="text" name="responsible" class="form-control" placeholder="اسم المسؤول عن التنفيذ">
+                                    <label class="form-label">المسؤول عن التنفيذ</label>
+                                    <select name="responsible_user_id" class="form-control">
+                                        <option value="">-- اختر المسؤول --</option>
+                                        <?php foreach ($availableUsers as $au): ?>
+                                        <option value="<?= $au['id'] ?>"><?= e($au['full_name_ar']) ?> (<?= $au['role_name'] ?>)</option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -224,10 +282,10 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
                         <p style="margin-top:4px;color:var(--text-secondary);"><?= nl2br(e($plan['strategies'])) ?></p>
                     </div>
 
-                    <?php if ($plan['timeline'] || $plan['responsible']): ?>
+                    <?php if ($plan['timeline'] || $plan['responsible_name']): ?>
                     <div style="margin-top:8px;font-size:13px;color:var(--text-muted);">
                         <?php if ($plan['timeline']): ?>⏰ <?= e($plan['timeline']) ?><?php endif; ?>
-                        <?php if ($plan['responsible']): ?> | 👤 <?= e($plan['responsible']) ?><?php endif; ?>
+                        <?php if ($plan['responsible_name']): ?> | 👤 <?= e($plan['responsible_name']) ?><?php endif; ?>
                     </div>
                     <?php endif; ?>
 
@@ -275,3 +333,13 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
 
 <?php
 require_once __DIR__ . '/../../includes/footer.php';
+?>
+
+<style>
+@media print {
+    .sidebar, .topbar, .btn, form, .card-footer, #create-form { display: none !important; }
+    .section { margin: 0; padding: 0; }
+    .card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    .card-header { background: #f5f5f5 !important; }
+}
+</style>

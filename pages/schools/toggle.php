@@ -1,12 +1,12 @@
 <?php
 /**
  * ============================================================
- * تعطيل/تفعيل مدرسة
+ * أرشفة/استعادة مدرسة
  * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
  * ============================================================
  */
 
-$pageTitle = 'تغيير حالة المدرسة';
+$pageTitle = 'أرشفة/استعادة مدرسة';
 $breadcrumb = [
     'الإدارة' => null,
     'إدارة المدارس' => 'index.php',
@@ -41,16 +41,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("toggle.php?id={$schoolId}");
     }
 
-    $newStatus = $school['is_active'] ? 0 : 1;
+    // If currently active, we archive; if archived, we restore.
+    $isCurrentlyActive = (bool)$school['is_active'];
 
     try {
-        $stmt = $db->prepare("UPDATE schools SET is_active = ?, updated_at = NOW() WHERE id = ?");
-        $stmt->execute([$newStatus, $schoolId]);
+        if ($isCurrentlyActive) {
+            $stmt = $db->prepare("UPDATE schools SET is_active = 0, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$schoolId]);
+            $actionPerformed = 'أرشفة';
+            $statusText = 'الأرشفة';
+        } else {
+            $stmt = $db->prepare("UPDATE schools SET is_active = 1, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$schoolId]);
+            $actionPerformed = 'استعادة';
+            $statusText = 'الاستعادة';
+        }
 
-        $statusText = $newStatus ? 'تفعيل' : 'تعطيل';
-        logActivity($db, $_SESSION['user']['id'], 'toggle_school', "{$statusText} المدرسة: {$school['name_ar']}", 'school', $schoolId);
+        logActivity($db, $_SESSION['user']['id'], 'toggle_school', "{$actionPerformed} المدرسة: {$school['name_ar']}", 'school', $schoolId);
 
-        setFlash("تم {$statusText} المدرسة {$school['name_ar']} بنجاح", 'success');
+        setFlash("تم {$actionPerformed} المدرسة {$school['name_ar']} بنجاح", 'success');
         redirect('index.php');
     } catch (Exception $e) {
         error_log('School Toggle Error: ' . $e->getMessage());
@@ -59,8 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$actionText = $school['is_active'] ? 'تعطيل' : 'تفعيل';
-$actionIcon = $school['is_active'] ? '🚫' : '✅';
+$isCurrentlyActive = (bool)$school['is_active'];
+$actionText = $isCurrentlyActive ? 'أرشفة' : 'استعادة';
+$actionIcon = $isCurrentlyActive ? '🗑️' : '🔄';
+$actionColor = $isCurrentlyActive ? 'danger' : 'success';
 ?>
 
 <div class="card">
@@ -80,7 +91,8 @@ $actionIcon = $school['is_active'] ? '🚫' : '✅';
                     </tr>
                     <tr>
                         <td style="font-weight:600;padding:var(--space-2);">الرمز:</td>
-                        <td style="padding:var(--space-2);"><code><?= e($school['code']) ?></code></td>
+                        <td style="padding:var(--space-2);"><code><?= e($school['code'] ?? ($school['reference_code'] ?? '—')) ?></code></td>
+
                     </tr>
                     <tr>
                         <td style="font-weight:600;padding:var(--space-2);">الحالة الحالية:</td>
@@ -90,11 +102,11 @@ $actionIcon = $school['is_active'] ? '🚫' : '✅';
             </div>
         </div>
 
-        <?php if ($school['is_active']): ?>
-            <p class="text-secondary mb-4">سيتم تعطيل المدرسة ولن تظهر في القوائم النشطة. لن يتم حذف أي بيانات.</p>
-        <?php else: ?>
-            <p class="text-secondary mb-4">سيتم تفعيل المدرسة وستظهر في القوائم النشطة مرة أخرى.</p>
-        <?php endif; ?>
+<?php if ($isCurrentlyActive): ?>
+             <p class="text-secondary mb-4">سيتم أرشفة المدرسة ولن تظهر في القوائم النشطة. لن يتم حذف أي بيانات وسيبقى سجلها محفوظًا للمراجعة التاريخية.</p>
+         <?php else: ?>
+             <p class="text-secondary mb-4">سيتم استعادة المدرسة وستظهر في القوائم النشطة مرة أخرى.</p>
+         <?php endif; ?>
 
         <form method="POST" action="">
             <?= csrfField() ?>

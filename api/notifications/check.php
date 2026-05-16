@@ -10,8 +10,7 @@ if (!isAjax()) {
 }
 
 if (!isset($_SESSION['user']['id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'يجب تسجيل الدخول'], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['count' => 0, 'logged_out' => true, 'success' => true], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

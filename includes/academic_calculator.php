@@ -175,7 +175,7 @@ class AcademicCalculator {
             SELECT DISTINCT sub.id AS subject_id, sub.name_ar, sub.code
             FROM subject_teachers st
             INNER JOIN subjects sub ON sub.id = st.subject_id
-            WHERE st.class_id = ? AND st.academic_year_id = ? AND st.is_active = 1
+            WHERE st.classroom_id = ? AND st.academic_year_id = ?
         ");
         $stmt->execute([$enrollment['class_id'], $academicYearId]);
         $subjects = $stmt->fetchAll();

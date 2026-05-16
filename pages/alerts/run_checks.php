@@ -36,7 +36,11 @@ try {
 // الحصول على السنوات الدراسية
 $academicYears = [];
 try {
-    $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY name DESC");
+    if ($userRole === 'group_admin') {
+        $stmt = $db->query("SELECT id, name FROM academic_years WHERE status != 'planning' ORDER BY start_date DESC");
+    } else {
+        $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC");
+    }
     $academicYears = $stmt->fetchAll();
 } catch (Exception $e) {}
 
@@ -45,7 +49,11 @@ $semesters = [];
 $selectedYear = $_GET['academic_year_id'] ?? ($_POST['academic_year_id'] ?? '');
 if ($selectedYear) {
     try {
-        $stmt = $db->prepare("SELECT id, name_ar FROM semesters WHERE academic_year_id = :year_id AND is_active = 1 ORDER BY id");
+        if ($userRole === 'group_admin') {
+            $stmt = $db->prepare("SELECT id, name_ar FROM semesters WHERE academic_year_id = :year_id ORDER BY id");
+        } else {
+            $stmt = $db->prepare("SELECT id, name_ar FROM semesters WHERE academic_year_id = :year_id AND is_active = 1 ORDER BY id");
+        }
         $stmt->execute([':year_id' => $selectedYear]);
         $semesters = $stmt->fetchAll();
     } catch (Exception $e) {}
@@ -179,11 +187,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_checks'])) {
 </div>
 
 <?php
-$pageJs = "
+$pageJs = <<<'JS'
 document.getElementById('year-select').addEventListener('change', function() {
     var yearId = this.value;
     var semSelect = document.getElementById('semester-select');
-    semSelect.innerHTML = '<option value=\"\">جاري التحميل...</option>';
+    semSelect.innerHTML = '<option value="">جاري التحميل...</option>';
     fetch('run_checks.php?academic_year_id=' + yearId).then(r => r.text()).then(html => {
         var parser = new DOMParser();
         var doc = parser.parseFromString(html, 'text/html');
@@ -191,5 +199,5 @@ document.getElementById('year-select').addEventListener('change', function() {
         semSelect.innerHTML = opts;
     });
 });
-";
+JS;
 require_once __DIR__ . '/../../includes/footer.php';

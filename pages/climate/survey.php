@@ -11,6 +11,7 @@ $pageTitle = 'استبيان المناخ المدرسي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيان المناخ' => 'index.php', 'استبيان جديد' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -33,12 +34,9 @@ try {
 } catch (Exception $e) {}
 
 $academicYears = [];
-$semesters = [];
 try {
-    $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC");
+    $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 AND status != 'planning' ORDER BY start_date DESC");
     $academicYears = $stmt->fetchAll();
-    $stmt = $db->query("SELECT id, name_ar, academic_year_id FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 $respondentTypes = ['teacher' => 'معلم', 'student' => 'طالب', 'parent' => 'ولي أمر', 'admin' => 'إداري'];
@@ -106,6 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$schoolIdPost || !$respondentType || !$academicYearId || !$semesterId) {
                 throw new Exception('يرجى ملء جميع الحقول المطلوبة');
             }
+
+            // Resolve semester 1/2 to actual DB semester_id
+            $semName = semesterValueToNameAr($semesterId);
+            $stmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
+            $stmt->execute([$semName, $academicYearId]);
+            $resolvedSemId = $stmt->fetchColumn();
+            if (!$resolvedSemId) {
+                throw new Exception('الفصل الدراسي المحدد غير موجود لهذه السنة الدراسية');
+            }
+            $semesterId = (int)$resolvedSemId;
             
             $responses = [];
             $itemScores = [];
@@ -132,9 +140,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$schoolIdPost, $academicYearId, $semesterId, $respondentType, $userId, $overallScore, $notes ?: null]);
             $surveyId = $db->lastInsertId();
             
-            $stmt = $db->prepare("INSERT INTO climate_items (survey_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
+            $stmt = $db->prepare("INSERT INTO climate_items (survey_id, item_id, normalized_value, is_active) VALUES (?, ?, ?, 1)");
             foreach ($itemScores as $itemId => $scores) {
-                $stmt->execute([$surveyId, $itemId, $scores['normalized'], null]);
+                $stmt->execute([$surveyId, $itemId, $scores['normalized']]);
             }
             
             $db->commit();
@@ -191,9 +199,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label">الفصل الدراسي <span class="required">*</span></label>
                         <select name="semester_id" class="form-control" required>
                             <option value="">-- اختر الفصل الدراسي --</option>
-                            <?php foreach ($semesters as $sem): ?>
-                                <option value="<?php echo $sem['id']; ?>"><?php echo e($sem['name_ar']); ?></option>
-                            <?php endforeach; ?>
+                            <option value="1">الفصل الدراسي الأول</option>
+                            <option value="2">الفصل الدراسي الثاني</option>
                         </select>
                     </div>
                 </div>

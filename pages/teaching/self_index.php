@@ -1,12 +1,4 @@
 <?php
-/**
- * ============================================================
- * التقييم الذاتي للتدريس - فهرس
- * Teaching Self-Evaluation Index
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
- */
-
 $pageTitle = 'التقييم الذاتي للتدريس';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الذاتي' => null];
 
@@ -22,19 +14,27 @@ $engine = new AssessmentEngine($db);
 
 $userId = $_SESSION['user']['id'];
 
-// جلب تقييمات المعلم الذاتية
 $evaluations = [];
 try {
-    $stmt = $db->prepare("
-        SELECT tse.*, sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_self_evaluations tse
-        JOIN semesters sem ON tse.semester_id = sem.id
-        JOIN academic_years ay ON tse.academic_year_id = ay.id
-        WHERE tse.teacher_id = ? AND tse.is_active = 1
-        ORDER BY tse.evaluation_date DESC
-    ");
-    $stmt->execute([$userId]);
-    $evaluations = $stmt->fetchAll();
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+    $stmt->execute();
+    $formId = $stmt->fetchColumn();
+
+    if ($formId) {
+        $stmt = $db->prepare("
+            SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+                   AVG(ar.numeric_value) AS overall_score,
+                   sem.name_ar AS semester_name, ay.name AS year_name
+            FROM assessment_responses ar
+            JOIN semesters sem ON ar.semester_id = sem.id
+            JOIN academic_years ay ON ar.academic_year_id = ay.id
+            WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ? AND ar.is_active = 1
+            GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
+            ORDER BY ar.response_date DESC
+        ");
+        $stmt->execute([$formId, $userId, $userId]);
+        $evaluations = $stmt->fetchAll();
+    }
 } catch (Exception $e) {}
 ?>
 
@@ -69,20 +69,21 @@ try {
                         <tbody>
                             <?php foreach ($evaluations as $i => $eval): 
                                 $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
+                                $dateParam = urlencode($eval['response_date']);
                             ?>
                             <tr>
-                                <td><?php echo $i + 1; ?></td>
-                                <td><?php echo e($eval['semester_name']); ?></td>
-                                <td><?php echo e($eval['year_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
-                                <td style="font-weight:700; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                                    <?php echo $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
+                                <td><?= $i + 1; ?></td>
+                                <td><?= e($eval['semester_name']); ?></td>
+                                <td><?= e($eval['year_name']); ?></td>
+                                <td><?= formatDateAr($eval['response_date'], 'short'); ?></td>
+                                <td style="font-weight:700; color:<?= $rating['color'] ?? 'inherit'; ?>;">
+                                    <?= $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
                                 </td>
-                                <td style="color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                                    <?php echo $rating['label'] ?? '—'; ?>
+                                <td style="color:<?= $rating['color'] ?? 'inherit'; ?>;">
+                                    <?= $rating['label'] ?? '—'; ?>
                                 </td>
                                 <td class="actions">
-                                    <a href="self_view.php?id=<?php echo $eval['id']; ?>" class="btn btn-sm btn-info">👁️</a>
+                                    <a href="self_view.php?date=<?= $dateParam ?>" class="btn btn-sm btn-info">👁️</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

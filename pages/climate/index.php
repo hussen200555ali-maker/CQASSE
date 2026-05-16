@@ -11,6 +11,7 @@ $pageTitle = 'استبيان المناخ المدرسي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيان المناخ' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -26,6 +27,7 @@ $schoolId = $_SESSION['user']['school_id'] ?? null;
 $filterSchool = $_GET['school_id'] ?? '';
 $filterRespondent = $_GET['respondent_type'] ?? '';
 $filterSemester = $_GET['semester_id'] ?? '';
+$filterAy = (int)($_GET['academic_year_id'] ?? 0);
 
 $sql = "SELECT cs.*, s.name_ar as school_name, sem.name_ar as semester_name, ay.name as year_name
         FROM climate_surveys cs
@@ -38,7 +40,12 @@ $params = [];
 if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND cs.school_id = ?"; $params[] = $schoolId; }
 if ($filterSchool) { $sql .= " AND cs.school_id = ?"; $params[] = $filterSchool; }
 if ($filterRespondent) { $sql .= " AND cs.respondent_type = ?"; $params[] = $filterRespondent; }
-if ($filterSemester) { $sql .= " AND cs.semester_id = ?"; $params[] = $filterSemester; }
+if ($filterAy > 0) { $sql .= " AND cs.academic_year_id = ?"; $params[] = $filterAy; }
+if ($filterSemester) {
+    $semVal = (int)$filterSemester;
+    $semFilter = buildSemesterSubquery($semVal);
+    if ($semFilter['sql']) { $sql .= $semFilter['sql']; $params = array_merge($params, $semFilter['params']); }
+}
 
 $sql .= " ORDER BY cs.survey_date DESC";
 
@@ -56,10 +63,10 @@ try {
     $stmt = $db->prepare($sql); $stmt->execute($p); $schools = $stmt->fetchAll();
 } catch (Exception $e) {}
 
-$semesters = [];
+$academicYears = [];
 try {
-    $stmt = $db->query("SELECT id, name_ar FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
+    $stmt = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 AND status != 'planning' ORDER BY start_date DESC");
+    $academicYears = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 $respondentTypes = ['teacher' => 'معلم', 'student' => 'طالب', 'parent' => 'ولي أمر', 'admin' => 'إداري'];
@@ -252,12 +259,20 @@ if (!empty($surveys)) {
                     </select>
                 </div>
                 <div class="form-group">
+                    <label class="form-label">السنة الدراسية:</label>
+                    <select name="academic_year_id" class="form-control" style="width:auto;">
+                        <option value="0" <?php echo $filterAy === 0 ? 'selected' : ''; ?>>الكل</option>
+                        <?php foreach ($academicYears as $ay): ?>
+                            <option value="<?php echo $ay['id']; ?>" <?php echo $filterAy == $ay['id'] ? 'selected' : ''; ?>><?php echo e($ay['name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label class="form-label">الفصل الدراسي:</label>
                     <select name="semester_id" class="form-control" style="width:auto;">
-                        <option value="">الكل</option>
-                        <?php foreach ($semesters as $sem): ?>
-                            <option value="<?php echo $sem['id']; ?>" <?php echo $filterSemester == $sem['id'] ? 'selected' : ''; ?>><?php echo e($sem['name_ar']); ?></option>
-                        <?php endforeach; ?>
+                        <option value="0" <?php echo $filterSemester == 0 ? 'selected' : ''; ?>>الكل</option>
+                        <option value="1" <?php echo $filterSemester == 1 ? 'selected' : ''; ?>>الفصل الدراسي الأول</option>
+                        <option value="2" <?php echo $filterSemester == 2 ? 'selected' : ''; ?>>الفصل الدراسي الثاني</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">بحث</button>

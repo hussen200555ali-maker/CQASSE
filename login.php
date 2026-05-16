@@ -6,13 +6,10 @@
  * ============================================================
  */
 
-// Start session (same name as session.php to avoid redirect loop)
-session_name('EQAS_SESSION');
-session_start();
-
-// Include required files
+// Include required files (CRITICAL ORDER: database → helpers → session)
 require_once __DIR__ . '/includes/database.php';
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/session.php';
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
@@ -117,9 +114,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ];
                                 $_SESSION['school_id'] = $user['school_id'];
                                 $_SESSION['last_activity'] = time();
+                                $_SESSION['session_nonce'] = bin2hex(random_bytes(16));
                                 $_SESSION['fingerprint'] = hash('sha256',
-                                    $_SERVER['HTTP_USER_AGENT'] .
-                                    ($_SERVER['REMOTE_ADDR'] ?? '') .
+                                    ($_SERVER['HTTP_USER_AGENT'] ?? 'Unknown') .
+                                    $_SESSION['session_nonce'] .
                                     (defined('SESSION_FINGERPRINT_SALT') ? SESSION_FINGERPRINT_SALT : 'EQAS_SecureSalt_2026_v203')
                                 );
                                 $_SESSION['password_hash_sig'] = hash('sha256', $user['password_hash']);

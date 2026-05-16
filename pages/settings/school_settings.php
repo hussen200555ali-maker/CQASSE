@@ -18,7 +18,7 @@ if (!hasPermission('group_admin')) {
 }
 
 // جلب المدارس
-$stmt = $db->query("SELECT id, name_ar, code FROM schools WHERE is_active = 1 ORDER BY name_ar");
+$stmt = $db->query("SELECT id, name_ar, reference_code FROM schools WHERE is_active = 1 ORDER BY name_ar");
 $schools = $stmt->fetchAll();
 
 $selectedSchool = $_GET['school_id'] ?? $_POST['school_id'] ?? '';
@@ -135,10 +135,10 @@ if ($selectedSchool) {
         $selectedSchoolName = '';
         if ($selectedSchool) {
             foreach ($schools as $s) {
-                if ($s['id'] == $selectedSchool) {
-                    $selectedSchoolName = $s['name_ar'] . ' (' . $s['code'] . ')';
-                    break;
-                }
+                 if ($s['id'] == $selectedSchool) {
+                     $selectedSchoolName = $s['name_ar'] . ' (' . $s['reference_code'] . ')';
+                     break;
+                 }
             }
         }
         ?>
@@ -156,7 +156,7 @@ if ($selectedSchool) {
                     <option value="">-- اختر مدرسة --</option>
                     <?php foreach ($schools as $school): ?>
                     <option value="<?php echo $school['id']; ?>" <?php echo $selectedSchool == $school['id'] ? 'selected' : ''; ?>>
-                        <?php echo e($school['name_ar'] . ' (' . $school['code'] . ')'); ?>
+                         <?php echo e($school['name_ar'] . ' (' . $school['reference_code'] . ')'); ?>
                     </option>
                     <?php endforeach; ?>
                 </select>

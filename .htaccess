@@ -39,8 +39,8 @@ php_value memory_limit 256M
     Deny from all
 </FilesMatch>
 
-# منع الوصول لملفات التكوين
-<FilesMatch "(config|database|settings)\.php$">
+# منع الوصول لملفات التكوين (ملفات الإعدادات في المسارات الفرعية مسموح بها)
+<FilesMatch "(config|database)\.php$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>

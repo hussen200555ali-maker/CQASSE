@@ -63,10 +63,10 @@ $classes = [];
 if ($user['role_name'] === 'teacher') {
     $stmt = $db->prepare("SELECT c.name_ar AS class_name, sub.name_ar AS subject_name, ay.name AS year_name
                           FROM subject_teachers st
-                          JOIN classes c ON st.class_id = c.id
+                          JOIN classes c ON c.id = st.classroom_id
                           JOIN subjects sub ON st.subject_id = sub.id
                           JOIN academic_years ay ON st.academic_year_id = ay.id
-                          WHERE st.teacher_id = ? AND st.is_active = 1
+                           WHERE st.teacher_id = ?
                           ORDER BY ay.name DESC, c.name_ar");
     $stmt->execute([$userId]);
     $classes = $stmt->fetchAll();

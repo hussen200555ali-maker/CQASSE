@@ -1,12 +1,12 @@
 <?php
 /**
  * ============================================================
- * تعطيل/تفعيل مستخدم (حذف مبدئي)
+ * أرشفة/استعادة مستخدم (حذف ناعم)
  * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
  * ============================================================
  */
 
-$pageTitle = 'تعطيل/تفعيل مستخدم';
+$pageTitle = 'أرشفة/استعادة مستخدم';
 $breadcrumb = [
     'الإدارة' => null,
     'إدارة المستخدمين' => 'index.php',
@@ -52,25 +52,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $newStatus = $user['is_active'] ? 0 : 1;
 
-    try {
-        $stmt = $db->prepare("UPDATE users SET is_active = ?, updated_at = NOW() WHERE id = ?");
-        $stmt->execute([$newStatus, $userId]);
+     try {
+         if ($newStatus === 0) {
+              // أرشفة المستخدم (تعطيل)
+              $stmt = $db->prepare("UPDATE users SET is_active = 0 WHERE id = ?");
+              $stmt->execute([$userId]);
+              $actionPerformed = 'أرشفة';
+          } else {
+              // استعادة المستخدم (تفعيل)
+              $stmt = $db->prepare("UPDATE users SET is_active = 1 WHERE id = ?");
+              $stmt->execute([$userId]);
+              $actionPerformed = 'استعادة';
+          }
 
-        $statusText = $newStatus ? 'تفعيل' : 'تعطيل';
-        logActivity($db, $_SESSION['user']['id'], 'toggle_user_status', "{$statusText} المستخدم: {$user['username']}", 'user', $userId);
+         logActivity($db, $_SESSION['user']['id'], 'toggle_user_status', "{$actionPerformed} المستخدم: {$user['username']}", 'user', $userId);
 
-        setFlash("تم {$statusText} المستخدم {$user['full_name_ar']} بنجاح", 'success');
-        redirect('index.php');
-    } catch (Exception $e) {
-        error_log('User Toggle Error: ' . $e->getMessage());
-        setFlash('حدث خطأ أثناء تحديث حالة المستخدم', 'danger');
-        redirect('index.php');
-    }
+         setFlash("تم {$actionPerformed} المستخدم {$user['full_name_ar']} بنجاح", 'success');
+         redirect('index.php');
+     } catch (Exception $e) {
+         error_log('User Toggle Error: ' . $e->getMessage());
+         setFlash('حدث خطأ أثناء تحديث حالة المستخدم', 'danger');
+         redirect('index.php');
+     }
 }
 
-$actionText = $user['is_active'] ? 'تعطيل' : 'تفعيل';
-$actionIcon = $user['is_active'] ? '🚫' : '✅';
-$actionColor = $user['is_active'] ? 'danger' : 'success';
+$actionText = $user['is_active'] ? 'أرشفة' : 'استعادة';
+        $actionIcon = $user['is_active'] ? '🗑️' : '🔄';
+        $actionColor = $user['is_active'] ? 'danger' : 'success';
 ?>
 
 <div class="card">
@@ -111,11 +119,11 @@ $actionColor = $user['is_active'] ? 'danger' : 'success';
             </div>
         </div>
 
-        <?php if ($user['is_active']): ?>
-            <p class="text-secondary mb-4">سيتم تعطيل حساب المستخدم ولن يتمكن من تسجيل الدخول. لن يتم حذف أي بيانات.</p>
-        <?php else: ?>
-            <p class="text-secondary mb-4">سيتم تفعيل حساب المستخدم وسيتمكن من تسجيل الدخول مرة أخرى.</p>
-        <?php endif; ?>
+<?php if ($user['is_active']): ?>
+             <p class="text-secondary mb-4">سيتم أرشفة حساب المستخدم ولن يتمكن من تسجيل الدخول. لن يتم حذف أي بيانات وسيبقى سجله محفوظًا للمراجعة التاريخية.</p>
+         <?php else: ?>
+             <p class="text-secondary mb-4">سيتم استعادة حساب المستخدم وسيتمكن من تسجيل الدخول مرة أخرى.</p>
+         <?php endif; ?>
 
         <form method="POST" action="">
             <?= csrfField() ?>

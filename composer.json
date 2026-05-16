@@ -1,5 +1,8 @@
 {
     "require-dev": {
         "phpunit/phpunit": "^10.5"
+    },
+    "require": {
+        "tecnickcom/tcpdf": "^6.11"
     }
 }

@@ -11,6 +11,7 @@ $pageTitle = 'قائمة المهارات';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة المهارات' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
@@ -26,102 +27,6 @@ $schoolId = $_SESSION['user']['school_id'] ?? null;
 
 $filterClass = $_GET['class_id'] ?? '';
 $filterStudent = $_GET['student_id'] ?? '';
-$filterSemester = $_GET['semester_id'] ?? '';
-
-// مستويات المهارات
-$skillLevels = [
-    ['key' => 'beginner',     'label' => 'مبتدئ',    'min' => 0,  'max' => 25,  'color' => '#dc3545', 'icon' => '🔴'],
-    ['key' => 'intermediate', 'label' => 'متوسط',    'min' => 25, 'max' => 50,  'color' => '#ffc107', 'icon' => '🟡'],
-    ['key' => 'advanced',     'label' => 'متقدم',    'min' => 50, 'max' => 75,  'color' => '#17a2b8', 'icon' => '🔵'],
-    ['key' => 'expert',       'label' => 'خبير',     'min' => 75, 'max' => 100, 'color' => '#28a745', 'icon' => '🟢'],
-];
-
-function getSkillLevelInfo($score) {
-    global $skillLevels;
-    foreach ($skillLevels as $level) {
-        if ($score >= $level['min'] && $score < $level['max']) return $level;
-    }
-    return $score >= 100 ? $skillLevels[3] : $skillLevels[0];
-}
-
-// جلب التقييمات
-$sql = "SELECT se.*, s.full_name_ar as student_name, s.student_number,
-        c.name_ar as class_name, u.full_name_ar as evaluator_name,
-        sem.name_ar as semester_name
-        FROM skills_evaluations se
-        JOIN students s ON se.student_id = s.id
-        JOIN classes c ON se.class_id = c.id
-        JOIN users u ON se.evaluator_id = u.id
-        JOIN semesters sem ON se.semester_id = sem.id
-        WHERE se.is_active = 1";
-$params = [];
-
-if ($schoolId && $userRole !== 'group_admin') {
-    $sql .= " AND se.class_id IN (SELECT id FROM classes WHERE school_id = ?)";
-    $params[] = $schoolId;
-}
-if ($userRole === 'teacher') {
-    $sql .= " AND se.evaluator_id = ?";
-    $params[] = $userId;
-}
-if ($filterClass) { $sql .= " AND se.class_id = ?"; $params[] = $filterClass; }
-if ($filterStudent) { $sql .= " AND se.student_id = ?"; $params[] = $filterStudent; }
-if ($filterSemester) { $sql .= " AND se.semester_id = ?"; $params[] = $filterSemester; }
-
-$sql .= " ORDER BY se.evaluation_date DESC";
-
-try {
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $evaluations = $stmt->fetchAll();
-} catch (Exception $e) { $evaluations = []; }
-
-// إحصائيات عامة
-$totalEvaluations = count($evaluations);
-$avgScore = 0;
-$highScore = 0;
-$lowScore = 100;
-$levelCounts = ['beginner' => 0, 'intermediate' => 0, 'advanced' => 0, 'expert' => 0];
-
-if ($totalEvaluations > 0) {
-    $sum = 0;
-    foreach ($evaluations as $eval) {
-        if ($eval['overall_score'] !== null) {
-            $s = $eval['overall_score'];
-            $sum += $s;
-            if ($s > $highScore) $highScore = $s;
-            if ($s < $lowScore) $lowScore = $s;
-            $lv = getSkillLevelInfo($s);
-            $levelCounts[$lv['key']]++;
-        }
-    }
-    $avgScore = round($sum / $totalEvaluations, 1);
-}
-
-// بيانات الرسم البياني - توزيع المستويات
-$chartLabels = ['مبتدئ', 'متوسط', 'متقدم', 'خبير'];
-$chartData = [$levelCounts['beginner'], $levelCounts['intermediate'], $levelCounts['advanced'], $levelCounts['expert']];
-$chartColors = ['#dc3545', '#ffc107', '#17a2b8', '#28a745'];
-
-// بيانات الرسم البياني - متوسط الدرجات حسب الفصل
-$classAvgData = [];
-$classAvgLabels = [];
-if (!empty($evaluations)) {
-    $classScores = [];
-    foreach ($evaluations as $eval) {
-        $cn = $eval['class_name'];
-        if (!isset($classScores[$cn])) $classScores[$cn] = ['sum' => 0, 'count' => 0];
-        if ($eval['overall_score'] !== null) {
-            $classScores[$cn]['sum'] += $eval['overall_score'];
-            $classScores[$cn]['count']++;
-        }
-    }
-    foreach ($classScores as $cn => $data) {
-        $classAvgLabels[] = $cn;
-        $classAvgData[] = $data['count'] > 0 ? round($data['sum'] / $data['count'], 1) : 0;
-    }
-}
-
 // الفصول للفلتر
 $classes = [];
 try {
@@ -132,11 +37,7 @@ try {
     $stmt = $db->prepare($sql); $stmt->execute($p); $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
-$semesters = [];
-try {
-    $stmt = $db->query("SELECT id, name_ar FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
-} catch (Exception $e) {}
+$filterSemester = $_GET['semester_id'] ?? '0';
 
 // الطلاب المميزون (خبير)
 $topStudents = array_filter($evaluations, function($e) { return ($e['overall_score'] ?? 0) >= 75; });
@@ -192,10 +93,9 @@ $topStudents = array_slice($topStudents, 0, 5);
                 <div class="form-group">
                     <label class="form-label">الفصل الدراسي:</label>
                     <select name="semester_id" class="form-control" style="width:auto;">
-                        <option value="">الكل</option>
-                        <?php foreach ($semesters as $sem): ?>
-                            <option value="<?php echo $sem['id']; ?>" <?php echo $filterSemester == $sem['id'] ? 'selected' : ''; ?>><?php echo e($sem['name_ar']); ?></option>
-                        <?php endforeach; ?>
+                        <option value="0" <?php echo $filterSemester == '0' ? 'selected' : ''; ?>>جميع الفصول</option>
+                        <option value="1" <?php echo $filterSemester == '1' ? 'selected' : ''; ?>>الفصل الدراسي الأول</option>
+                        <option value="2" <?php echo $filterSemester == '2' ? 'selected' : ''; ?>>الفصل الدراسي الثاني</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">بحث</button>

@@ -1,12 +1,4 @@
 <?php
-/**
- * ============================================================
- * عرض التقييم الإشرافي - مع رسم مقارنة (ذاتي/أقران/إشرافي)
- * Admin Evaluation View with Comparison Chart
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
- */
-
 $pageTitle = 'عرض التقييم الإشرافي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الإشرافي' => 'admin_index.php', 'عرض التقييم' => null];
 
@@ -20,22 +12,35 @@ if (!hasPermission('school_admin')) {
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
 
-$evalId = (int)($_GET['id'] ?? 0);
-if (!$evalId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('admin_index.php'); }
+$dateStr = $_GET['date'] ?? null;
+$teacherId = (int)($_GET['teacher_id'] ?? 0);
+$userId = $_SESSION['user']['id'];
+
+if (!$dateStr || !$teacherId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('admin_index.php'); }
+
+$formId = 0;
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 LIMIT 1");
+$stmt->execute();
+$formId = $stmt->fetchColumn();
+if (!$formId) { setFlash('نموذج التقييم غير موجود', 'danger'); redirect('admin_index.php'); }
 
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT tae.*, u.full_name_ar as teacher_name, ev.full_name_ar as evaluator_name,
-               sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_admin_evaluations tae
-        JOIN users u ON tae.teacher_id = u.id
-        JOIN users ev ON tae.evaluator_id = ev.id
-        JOIN semesters sem ON tae.semester_id = sem.id
-        JOIN academic_years ay ON tae.academic_year_id = ay.id
-        WHERE tae.id = ? AND tae.is_active = 1
+        SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+               AVG(ar.numeric_value) AS overall_score,
+               u.full_name_ar AS teacher_name,
+               ev.full_name_ar AS evaluator_name,
+               sem.name_ar AS semester_name, ay.name AS year_name
+        FROM assessment_responses ar
+        JOIN users u ON ar.teacher_id = u.id
+        JOIN users ev ON ar.responded_by = ev.id
+        JOIN semesters sem ON ar.semester_id = sem.id
+        JOIN academic_years ay ON ar.academic_year_id = ay.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.response_date = ? AND ar.is_active = 1
+        GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $teacherId, $dateStr]);
     $evaluation = $stmt->fetch();
 } catch (Exception $e) {}
 
@@ -45,14 +50,17 @@ $items = [];
 $categoryScores = [];
 try {
     $stmt = $db->prepare("
-        SELECT tai.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM teaching_admin_items tai JOIN assessment_items ai ON tai.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
-        WHERE tai.evaluation_id = ? AND tai.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
+        SELECT ar.numeric_value AS score, ai.text_ar, ai.tool_type, ai.weight,
+               ai.is_inverse, ai.max_value, ac.name_ar AS category_name
+        FROM assessment_responses ar
+        JOIN assessment_items ai ON ar.item_id = ai.id
+        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.response_date = ? AND ar.is_active = 1
+        ORDER BY ac.sort_order, ai.sort_order
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $teacherId, $dateStr]);
     $items = $stmt->fetchAll();
-    
+
     foreach ($items as $item) {
         $catName = $item['category_name'];
         if (!isset($categoryScores[$catName])) {
@@ -70,53 +78,59 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
 $selfScore = null;
 $peerScore = null;
 try {
-    $stmt = $db->prepare("
-        SELECT AVG(overall_score) as avg_score FROM teaching_self_evaluations 
-        WHERE teacher_id = ? AND semester_id = ? AND is_active = 1
-    ");
-    $stmt->execute([$evaluation['teacher_id'], $evaluation['semester_id']]);
-    $row = $stmt->fetch();
-    $selfScore = $row && $row['avg_score'] !== null ? round($row['avg_score'], 1) : null;
-    
-    $stmt = $db->prepare("
-        SELECT AVG(overall_score) as avg_score FROM teaching_peer_evaluations 
-        WHERE teacher_id = ? AND semester_id = ? AND is_active = 1
-    ");
-    $stmt->execute([$evaluation['teacher_id'], $evaluation['semester_id']]);
-    $row = $stmt->fetch();
-    $peerScore = $row && $row['avg_score'] !== null ? round($row['avg_score'], 1) : null;
+    $selfFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+    $selfFormId->execute();
+    $sfid = $selfFormId->fetchColumn();
+    if ($sfid) {
+        $stmt = $db->prepare("
+            SELECT AVG(ar.numeric_value) FROM assessment_responses ar
+            WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.semester_id = ? AND ar.is_active = 1
+        ");
+        $stmt->execute([$sfid, $teacherId, $evaluation['semester_id']]);
+        $selfScore = $stmt->fetchColumn() ?: null;
+    }
+
+    $peerFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
+    $peerFormId->execute();
+    $pfid = $peerFormId->fetchColumn();
+    if ($pfid) {
+        $stmt = $db->prepare("
+            SELECT AVG(ar.numeric_value) FROM assessment_responses ar
+            WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.semester_id = ? AND ar.is_active = 1
+        ");
+        $stmt->execute([$pfid, $teacherId, $evaluation['semester_id']]);
+        $peerScore = $stmt->fetchColumn() ?: null;
+    }
 } catch (Exception $e) {}
 ?>
 
-<!-- معلومات التقييم -->
 <div class="section">
     <div class="card">
         <div class="card-header">
             <div class="flex items-center gap-3">
                 <span style="font-size:32px;">👔</span>
                 <div>
-                    <h3 class="card-title">التقييم الإشرافي - <?php echo e($evaluation['teacher_name']); ?></h3>
-                    <div style="font-size:13px; color:var(--text-secondary);">المقيّم: <?php echo e($evaluation['evaluator_name']); ?></div>
+                    <h3 class="card-title">التقييم الإشرافي - <?= e($evaluation['teacher_name']) ?></h3>
+                    <div style="font-size:13px; color:var(--text-secondary);">المقيّم: <?= e($evaluation['evaluator_name']) ?></div>
                 </div>
             </div>
             <a href="admin_index.php" class="btn btn-light btn-sm">↩️ رجوع</a>
         </div>
         <div class="card-body">
             <div class="grid grid-3">
-                <div><span style="font-size:12px; color:var(--text-muted);">المعلم</span><div style="font-weight:600;"><?php echo e($evaluation['teacher_name']); ?></div></div>
-                <div><span style="font-size:12px; color:var(--text-muted);">الفصل الدراسي</span><div style="font-weight:600;"><?php echo e($evaluation['semester_name']); ?></div></div>
+                <div><span style="font-size:12px; color:var(--text-muted);">المعلم</span><div style="font-weight:600;"><?= e($evaluation['teacher_name']) ?></div></div>
+                <div><span style="font-size:12px; color:var(--text-muted);">الفصل الدراسي</span><div style="font-weight:600;"><?= e($evaluation['semester_name']) ?></div></div>
                 <div><span style="font-size:12px; color:var(--text-muted);">الدرجة الكلية</span>
-                    <div style="font-weight:700; font-size:20px; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                        <?php echo $overallScore !== null ? number_format($overallScore, 1) . '%' : '—'; ?>
+                    <div style="font-weight:700; font-size:20px; color:<?= $rating['color'] ?? 'inherit' ?>;">
+                        <?= $overallScore !== null ? number_format($overallScore, 1) . '%' : '—' ?>
                     </div>
-                    <?php if ($rating): ?><div style="color:<?php echo $rating['color']; ?>;"><?php echo $rating['label']; ?></div><?php endif; ?>
+                    <?php if ($rating): ?><div style="color:<?= $rating['color'] ?>;"><?= $rating['label'] ?></div><?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- رسم المقارنة -->
 <div class="section">
     <div class="card">
         <div class="card-header"><h3 class="card-title">📊 مقارنة التقييمات (ذاتي / أقران / إشرافي)</h3></div>
@@ -128,7 +142,6 @@ try {
     </div>
 </div>
 
-<!-- عناصر التقييم -->
 <div class="section">
     <h3 class="section-title">تفاصيل التقييم</h3>
     <?php
@@ -140,20 +153,20 @@ try {
     ?>
     <div class="card mb-4">
         <div class="card-header" style="background:var(--primary); color:white;">
-            <h4 style="margin:0; color:white; font-size:15px;">👔 <?php echo e($currentCategory); ?></h4>
+            <h4 style="margin:0; color:white; font-size:15px;">👔 <?= e($currentCategory) ?></h4>
         </div>
         <div class="card-body">
     <?php endif; ?>
             <div style="margin-bottom:16px;">
                 <div class="flex justify-between items-center mb-1">
-                    <span style="font-size:14px; font-weight:500;"><?php echo e($item['text_ar']); ?></span>
-                    <span style="font-size:14px; font-weight:600;"><?php echo number_format($item['score'] ?? 0, 1); ?>%</span>
+                    <span style="font-size:14px; font-weight:500;"><?= e($item['text_ar']) ?></span>
+                    <span style="font-size:14px; font-weight:600;"><?= number_format($item['score'] ?? 0, 1) ?>%</span>
                 </div>
-                <?php echo $engine->renderScoreBar($item['score'] ?? 0); ?>
+                <?= $engine->renderScoreBar($item['score'] ?? 0) ?>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    الأداة: <?php echo e($engine->getToolLabel($item['tool_type'])); ?>
+                    الأداة: <?= e($engine->getToolLabel($item['tool_type'])) ?>
                     <?php if ($item['is_inverse']): ?> | <span style="color:var(--warning);">عكسي</span><?php endif; ?>
-                    | الوزن: <?php echo number_format($item['weight'], 1); ?>
+                    | الوزن: <?= number_format($item['weight'], 1) ?>
                 </div>
             </div>
     <?php endforeach; ?>
@@ -162,15 +175,6 @@ try {
     </div>
     <?php endif; ?>
 </div>
-
-<?php if ($evaluation['notes']): ?>
-<div class="section">
-    <div class="card">
-        <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
-        <div class="card-body"><p><?php echo e($evaluation['notes']); ?></p></div>
-    </div>
-</div>
-<?php endif; ?>
 
 <?php
 $compLabels = [];

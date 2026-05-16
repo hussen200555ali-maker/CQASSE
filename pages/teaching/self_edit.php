@@ -1,11 +1,4 @@
 <?php
-/**
- * ============================================================
- * تعديل التقييم الذاتي للتدريس - Edit Teaching Self-Evaluation
- * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
- * ============================================================
- */
-
 $pageTitle = 'تعديل التقييم الذاتي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الذاتي' => 'self_index.php', 'تعديل التقييم' => null];
 
@@ -21,83 +14,63 @@ $engine = new AssessmentEngine($db);
 
 $userId = $_SESSION['user']['id'];
 $userRole = $_SESSION['user']['role'];
+$dateStr = $_GET['date'] ?? null;
 
-$evalId = (int)($_GET['id'] ?? 0);
-if (!$evalId) {
-    setFlash('معرف التقييم غير صالح', 'danger');
-    redirect('self_index.php');
-}
+if (!$dateStr) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('self_index.php'); }
 
-// جلب بيانات التقييم الذاتي
+$formId = 0;
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+$stmt->execute();
+$formId = (int)$stmt->fetchColumn();
+
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT tse.*, u.full_name_ar as teacher_name,
-               sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_self_evaluations tse
-        JOIN users u ON tse.teacher_id = u.id
-        JOIN semesters sem ON tse.semester_id = sem.id
-        JOIN academic_years ay ON tse.academic_year_id = ay.id
-        WHERE tse.id = ? AND tse.is_active = 1
+        SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+               AVG(ar.numeric_value) AS overall_score,
+               u.full_name_ar AS teacher_name,
+               sem.name_ar AS semester_name, ay.name AS year_name
+        FROM assessment_responses ar
+        JOIN users u ON ar.teacher_id = u.id
+        JOIN semesters sem ON ar.semester_id = sem.id
+        JOIN academic_years ay ON ar.academic_year_id = ay.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
+        GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $userId, $userId, $dateStr]);
     $evaluation = $stmt->fetch();
-} catch (Exception $e) {
-    $evaluation = null;
-}
+} catch (Exception $e) {}
 
-if (!$evaluation) {
-    setFlash('التقييم غير موجود', 'danger');
-    redirect('self_index.php');
-}
+if (!$evaluation) { setFlash('التقييم غير موجود', 'danger'); redirect('self_index.php'); }
 
-// التحقق من الملكية: فقط المعلم نفسه أو المدير يمكنه التعديل
-if ($evaluation['teacher_id'] != $userId && !hasPermission('group_admin')) {
-    setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
-    redirect('self_view.php?id=' . $evalId);
-}
-
-// التحقق من قفل الفصل الدراسي
 if (isSemesterLocked($db, $evaluation['semester_id'])) {
     if (!canEditSemester($db, $evaluation['semester_id'], $userRole)) {
         setFlash('الفصل الدراسي مقفل ولا يمكن تعديل التقييم', 'danger');
-        redirect('self_view.php?id=' . $evalId);
+        redirect('self_index.php');
     }
 }
 
-// جلب عناصر التقييم الحالية
-$existingItems = [];
+// جلب القيم الحالية
+$currentValues = [];
 try {
     $stmt = $db->prepare("
-        SELECT tsi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
-               ac.name_ar as category_name
-        FROM teaching_self_items tsi
-        JOIN assessment_items ai ON tsi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
-        WHERE tsi.evaluation_id = ? AND tsi.is_active = 1
-        ORDER BY ac.sort_order, ai.sort_order
+        SELECT ar.item_id, ar.numeric_value AS score
+        FROM assessment_responses ar
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
     ");
-    $stmt->execute([$evalId]);
-    $existingItems = $stmt->fetchAll();
-} catch (Exception $e) {
-    $existingItems = [];
-}
+    $stmt->execute([$formId, $userId, $userId, $dateStr]);
+    while ($row = $stmt->fetch()) {
+        $currentValues[(int)$row['item_id']] = $row['score'];
+    }
+} catch (Exception $e) {}
 
-// بناء مصفوفة القيم الحالية
-$currentValues = [];
-foreach ($existingItems as $ei) {
-    $currentValues[$ei['item_id']] = $ei['score'];
-}
-
-// جلب نموذج التقييم الذاتي
 $selfForm = null;
 $selfItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
-    $stmt->execute();
-    $formRow = $stmt->fetch();
-    if ($formRow) {
-        $selfForm = $engine->getFormWithItems($formRow['id']);
+    if ($formId) {
+        $selfForm = $engine->getFormWithItems($formId);
         if ($selfForm) {
             foreach ($selfForm['categories'] as $cat) {
                 foreach ($cat['items'] as $item) {
@@ -108,15 +81,12 @@ try {
     }
 } catch (Exception $e) {}
 
-// معالجة التعديل
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf()) {
         setFlash('خطأ في التحقق من الأمان', 'danger');
     } else {
         try {
             $db->beginTransaction();
-
-            $notes = trim($_POST['notes'] ?? '');
 
             $responses = [];
             $itemScores = [];
@@ -128,41 +98,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($validation['valid']) {
                         $normalized = $engine->normalizeTool($item['tool_type'], $validation['value'], $item['max_value'], $item['is_inverse']);
                         $responses[] = ['weight' => $item['weight'], 'normalized' => $normalized];
-                        $itemScores[$item['id']] = ['raw' => $validation['value'], 'normalized' => $normalized];
+                        $itemScores[$item['id']] = $normalized;
                     }
                 }
             }
 
             $overallScore = $engine->calculateScore($responses);
 
-            // تحديث التقييم الرئيسي
+            // Update: delete old responses for this group, insert new ones
             $stmt = $db->prepare("
-                UPDATE teaching_self_evaluations
-                SET overall_score = ?, notes = ?, updated_at = NOW()
-                WHERE id = ?
+                UPDATE assessment_responses SET is_active = 0
+                WHERE form_id = ? AND teacher_id = ? AND responded_by = ? AND response_date = ?
             ");
-            $stmt->execute([$overallScore, $notes ?: null, $evalId]);
+            $stmt->execute([$formId, $userId, $userId, $dateStr]);
 
-            // تحديث عناصر التقييم
-            $stmtCheck = $db->prepare("SELECT id FROM teaching_self_items WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
-            $stmtUpdate = $db->prepare("UPDATE teaching_self_items SET score = ?, notes = ? WHERE evaluation_id = ? AND item_id = ?");
-            $stmtInsert = $db->prepare("INSERT INTO teaching_self_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
-
-            foreach ($itemScores as $itemId => $scores) {
-                $stmtCheck->execute([$evalId, $itemId]);
-                $existingRow = $stmtCheck->fetch();
-
-                if ($existingRow) {
-                    $stmtUpdate->execute([$scores['normalized'], null, $evalId, $itemId]);
-                } else {
-                    $stmtInsert->execute([$evalId, $itemId, $scores['normalized'], null]);
-                }
+            foreach ($itemScores as $itemId => $normalized) {
+                $engine->saveResponse([
+                    'form_id' => $formId,
+                    'item_id' => $itemId,
+                    'teacher_id' => $userId,
+                    'school_id' => $_SESSION['user']['school_id'] ?? null,
+                    'academic_year_id' => $evaluation['academic_year_id'],
+                    'semester_id' => $evaluation['semester_id'],
+                    'numeric_value' => $normalized,
+                    'responded_by' => $userId,
+                ]);
             }
 
             $db->commit();
-            logActivity($db, $userId, 'edit_teaching_self', 'تعديل تقييم ذاتي - الدرجة: ' . number_format($overallScore, 1) . '%', 'teaching_self_evaluation', $evalId);
+            logActivity($db, $userId, 'edit_teaching_self', 'تعديل تقييم ذاتي - الدرجة: ' . number_format($overallScore, 1) . '%', 'assessment_responses', 0);
             setFlash('تم تحديث التقييم الذاتي بنجاح - الدرجة: ' . number_format($overallScore, 1) . '%', 'success');
-            redirect('self_view.php?id=' . $evalId);
+            redirect('self_index.php');
         } catch (Exception $e) {
             $db->rollBack();
             error_log('Teaching Self Edit Error: ' . $e->getMessage());
@@ -177,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-header">
             <h3 class="card-title">✏️ تعديل التقييم الذاتي للتدريس</h3>
             <div class="flex gap-2">
-                <a href="self_view.php?id=<?= $evalId ?>" class="btn btn-info btn-sm">👁️ عرض</a>
+                <a href="self_view.php?date=<?= urlencode($dateStr) ?>" class="btn btn-info btn-sm">👁️ عرض</a>
                 <a href="self_index.php" class="btn btn-light btn-sm">↩ القائمة</a>
             </div>
         </div>
@@ -237,19 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">📝 ملاحظات</h3>
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    <textarea name="notes" class="form-control" rows="3" placeholder="أضف ملاحظاتك هنا..."><?= e($evaluation['notes'] ?? '') ?></textarea>
-                </div>
-            </div>
-        </div>
-
         <div class="flex justify-end gap-3">
-            <a href="self_view.php?id=<?= $evalId ?>" class="btn btn-light">إلغاء</a>
+            <a href="self_view.php?date=<?= urlencode($dateStr) ?>" class="btn btn-light">إلغاء</a>
             <button type="submit" class="btn btn-primary">💾 حفظ التعديلات</button>
         </div>
     </form>

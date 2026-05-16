@@ -1,11 +1,4 @@
 <?php
-/**
- * ============================================================
- * تعديل تقييم القرين - Edit Peer Evaluation
- * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
- * ============================================================
- */
-
 $pageTitle = 'تعديل تقييم القرين';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'تقييم الأقران' => 'peer_index.php', 'تعديل التقييم' => null];
 
@@ -21,85 +14,65 @@ $engine = new AssessmentEngine($db);
 
 $userId = $_SESSION['user']['id'];
 $userRole = $_SESSION['user']['role'];
+$dateStr = $_GET['date'] ?? null;
+$teacherId = (int)($_GET['teacher_id'] ?? 0);
 
-$evalId = (int)($_GET['id'] ?? 0);
-if (!$evalId) {
-    setFlash('معرف التقييم غير صالح', 'danger');
-    redirect('peer_index.php');
-}
+if (!$dateStr || !$teacherId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('peer_index.php'); }
 
-// جلب بيانات تقييم القرين
+$formId = 0;
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
+$stmt->execute();
+$formId = (int)$stmt->fetchColumn();
+
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT tpe.*, u.full_name_ar as teacher_name,
-               ev.full_name_ar as evaluator_name,
-               sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_peer_evaluations tpe
-        JOIN users u ON tpe.teacher_id = u.id
-        JOIN users ev ON tpe.evaluator_id = ev.id
-        JOIN semesters sem ON tpe.semester_id = sem.id
-        JOIN academic_years ay ON tpe.academic_year_id = ay.id
-        WHERE tpe.id = ? AND tpe.is_active = 1
+        SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+               AVG(ar.numeric_value) AS overall_score,
+               u.full_name_ar AS teacher_name,
+               ev.full_name_ar AS evaluator_name,
+               sem.name_ar AS semester_name, ay.name AS year_name
+        FROM assessment_responses ar
+        JOIN users u ON ar.teacher_id = u.id
+        JOIN users ev ON ar.responded_by = ev.id
+        JOIN semesters sem ON ar.semester_id = sem.id
+        JOIN academic_years ay ON ar.academic_year_id = ay.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
+        GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $teacherId, $userId, $dateStr]);
     $evaluation = $stmt->fetch();
-} catch (Exception $e) {
-    $evaluation = null;
-}
+} catch (Exception $e) {}
 
-if (!$evaluation) {
-    setFlash('التقييم غير موجود', 'danger');
-    redirect('peer_index.php');
-}
+if (!$evaluation) { setFlash('التقييم غير موجود', 'danger'); redirect('peer_index.php'); }
 
-// التحقق من الملكية: فقط المقيّم الأصلي أو المدير يمكنه التعديل
-if ($evaluation['evaluator_id'] != $userId && !hasPermission('group_admin')) {
-    setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
-    redirect('peer_view.php?id=' . $evalId);
-}
-
-// التحقق من قفل الفصل الدراسي
 if (isSemesterLocked($db, $evaluation['semester_id'])) {
     if (!canEditSemester($db, $evaluation['semester_id'], $userRole)) {
         setFlash('الفصل الدراسي مقفل ولا يمكن تعديل التقييم', 'danger');
-        redirect('peer_view.php?id=' . $evalId);
+        redirect('peer_index.php');
     }
 }
 
-// جلب عناصر التقييم الحالية
-$existingItems = [];
+$currentValues = [];
 try {
     $stmt = $db->prepare("
-        SELECT tpi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
-               ac.name_ar as category_name
-        FROM teaching_peer_items tpi
-        JOIN assessment_items ai ON tpi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
-        WHERE tpi.evaluation_id = ? AND tpi.is_active = 1
-        ORDER BY ac.sort_order, ai.sort_order
+        SELECT ar.item_id, ar.numeric_value AS score
+        FROM assessment_responses ar
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
     ");
-    $stmt->execute([$evalId]);
-    $existingItems = $stmt->fetchAll();
-} catch (Exception $e) {
-    $existingItems = [];
-}
+    $stmt->execute([$formId, $teacherId, $userId, $dateStr]);
+    while ($row = $stmt->fetch()) {
+        $currentValues[(int)$row['item_id']] = $row['score'];
+    }
+} catch (Exception $e) {}
 
-// بناء مصفوفة القيم الحالية
-$currentValues = [];
-foreach ($existingItems as $ei) {
-    $currentValues[$ei['item_id']] = $ei['score'];
-}
-
-// جلب نموذج تقييم الأقران
 $peerForm = null;
 $peerItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
-    $stmt->execute();
-    $formRow = $stmt->fetch();
-    if ($formRow) {
-        $peerForm = $engine->getFormWithItems($formRow['id']);
+    if ($formId) {
+        $peerForm = $engine->getFormWithItems($formId);
         if ($peerForm) {
             foreach ($peerForm['categories'] as $cat) {
                 foreach ($cat['items'] as $item) {
@@ -110,15 +83,12 @@ try {
     }
 } catch (Exception $e) {}
 
-// معالجة التعديل
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf()) {
         setFlash('خطأ في التحقق من الأمان', 'danger');
     } else {
         try {
             $db->beginTransaction();
-
-            $notes = trim($_POST['notes'] ?? '');
 
             $responses = [];
             $itemScores = [];
@@ -130,41 +100,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($validation['valid']) {
                         $normalized = $engine->normalizeTool($item['tool_type'], $validation['value'], $item['max_value'], $item['is_inverse']);
                         $responses[] = ['weight' => $item['weight'], 'normalized' => $normalized];
-                        $itemScores[$item['id']] = ['raw' => $validation['value'], 'normalized' => $normalized];
+                        $itemScores[$item['id']] = $normalized;
                     }
                 }
             }
 
             $overallScore = $engine->calculateScore($responses);
 
-            // تحديث التقييم الرئيسي
             $stmt = $db->prepare("
-                UPDATE teaching_peer_evaluations
-                SET overall_score = ?, notes = ?, updated_at = NOW()
-                WHERE id = ?
+                UPDATE assessment_responses SET is_active = 0
+                WHERE form_id = ? AND teacher_id = ? AND responded_by = ? AND response_date = ?
             ");
-            $stmt->execute([$overallScore, $notes ?: null, $evalId]);
+            $stmt->execute([$formId, $teacherId, $userId, $dateStr]);
 
-            // تحديث عناصر التقييم
-            $stmtCheck = $db->prepare("SELECT id FROM teaching_peer_items WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
-            $stmtUpdate = $db->prepare("UPDATE teaching_peer_items SET score = ?, notes = ? WHERE evaluation_id = ? AND item_id = ?");
-            $stmtInsert = $db->prepare("INSERT INTO teaching_peer_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
-
-            foreach ($itemScores as $itemId => $scores) {
-                $stmtCheck->execute([$evalId, $itemId]);
-                $existingRow = $stmtCheck->fetch();
-
-                if ($existingRow) {
-                    $stmtUpdate->execute([$scores['normalized'], null, $evalId, $itemId]);
-                } else {
-                    $stmtInsert->execute([$evalId, $itemId, $scores['normalized'], null]);
-                }
+            foreach ($itemScores as $itemId => $normalized) {
+                $engine->saveResponse([
+                    'form_id' => $formId,
+                    'item_id' => $itemId,
+                    'teacher_id' => $teacherId,
+                    'school_id' => $_SESSION['user']['school_id'] ?? null,
+                    'academic_year_id' => $evaluation['academic_year_id'],
+                    'semester_id' => $evaluation['semester_id'],
+                    'numeric_value' => $normalized,
+                    'responded_by' => $userId,
+                ]);
             }
 
             $db->commit();
-            logActivity($db, $userId, 'edit_teaching_peer', 'تعديل تقييم قرين - الدرجة: ' . number_format($overallScore, 1) . '% - المعلم: ' . $evaluation['teacher_name'], 'teaching_peer_evaluation', $evalId);
+            logActivity($db, $userId, 'edit_teaching_peer', 'تعديل تقييم قرين - الدرجة: ' . number_format($overallScore, 1) . '% - المعلم: ' . $evaluation['teacher_name'], 'assessment_responses', 0);
             setFlash('تم تحديث تقييم القرين بنجاح - الدرجة: ' . number_format($overallScore, 1) . '%', 'success');
-            redirect('peer_view.php?id=' . $evalId);
+            redirect('peer_index.php');
         } catch (Exception $e) {
             $db->rollBack();
             error_log('Teaching Peer Edit Error: ' . $e->getMessage());
@@ -179,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-header">
             <h3 class="card-title">✏️ تعديل تقييم القرين</h3>
             <div class="flex gap-2">
-                <a href="peer_view.php?id=<?= $evalId ?>" class="btn btn-info btn-sm">👁️ عرض</a>
+                <a href="peer_view.php?date=<?= urlencode($dateStr) ?>&teacher_id=<?= $teacherId ?>" class="btn btn-info btn-sm">👁️ عرض</a>
                 <a href="peer_index.php" class="btn btn-light btn-sm">↩ القائمة</a>
             </div>
         </div>
@@ -243,19 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">📝 ملاحظات</h3>
-            </div>
-            <div class="card-body">
-                <div class="form-group">
-                    <textarea name="notes" class="form-control" rows="3" placeholder="أضف ملاحظاتك هنا..."><?= e($evaluation['notes'] ?? '') ?></textarea>
-                </div>
-            </div>
-        </div>
-
         <div class="flex justify-end gap-3">
-            <a href="peer_view.php?id=<?= $evalId ?>" class="btn btn-light">إلغاء</a>
+            <a href="peer_view.php?date=<?= urlencode($dateStr) ?>&teacher_id=<?= $teacherId ?>" class="btn btn-light">إلغاء</a>
             <button type="submit" class="btn btn-primary">💾 حفظ التعديلات</button>
         </div>
     </form>

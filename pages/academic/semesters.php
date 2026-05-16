@@ -240,6 +240,7 @@ foreach ($semesters as $sem) {
                                 <td><?= formatNumberAr($semesterStats[$sem['id']]['assessments']) ?></td>
                                 <td class="actions">
                                     <?php if (hasPermission('group_admin')): ?>
+                                        <a href="edit_semester.php?id=<?= $sem['id'] ?>" class="btn btn-sm btn-primary" title="تعديل التواريخ">🗓️</a>
                                         <!-- تبديل سريع للقفل -->
                                         <form method="POST" action="" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من تغيير حالة القفل؟');">
                                             <?= csrfField() ?>

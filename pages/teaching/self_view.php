@@ -1,12 +1,4 @@
 <?php
-/**
- * ============================================================
- * عرض التقييم الذاتي - مع رسم رادار
- * Teaching Self-Evaluation View with Radar Chart
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
- */
-
 $pageTitle = 'عرض التقييم الذاتي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الذاتي' => 'self_index.php', 'عرض التقييم' => null];
 
@@ -20,47 +12,59 @@ if (!hasPermission('teacher')) {
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
 
-$evalId = (int)($_GET['id'] ?? 0);
-if (!$evalId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('self_index.php'); }
+$dateStr = $_GET['date'] ?? null;
+if (!$dateStr) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('self_index.php'); }
 
+$userId = $_SESSION['user']['id'];
+
+// الحصول على id النموذج
+$formId = 0;
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+$stmt->execute();
+$formId = $stmt->fetchColumn();
+if (!$formId) { setFlash('نموذج التقييم غير موجود', 'danger'); redirect('self_index.php'); }
+
+// جلب معلومات التقييم
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT tse.*, sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_self_evaluations tse
-        JOIN semesters sem ON tse.semester_id = sem.id
-        JOIN academic_years ay ON tse.academic_year_id = ay.id
-        WHERE tse.id = ? AND tse.is_active = 1
+        SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+               AVG(ar.numeric_value) AS overall_score,
+               sem.name_ar AS semester_name, ay.name AS year_name
+        FROM assessment_responses ar
+        JOIN semesters sem ON ar.semester_id = sem.id
+        JOIN academic_years ay ON ar.academic_year_id = ay.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
+        GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $userId, $userId, $dateStr]);
     $evaluation = $stmt->fetch();
 } catch (Exception $e) {}
 
 if (!$evaluation) { setFlash('التقييم غير موجود', 'danger'); redirect('self_index.php'); }
 
-// التأكد أن المعلم يرى تقييماته فقط
-if ($_SESSION['user']['role'] === 'teacher' && $evaluation['teacher_id'] != $_SESSION['user']['id']) {
-    setFlash('ليس لديك صلاحية لعرض هذا التقييم', 'danger');
-    redirect('self_index.php');
-}
-
+// جلب العناصر
 $items = [];
 $categoryScores = [];
 try {
     $stmt = $db->prepare("
-        SELECT tsi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM teaching_self_items tsi JOIN assessment_items ai ON tsi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
-        WHERE tsi.evaluation_id = ? AND tsi.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
+        SELECT ar.numeric_value AS score, ai.text_ar, ai.tool_type, ai.weight,
+               ai.is_inverse, ai.max_value, ac.name_ar AS category_name
+        FROM assessment_responses ar
+        JOIN assessment_items ai ON ar.item_id = ai.id
+        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
+          AND ar.response_date = ? AND ar.is_active = 1
+        ORDER BY ac.sort_order, ai.sort_order
     ");
-    $stmt->execute([$evalId]);
+    $stmt->execute([$formId, $userId, $userId, $dateStr]);
     $items = $stmt->fetchAll();
-    
-    // حساب متوسط كل فئة
+
     foreach ($items as $item) {
         $catName = $item['category_name'];
         if (!isset($categoryScores[$catName])) {
-            $categoryScores[$catName] = ['total' => 0, 'count' => 0, 'weighted_sum' => 0, 'total_weight' => 0];
+            $categoryScores[$catName] = ['weighted_sum' => 0, 'total_weight' => 0, 'count' => 0];
         }
         $categoryScores[$catName]['weighted_sum'] += $item['weight'] * ($item['score'] ?? 0);
         $categoryScores[$catName]['total_weight'] += $item['weight'];
@@ -71,7 +75,6 @@ try {
 $overallScore = $evaluation['overall_score'];
 $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null;
 
-// تحضير بيانات رسم الرادار
 $radarLabels = [];
 $radarData = [];
 foreach ($categoryScores as $catName => $catData) {
@@ -80,7 +83,6 @@ foreach ($categoryScores as $catName => $catData) {
 }
 ?>
 
-<!-- معلومات التقييم -->
 <div class="section">
     <div class="card">
         <div class="card-header">
@@ -88,21 +90,21 @@ foreach ($categoryScores as $catName => $catData) {
                 <span style="font-size:32px;">🪞</span>
                 <div>
                     <h3 class="card-title">التقييم الذاتي للتدريس</h3>
-                    <div style="font-size:13px; color:var(--text-secondary);"><?php echo e($evaluation['semester_name'] . ' - ' . $evaluation['year_name']); ?></div>
+                    <div style="font-size:13px; color:var(--text-secondary);"><?= e($evaluation['semester_name'] . ' - ' . $evaluation['year_name']) ?></div>
                 </div>
             </div>
             <a href="self_index.php" class="btn btn-light btn-sm">↩️ رجوع</a>
         </div>
         <div class="card-body">
             <div class="grid grid-3">
-                <div><span style="font-size:12px; color:var(--text-muted);">التاريخ</span><div style="font-weight:600;"><?php echo formatDateAr($evaluation['evaluation_date'], 'medium'); ?></div></div>
-                <div><span style="font-size:12px; color:var(--text-muted);">الفصل الدراسي</span><div style="font-weight:600;"><?php echo e($evaluation['semester_name']); ?></div></div>
+                <div><span style="font-size:12px; color:var(--text-muted);">التاريخ</span><div style="font-weight:600;"><?= formatDateAr($evaluation['response_date'], 'medium') ?></div></div>
+                <div><span style="font-size:12px; color:var(--text-muted);">الفصل الدراسي</span><div style="font-weight:600;"><?= e($evaluation['semester_name']) ?></div></div>
                 <div><span style="font-size:12px; color:var(--text-muted);">الدرجة الكلية</span>
-                    <div style="font-weight:700; font-size:20px; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                        <?php echo $overallScore !== null ? number_format($overallScore, 1) . '%' : '—'; ?>
+                    <div style="font-weight:700; font-size:20px; color:<?= $rating['color'] ?? 'inherit' ?>;">
+                        <?= $overallScore !== null ? number_format($overallScore, 1) . '%' : '—' ?>
                     </div>
                     <?php if ($rating): ?>
-                        <div style="color:<?php echo $rating['color']; ?>;"><?php echo $rating['label']; ?></div>
+                        <div style="color:<?= $rating['color'] ?>;"><?= $rating['label'] ?></div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -110,7 +112,6 @@ foreach ($categoryScores as $catName => $catData) {
     </div>
 </div>
 
-<!-- رسم الرادار -->
 <?php if (!empty($radarLabels)): ?>
 <div class="section">
     <div class="card">
@@ -124,7 +125,6 @@ foreach ($categoryScores as $catName => $catData) {
 </div>
 <?php endif; ?>
 
-<!-- عناصر التقييم -->
 <div class="section">
     <h3 class="section-title">تفاصيل التقييم</h3>
     <?php
@@ -136,20 +136,20 @@ foreach ($categoryScores as $catName => $catData) {
     ?>
     <div class="card mb-4">
         <div class="card-header" style="background:var(--info); color:white;">
-            <h4 style="margin:0; color:white; font-size:15px;">🪞 <?php echo e($currentCategory); ?></h4>
+            <h4 style="margin:0; color:white; font-size:15px;">🪞 <?= e($currentCategory) ?></h4>
         </div>
         <div class="card-body">
     <?php endif; ?>
             <div style="margin-bottom:16px;">
                 <div class="flex justify-between items-center mb-1">
-                    <span style="font-size:14px; font-weight:500;"><?php echo e($item['text_ar']); ?></span>
-                    <span style="font-size:14px; font-weight:600; color:<?php echo $engine->getScoreRating($item['score'] ?? 0)['color']; ?>;">
-                        <?php echo number_format($item['score'] ?? 0, 1); ?>%
+                    <span style="font-size:14px; font-weight:500;"><?= e($item['text_ar']) ?></span>
+                    <span style="font-size:14px; font-weight:600; color:<?= $engine->getScoreRating($item['score'] ?? 0)['color'] ?>;">
+                        <?= number_format($item['score'] ?? 0, 1) ?>%
                     </span>
                 </div>
-                <?php echo $engine->renderScoreBar($item['score'] ?? 0); ?>
+                <?= $engine->renderScoreBar($item['score'] ?? 0) ?>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    الأداة: <?php echo e($engine->getToolLabel($item['tool_type'])); ?>
+                    الأداة: <?= e($engine->getToolLabel($item['tool_type'])) ?>
                 </div>
             </div>
     <?php endforeach; ?>
@@ -159,17 +159,7 @@ foreach ($categoryScores as $catName => $catData) {
     <?php endif; ?>
 </div>
 
-<?php if ($evaluation['notes']): ?>
-<div class="section">
-    <div class="card">
-        <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
-        <div class="card-body"><p><?php echo e($evaluation['notes']); ?></p></div>
-    </div>
-</div>
-<?php endif; ?>
-
 <?php
-// جافاسكربت لرسم الرادار
 $pageJs = "
     initChart('radarChart', 'radar', {
         labels: " . json_encode($radarLabels, JSON_UNESCAPED_UNICODE) . ",

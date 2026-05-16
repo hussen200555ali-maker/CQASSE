@@ -123,60 +123,63 @@ class EQICalculator {
         if ($academicScore !== null) { 
             $scores['academic'] = $academicScore; 
             $availableDimensions[] = 'academic'; 
-            $dimensionDetails['academic'] = ['score' => $academicScore, 'status' => 'available', 'source' => 'grades'];
+            $dimensionDetails['academic'] = ['score' => $academicScore, 'status' => 'available', 'source_type' => 'direct', 'source' => 'grades'];
         } else { 
             $missingDimensions[] = 'academic'; 
-            $dimensionDetails['academic'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['academic'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
-        $teachingScore = $this->calculateTeachingScore($schoolId, $academicYearId, $semesterId);
+        $usedTeachingProxy = false;
+        $teachingScore = $this->calculateTeachingScore($schoolId, $academicYearId, $semesterId, $usedTeachingProxy);
         if ($teachingScore !== null) { 
             $scores['teaching'] = $teachingScore; 
             $availableDimensions[] = 'teaching'; 
-            $dimensionDetails['teaching'] = ['score' => $teachingScore, 'status' => 'available', 'source' => 'evaluations'];
+            $teachingSourceType = $usedTeachingProxy ? 'proxy' : 'direct';
+            $teachingSource = $usedTeachingProxy ? 'grades_proxy' : 'teaching_evaluation_summary';
+            $dimensionDetails['teaching'] = ['score' => $teachingScore, 'status' => 'available', 'source_type' => $teachingSourceType, 'source' => $teachingSource];
         } else { 
             $missingDimensions[] = 'teaching'; 
-            $dimensionDetails['teaching'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['teaching'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
         $climateScore = $this->calculateClimateScore($schoolId, $academicYearId, $semesterId);
         if ($climateScore !== null) { 
             $scores['climate'] = $climateScore; 
             $availableDimensions[] = 'climate'; 
-            $dimensionDetails['climate'] = ['score' => $climateScore, 'status' => 'available', 'source' => 'surveys'];
+            $dimensionDetails['climate'] = ['score' => $climateScore, 'status' => 'available', 'source_type' => 'direct', 'source' => 'surveys'];
         } else { 
             $missingDimensions[] = 'climate'; 
-            $dimensionDetails['climate'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['climate'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
         $behaviorScore = $this->calculateBehaviorScore($schoolId, $academicYearId, $semesterId);
         if ($behaviorScore !== null) { 
             $scores['behavior'] = $behaviorScore; 
             $availableDimensions[] = 'behavior'; 
-            $dimensionDetails['behavior'] = ['score' => $behaviorScore, 'status' => 'available', 'source' => 'evaluations'];
+            $dimensionDetails['behavior'] = ['score' => $behaviorScore, 'status' => 'available', 'source_type' => 'direct', 'source' => 'evaluations'];
         } else { 
             $missingDimensions[] = 'behavior'; 
-            $dimensionDetails['behavior'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['behavior'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
         $skillsScore = $this->calculateSkillsScore($schoolId, $academicYearId, $semesterId);
         if ($skillsScore !== null) { 
             $scores['skills'] = $skillsScore; 
             $availableDimensions[] = 'skills'; 
-            $dimensionDetails['skills'] = ['score' => $skillsScore, 'status' => 'available', 'source' => 'evaluations'];
+            $dimensionDetails['skills'] = ['score' => $skillsScore, 'status' => 'available', 'source_type' => 'direct', 'source' => 'evaluations'];
         } else { 
             $missingDimensions[] = 'skills'; 
-            $dimensionDetails['skills'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['skills'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
         $attendanceScore = $this->calculateAttendanceScore($schoolId, $academicYearId, $semesterId);
         if ($attendanceScore !== null) { 
             $scores['attendance'] = $attendanceScore; 
             $availableDimensions[] = 'attendance'; 
-            $dimensionDetails['attendance'] = ['score' => $attendanceScore, 'status' => 'available', 'source' => 'summary'];
+            $dimensionDetails['attendance'] = ['score' => $attendanceScore, 'status' => 'available', 'source_type' => 'direct', 'source' => 'summary'];
         } else { 
             $missingDimensions[] = 'attendance'; 
-            $dimensionDetails['attendance'] = ['score' => null, 'status' => 'missing', 'source' => null];
+            $dimensionDetails['attendance'] = ['score' => null, 'status' => 'missing', 'source_type' => null, 'source' => null];
         }
         
         // 2. إذا لم تتوفر أي أبعاد
@@ -332,75 +335,58 @@ class EQICalculator {
     /**
      * حساب درجة جودة التدريس
      * مرجح: ذاتي 20%، أقران 30%، إشرافي 50%
+     * 
+     * آلية احتياطية تدريجية:
+     * 1. المحاولة الأولى: تقييمات التدريس الفعلية من teaching_evaluation_summary
+     * 2. الاحتياطي: متوسط درجات الطلاب (وكيل) عند غياب بيانات التقييم
+     * 3. تسجيل تحذير في سجل الأخطاء عند استخدام الاحتياطي
+     * 
+     * @param int $schoolId
+     * @param int $yearId
+     * @param int $semesterId
+     * @param bool $usedProxy مرجع يُضبط على true إذا تم استخدام الاحتياطي
+     * @return float|null
      */
-    private function calculateTeachingScore($schoolId, $yearId, $semesterId) {
+    private function calculateTeachingScore($schoolId, $yearId, $semesterId, &$usedProxy = false) {
         try {
-            $selfScore = null;
-            $peerScore = null;
-            $adminScore = null;
-            
-            // التقييم الذاتي
-            $sql = "SELECT AVG(tse.overall_score) AS avg_score
-                    FROM teaching_self_evaluations tse
-                    INNER JOIN users u ON u.id = tse.teacher_id
-                    INNER JOIN subject_teachers st ON st.teacher_id = u.id
-                    WHERE st.academic_year_id = :year_id
-                        AND tse.academic_year_id = :year_id 
-                        AND tse.semester_id = :semester_id 
-                        AND tse.is_active = 1
-                        AND u.school_id = :school_id";
+            // 1. المحاولة الأولى: تقييمات التدريس الفعلية (مُجمّعة مسبقاً في teaching_evaluation_summary)
+            $sql = "SELECT COALESCE(AVG(tes.combined_score), 0)
+                    FROM teaching_evaluation_summary tes
+                    JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
+                    WHERE tes.academic_year_id = :year_id
+                      AND tes.semester_id = :semester_id
+                      AND tes.is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':school_id' => $schoolId, ':year_id' => $yearId, ':semester_id' => $semesterId]);
             $result = $stmt->fetchColumn();
-            if ($result !== null && $result !== false) $selfScore = (float)$result;
-            
-            // تقييم الأقران
-            $sql = "SELECT AVG(tpe.overall_score) AS avg_score
-                    FROM teaching_peer_evaluations tpe
-                    INNER JOIN users u ON u.id = tpe.evaluatee_id
-                    WHERE tpe.academic_year_id = :year_id 
-                        AND tpe.semester_id = :semester_id 
-                        AND tpe.is_active = 1
-                        AND u.school_id = :school_id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':school_id' => $schoolId, ':year_id' => $yearId, ':semester_id' => $semesterId]);
-            $result = $stmt->fetchColumn();
-            if ($result !== null && $result !== false) $peerScore = (float)$result;
-            
-            // التقييم الإشرافي
-            $sql = "SELECT AVG(tae.overall_score) AS avg_score
-                    FROM teaching_admin_evaluations tae
-                    INNER JOIN users u ON u.id = tae.teacher_id
-                    WHERE tae.academic_year_id = :year_id 
-                        AND tae.semester_id = :semester_id 
-                        AND tae.is_active = 1
-                        AND u.school_id = :school_id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':school_id' => $schoolId, ':year_id' => $yearId, ':semester_id' => $semesterId]);
-            $result = $stmt->fetchColumn();
-            if ($result !== null && $result !== false) $adminScore = (float)$result;
-            
-            // حساب المرجح
-            $totalWeight = 0;
-            $weightedSum = 0;
-            
-            if ($selfScore !== null) {
-                $weightedSum += $selfScore * 0.20;
-                $totalWeight += 0.20;
+
+            if ($result !== null && $result !== false && $result > 0) {
+                return round((float)$result, 2);
             }
-            if ($peerScore !== null) {
-                $weightedSum += $peerScore * 0.30;
-                $totalWeight += 0.30;
+
+            // 2. وكيل احتياطي: متوسط درجات الطلاب عند غياب بيانات تقييم التدريس
+            $proxySql = "SELECT AVG(g.grade_value / g.max_value * 100) AS avg_score
+                         FROM grades g
+                         INNER JOIN students s ON s.id = g.student_id
+                         WHERE s.school_id = :school_id 
+                             AND g.academic_year_id = :year_id 
+                             AND g.semester_id = :semester_id 
+                             AND g.is_active = 1 
+                             AND s.is_active = 1";
+            $proxyStmt = $this->db->prepare($proxySql);
+            $proxyStmt->execute([
+                ':school_id' => $schoolId,
+                ':year_id' => $yearId,
+                ':semester_id' => $semesterId,
+            ]);
+            $proxyResult = $proxyStmt->fetchColumn();
+
+            if ($proxyResult !== null && $proxyResult !== false) {
+                $usedProxy = true;
+                error_log("EQICalculator::calculateTeachingScore - WARNING: Using proxy (student grades) for school_id=$schoolId, year_id=$yearId, semester_id=$semesterId. No teaching evaluation data found.");
+                return round((float)$proxyResult, 2);
             }
-            if ($adminScore !== null) {
-                $weightedSum += $adminScore * 0.50;
-                $totalWeight += 0.50;
-            }
-            
-            if ($totalWeight > 0) {
-                return round(($weightedSum / $totalWeight), 2);
-            }
-            
+
             return null;
         } catch (Exception $e) {
             error_log('EQICalculator::calculateTeachingScore - ' . $e->getMessage());
@@ -457,7 +443,8 @@ class EQICalculator {
             ]);
             $result = $stmt->fetchColumn();
             
-            return $result !== null && $result !== false ? round((float)$result, 2) : null;
+            $score = $result !== null && $result !== false ? round((float)$result, 2) : null;
+            return $score !== null ? min(100, $score) : null;
         } catch (Exception $e) {
             error_log('EQICalculator::calculateBehaviorScore - ' . $e->getMessage());
             return null;
@@ -472,12 +459,9 @@ class EQICalculator {
         try {
             $sql = "SELECT AVG(se.score) AS avg_score
                     FROM skills_evaluations se
-                    INNER JOIN students s ON s.id = se.student_id
-                    WHERE s.school_id = :school_id 
+                    WHERE se.school_id = :school_id 
                         AND se.academic_year_id = :year_id 
-                        AND se.semester_id = :semester_id 
-                        AND se.is_active = 1
-                        AND s.is_active = 1";
+                        AND se.semester_id = :semester_id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -557,13 +541,36 @@ class EQICalculator {
                         overall_eqi = :eqi, calculated_by = :calc_by,
                         calculated_at = CURRENT_TIMESTAMP
                         WHERE id = :id";
-                $params[':id'] = $existing['id'];
+                $params = [
+                    ':academic' => $scores['academic'] ?? null,
+                    ':teaching' => $scores['teaching'] ?? null,
+                    ':climate' => $scores['climate'] ?? null,
+                    ':behavior' => $scores['behavior'] ?? null,
+                    ':skills' => $scores['skills'] ?? null,
+                    ':attendance' => $scores['attendance'] ?? null,
+                    ':eqi' => $eqi,
+                    ':calc_by' => $_SESSION['user']['id'] ?? 0,
+                    ':id' => $existing['id'],
+                ];
             } else {
                 $sql = "INSERT INTO equi_results 
                         (school_id, academic_year_id, semester_id, academic_score, teaching_score, 
                          climate_score, behavior_score, skills_score, attendance_score, overall_eqi, calculated_by)
                         VALUES (:school_id, :year_id, :semester_id, :academic, :teaching, 
                                 :climate, :behavior, :skills, :attendance, :eqi, :calc_by)";
+                $params = [
+                    ':school_id' => $schoolId,
+                    ':year_id' => $yearId,
+                    ':semester_id' => $semesterId,
+                    ':academic' => $scores['academic'] ?? null,
+                    ':teaching' => $scores['teaching'] ?? null,
+                    ':climate' => $scores['climate'] ?? null,
+                    ':behavior' => $scores['behavior'] ?? null,
+                    ':skills' => $scores['skills'] ?? null,
+                    ':attendance' => $scores['attendance'] ?? null,
+                    ':eqi' => $eqi,
+                    ':calc_by' => $_SESSION['user']['id'] ?? 0,
+                ];
             }
 
             $stmt = $this->db->prepare($sql);
@@ -687,6 +694,79 @@ class EQICalculator {
     }
     
     // ========================================================================
+    // فحص جاهزية البيانات
+    // ========================================================================
+
+    /**
+     * فحص مدى توفر البيانات اللازمة لحساب المؤشر لكل بُعد
+     */
+    public function checkDataAvailability($schoolId, $yearId, $semesterId) {
+        $checks = [];
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM grades g
+                INNER JOIN students s ON s.id = g.student_id
+                WHERE s.school_id = ? AND g.academic_year_id = ? AND g.semester_id = ? AND g.is_active = 1 AND s.is_active = 1");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $checks['academic'] = ['available' => $count > 0, 'count' => $count, 'page' => 'academic_assessment/grade_entry.php', 'page_label' => 'إدخال الدرجات'];
+        } catch (Exception $e) { $checks['academic'] = ['available' => false, 'count' => 0, 'page' => 'academic_assessment/grade_entry.php', 'page_label' => 'إدخال الدرجات']; }
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM subject_teachers st
+                JOIN classes c ON c.id = st.classroom_id
+                WHERE c.school_id = ? AND c.academic_year_id = ? AND st.semester_id = ?");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $available = $count > 0;
+            $checks['teaching'] = [
+                'available' => $available,
+                'partial' => $available,
+                'count' => $count,
+                'page' => 'teaching/self_evaluate.php',
+                'page_label' => 'تقييم التدريس (تقديري)',
+            ];
+        } catch (Exception $e) { $checks['teaching'] = ['available' => false, 'partial' => false, 'count' => 0, 'page' => 'teaching/self_evaluate.php', 'page_label' => 'تقييم التدريس (تقديري)']; }
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM climate_surveys
+                WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $checks['climate'] = ['available' => $count > 0, 'count' => $count, 'page' => 'climate/survey.php', 'page_label' => 'استبيان المناخ'];
+        } catch (Exception $e) { $checks['climate'] = ['available' => false, 'count' => 0, 'page' => 'climate/survey.php', 'page_label' => 'استبيان المناخ']; }
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM behavior_scores bs
+                INNER JOIN students s ON s.id = bs.student_id
+                WHERE s.school_id = ? AND bs.academic_year_id = ? AND bs.semester_id = ? AND bs.is_active = 1 AND s.is_active = 1");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $checks['behavior'] = ['available' => $count > 0, 'count' => $count, 'page' => 'behavior/evaluate.php', 'page_label' => 'تقييم السلوك'];
+        } catch (Exception $e) { $checks['behavior'] = ['available' => false, 'count' => 0, 'page' => 'behavior/evaluate.php', 'page_label' => 'تقييم السلوك']; }
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM skills_evaluations se
+                INNER JOIN students s ON s.id = se.student_id
+                WHERE s.school_id = ? AND se.academic_year_id = ? AND se.semester_id = ? AND se.is_active = 1 AND s.is_active = 1");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $checks['skills'] = ['available' => $count > 0, 'count' => $count, 'page' => 'skills/evaluate.php', 'page_label' => 'تقييم المهارات'];
+        } catch (Exception $e) { $checks['skills'] = ['available' => false, 'count' => 0, 'page' => 'skills/evaluate.php', 'page_label' => 'تقييم المهارات']; }
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM attendance_summaries ats
+                INNER JOIN students s ON s.id = ats.student_id
+                WHERE s.school_id = ? AND ats.academic_year_id = ? AND ats.semester_id = ? AND ats.is_active = 1 AND s.is_active = 1");
+            $stmt->execute([$schoolId, $yearId, $semesterId]);
+            $count = (int)$stmt->fetchColumn();
+            $checks['attendance'] = ['available' => $count > 0, 'count' => $count, 'page' => 'attendance/index.php', 'page_label' => 'سجلات الحضور'];
+        } catch (Exception $e) { $checks['attendance'] = ['available' => false, 'count' => 0, 'page' => 'attendance/index.php', 'page_label' => 'سجلات الحضور']; }
+
+        return $checks;
+    }
+
+    // ========================================================================
     // المقارنات
     // ========================================================================
     
@@ -731,7 +811,7 @@ class EQICalculator {
      */
     private function getSchoolInfo($schoolId) {
         try {
-            $stmt = $this->db->prepare("SELECT id, name_ar, name_en, code, reference_code, school_type FROM schools WHERE id = :id");
+            $stmt = $this->db->prepare("SELECT id, name_ar, name_en, reference_code, school_type FROM schools WHERE id = :id");
             $stmt->execute([':id' => $schoolId]);
             return $stmt->fetch();
         } catch (Exception $e) {

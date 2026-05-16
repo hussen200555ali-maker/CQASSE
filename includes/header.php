@@ -52,13 +52,20 @@ $userRoleLabel = $roleLabels[$userRole] ?? $userRole;
 // User initials for avatar
 $userInitials = mb_substr($userName, 0, 1, 'UTF-8');
 
-// Notification count
+// Notification count for unified tab (alerts only)
 $notificationCount = 0;
 if (isset($db) && isLoggedIn()) {
     try {
-        $stmt = $db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-        $stmt->execute([$_SESSION['user']['id'] ?? 0]);
-        $notificationCount = $stmt->fetchColumn();
+        $userRole = $_SESSION['user']['role'] ?? '';
+        $schoolId = $_SESSION['user']['school_id'] ?? null;
+
+        $alertSql = "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0";
+        if (in_array($userRole, ['school_admin', 'teacher']) && $schoolId) {
+            $alertSql .= " AND school_id = " . (int)$schoolId;
+        }
+
+        $alertStmt = $db->query($alertSql);
+        $notificationCount = (int)$alertStmt->fetchColumn();
     } catch (Exception $e) {
         $notificationCount = 0;
     }
@@ -106,8 +113,11 @@ if (isset($db) && isLoggedIn()) {
     <?php endif; ?>
 
     <!-- Page-specific CSS -->
-    <?php if (isset($pageCSS)): ?>
-    <link rel="stylesheet" href="<?php echo EQAS_ASSETS_URL ?? 'assets'; ?>/css/<?php echo htmlspecialchars($pageCSS); ?>">
+    <?php if (isset($pageCSS)):
+        $pageCSSPath = __DIR__ . '/../assets/css/' . $pageCSS;
+        $pageCSSVer = file_exists($pageCSSPath) ? filemtime($pageCSSPath) : time();
+    ?>
+    <link rel="stylesheet" href="<?php echo EQAS_ASSETS_URL ?? 'assets'; ?>/css/<?php echo htmlspecialchars($pageCSS); ?>?v=<?php echo $pageCSSVer; ?>">
     <?php endif; ?>
 
     <style>
@@ -778,7 +788,7 @@ if (isset($db) && isLoggedIn()) {
                     </div>
 
                     <!-- Notifications -->
-                    <div class="topbar-item notification-bell" onclick="window.location.href='<?php echo baseUrl('pages/notifications/index.php'); ?>'">
+                    <div class="topbar-item notification-bell" onclick="window.location.href='<?php echo baseUrl('pages/notifications/index.php?tab=unified'); ?>'">
                         <i class="fas fa-bell"></i>
                         <?php if ($notificationCount > 0): ?>
                         <span class="notification-badge"><?php echo $notificationCount > 99 ? '99+' : $notificationCount; ?></span>

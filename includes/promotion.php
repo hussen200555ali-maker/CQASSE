@@ -539,20 +539,20 @@ class PromotionEngine {
 
             // حفظ خطة التحسين في جدول improvement_plans
             $stmt = $this->db->prepare("INSERT INTO improvement_plans 
-                                        (student_id, decision_id, weak_areas, goals, strategies, timeline, 
-                                         responsible_teacher_id, parent_involvement, follow_up_date, notes, 
+                                        (student_id, decision_id, weaknesses, goals, strategies, timeline, 
+                                         responsible_user_id, parent_involvement, follow_up_date, notes, 
                                          status, created_by, is_active)
-                                        VALUES (:student_id, :decision_id, :weak_areas, :goals, :strategies, :timeline,
-                                                :teacher_id, :parent_inv, :follow_up, :notes,
+                                        VALUES (:student_id, :decision_id, :weaknesses, :goals, :strategies, :timeline,
+                                                :user_id, :parent_inv, :follow_up, :notes,
                                                 'active', :created_by, 1)");
             return $stmt->execute([
                 ':student_id' => $studentId,
                 ':decision_id' => $decisionId,
-                ':weak_areas' => $planData['weak_areas'] ?? null,
+                ':weaknesses' => $planData['weaknesses'] ?? $planData['weak_areas'] ?? null,
                 ':goals' => $planData['objectives'] ?? $planData['goals'] ?? null,
                 ':strategies' => $planData['actions'] ?? $planData['strategies'] ?? null,
                 ':timeline' => $planData['timeline'] ?? $planData['deadline'] ?? null,
-                ':teacher_id' => $planData['responsible_teacher_id'] ?? null,
+                ':user_id' => $planData['responsible_user_id'] ?? $planData['responsible_teacher_id'] ?? null,
                 ':parent_inv' => $planData['parent_involvement'] ?? null,
                 ':follow_up' => $planData['follow_up_date'] ?? null,
                 ':notes' => $planData['notes'] ?? null,

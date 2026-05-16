@@ -1,12 +1,4 @@
 <?php
-/**
- * ============================================================
- * التقييم الإشرافي - فهرس
- * Administrative Evaluation Index
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
- */
-
 $pageTitle = 'التقييم الإشرافي';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'التقييم الإشرافي' => null];
 
@@ -23,26 +15,38 @@ $engine = new AssessmentEngine($db);
 $userId = $_SESSION['user']['id'];
 $schoolId = $_SESSION['user']['school_id'] ?? null;
 
+$formId = 0;
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 LIMIT 1");
+$stmt->execute();
+$formId = $stmt->fetchColumn();
+
 $evaluations = [];
-try {
-    $sql = "SELECT tae.*, u.full_name_ar as teacher_name, ev.full_name_ar as evaluator_name,
-            sem.name_ar as semester_name, ay.name as year_name
-            FROM teaching_admin_evaluations tae
-            JOIN users u ON tae.teacher_id = u.id
-            JOIN users ev ON tae.evaluator_id = ev.id
-            JOIN semesters sem ON tae.semester_id = sem.id
-            JOIN academic_years ay ON tae.academic_year_id = ay.id
-            WHERE tae.is_active = 1";
-    $params = [];
-    if ($schoolId && $_SESSION['user']['role'] !== 'group_admin') {
-        $sql .= " AND u.school_id = ?";
-        $params[] = $schoolId;
-    }
-    $sql .= " ORDER BY tae.evaluation_date DESC";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $evaluations = $stmt->fetchAll();
-} catch (Exception $e) {}
+if ($formId) {
+    try {
+        $sql = "
+            SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+                   ar.teacher_id, AVG(ar.numeric_value) AS overall_score,
+                   u.full_name_ar AS teacher_name,
+                   ev.full_name_ar AS evaluator_name,
+                   sem.name_ar AS semester_name, ay.name AS year_name
+            FROM assessment_responses ar
+            JOIN users u ON ar.teacher_id = u.id
+            JOIN users ev ON ar.responded_by = ev.id
+            JOIN semesters sem ON ar.semester_id = sem.id
+            JOIN academic_years ay ON ar.academic_year_id = ay.id
+            WHERE ar.form_id = ? AND ar.is_active = 1";
+        $params = [$formId];
+        if ($schoolId && $_SESSION['user']['role'] !== 'group_admin') {
+            $sql .= " AND u.school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
+                  ORDER BY ar.response_date DESC";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $evaluations = $stmt->fetchAll();
+    } catch (Exception $e) {}
+}
 ?>
 
 <div class="section">
@@ -74,18 +78,19 @@ try {
                         <tbody>
                             <?php foreach ($evaluations as $i => $eval): 
                                 $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
+                                $dateParam = urlencode($eval['response_date']);
                             ?>
                             <tr>
                                 <td><?php echo $i + 1; ?></td>
                                 <td style="font-weight:600;"><?php echo e($eval['teacher_name']); ?></td>
                                 <td><?php echo e($eval['evaluator_name']); ?></td>
                                 <td><?php echo e($eval['semester_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
+                                <td><?php echo formatDateAr($eval['response_date'], 'short'); ?></td>
                                 <td style="font-weight:700; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
                                     <?php echo $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
                                 </td>
                                 <td class="actions">
-                                    <a href="admin_view.php?id=<?php echo $eval['id']; ?>" class="btn btn-sm btn-info">👁️</a>
+                                    <a href="admin_view.php?date=<?php echo $dateParam ?>&teacher_id=<?php echo $eval['teacher_id']; ?>" class="btn btn-sm btn-info">👁️</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

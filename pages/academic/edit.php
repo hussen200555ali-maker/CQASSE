@@ -117,62 +117,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="card">
-    <div class="card-header">
-        <h3 class="card-title">تعديل السنة الأكاديمية: <?= e($year['name']) ?></h3>
+<div class="card mb-6">
+    <div class="card-header" style="background:var(--gradient-primary);">
+        <h3 class="card-title" style="color:var(--text-white);">✏️ تعديل السنة الأكاديمية: <?= e($year['name']) ?></h3>
         <a href="view.php?id=<?= $yearId ?>" class="btn btn-light btn-sm">↩ العودة</a>
     </div>
     <div class="card-body">
         <?php if (!empty($errors['general'])): ?>
-            <div class="flash-message flash-danger mb-4"><span><?= e($errors['general']) ?></span></div>
+            <div class="alert alert-danger mb-5"><span><?= e($errors['general']) ?></span></div>
         <?php endif; ?>
 
-        <form method="POST" action="" data-validate style="max-width:600px;">
+        <div class="alert alert-info mb-5">
+            <span class="alert-icon">💡</span>
+            <div class="flex-1">
+                <strong>تعديل السنة الأكاديمية</strong><br>
+                <span class="text-sm">يمكنك تعديل اسم وتواريخ وحالة السنة. لا يمكن تغيير التواريخ إذا كانت هناك بيانات تقييم مرتبطة. السنة المغلقة لا يمكن تعديلها.</span>
+            </div>
+        </div>
+
+        <form method="POST" action="" data-validate>
             <?= csrfField() ?>
 
-            <div class="form-group">
-                <label class="form-label">اسم السنة الأكاديمية <span class="required">*</span></label>
-                <input type="text" name="name" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"
-                       value="<?= e($year['name']) ?>" required>
-                <?php if (isset($errors['name'])): ?>
-                    <div class="invalid-feedback"><?= e($errors['name']) ?></div>
-                <?php endif; ?>
-            </div>
-
-            <div class="grid grid-2">
-                <div class="form-group">
-                    <label class="form-label">تاريخ البداية <span class="required">*</span></label>
-                    <input type="date" name="start_date" class="form-control <?= isset($errors['start_date']) ? 'is-invalid' : '' ?>"
-                           value="<?= e($year['start_date']) ?>" required>
-                    <?php if (isset($errors['start_date'])): ?>
-                        <div class="invalid-feedback"><?= e($errors['start_date']) ?></div>
-                    <?php endif; ?>
+            <!-- القسم 1: معلومات السنة -->
+            <div class="card mb-6">
+                <div class="card-header">
+                    <h4 class="card-title" style="font-size:var(--font-size-base);">📅 معلومات السنة الأكاديمية</h4>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">تاريخ النهاية <span class="required">*</span></label>
-                    <input type="date" name="end_date" class="form-control <?= isset($errors['end_date']) ? 'is-invalid' : '' ?>"
-                           value="<?= e($year['end_date']) ?>" required>
-                    <?php if (isset($errors['end_date'])): ?>
-                        <div class="invalid-feedback"><?= e($errors['end_date']) ?></div>
-                    <?php endif; ?>
+                <div class="card-body">
+                    <div class="form-group mb-4">
+                        <label class="form-label">اسم السنة الأكاديمية <span class="required">*</span></label>
+                        <input type="text" name="name" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>"
+                               value="<?= e($year['name']) ?>" required placeholder="مثال: 2025-2026">
+                        <?php if (isset($errors['name'])): ?>
+                            <div class="invalid-feedback"><?= e($errors['name']) ?></div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">تاريخ البداية <span class="required">*</span></label>
+                            <input type="date" name="start_date" class="form-control <?= isset($errors['start_date']) ? 'is-invalid' : '' ?>"
+                                   value="<?= e($year['start_date']) ?>" required>
+                            <?php if (isset($errors['start_date'])): ?>
+                                <div class="invalid-feedback"><?= e($errors['start_date']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">تاريخ النهاية <span class="required">*</span></label>
+                            <input type="date" name="end_date" class="form-control <?= isset($errors['end_date']) ? 'is-invalid' : '' ?>"
+                                   value="<?= e($year['end_date']) ?>" required>
+                            <?php if (isset($errors['end_date'])): ?>
+                                <div class="invalid-feedback"><?= e($errors['end_date']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">الحالة</label>
+                        <select name="status" class="form-control">
+                            <option value="planning" <?= $year['status'] === 'planning' ? 'selected' : '' ?>>تخطيط</option>
+                            <option value="active" <?= $year['status'] === 'active' ? 'selected' : '' ?>>نشطة</option>
+                            <?php if ($year['status'] === 'closed'): ?>
+                                <option value="closed" selected>مغلقة</option>
+                            <?php endif; ?>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">الحالة</label>
-                <select name="status" class="form-control">
-                    <option value="planning" <?= $year['status'] === 'planning' ? 'selected' : '' ?>>تخطيط</option>
-                    <option value="active" <?= $year['status'] === 'active' ? 'selected' : '' ?>>نشطة</option>
-                    <?php if ($year['status'] === 'closed'): ?>
-                        <option value="closed" selected>مغلقة</option>
-                    <?php endif; ?>
-                </select>
-            </div>
-
-            <div class="divider"></div>
+            <!-- أزرار التحكم -->
             <div class="flex gap-3">
-                <button type="submit" class="btn btn-primary">💾 حفظ التعديلات</button>
-                <a href="view.php?id=<?= $yearId ?>" class="btn btn-light">إلغاء</a>
+                <button type="submit" class="btn btn-primary btn-lg">💾 حفظ التعديلات</button>
+                <a href="view.php?id=<?= $yearId ?>" class="btn btn-light btn-lg">إلغاء</a>
             </div>
         </form>
     </div>

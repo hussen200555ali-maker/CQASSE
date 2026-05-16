@@ -99,12 +99,12 @@ foreach ($children as $child) {
     if ($data['latest'] && $data['latest']['decision'] === 'conditional') {
         try {
             $stmt = $db->prepare("
-                SELECT ip.id, ip.weak_areas, ip.goals, ip.strategies,
+                SELECT ip.id, ip.weaknesses, ip.goals, ip.strategies,
                        ip.timeline, ip.parent_involvement, ip.follow_up_date,
                        ip.notes, ip.status as plan_status,
                        u.full_name_ar as teacher_name
                 FROM improvement_plans ip
-                LEFT JOIN users u ON ip.responsible_teacher_id = u.id
+                LEFT JOIN users u ON ip.responsible_user_id = u.id
                 WHERE ip.decision_id = ? AND ip.is_active = 1
                 ORDER BY ip.created_at DESC
                 LIMIT 1
@@ -443,7 +443,10 @@ $statusColors = [
              ═══════════════════════════════════════════ -->
         <?php if ($plan): ?>
         <div class="improvement-plan-box">
-            <h4><i class="fas fa-clipboard-list" style="margin-left:6px;"></i>خطة التحسين</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <h4 style="margin:0;"><i class="fas fa-clipboard-list" style="margin-left:6px;"></i>خطة التحسين</h4>
+                <button type="button" onclick="window.print()" style="font-size:12px;padding:4px 10px;border:1px solid #1a5632;border-radius:4px;background:transparent;color:#1a5632;cursor:pointer;">🖨️ طباعة</button>
+            </div>
 
             <?php if ($plan['plan_status']): ?>
             <div style="margin-bottom:12px;">
@@ -453,10 +456,10 @@ $statusColors = [
             </div>
             <?php endif; ?>
 
-            <?php if ($plan['weak_areas']): ?>
+            <?php if ($plan['weaknesses']): ?>
             <div class="plan-item">
                 <div class="plan-label"><i class="fas fa-exclamation-circle" style="margin-left:4px;"></i>نقاط الضعف</div>
-                <div class="plan-value"><?php echo e($plan['weak_areas']); ?></div>
+                <div class="plan-value"><?php echo e($plan['weaknesses']); ?></div>
             </div>
             <?php endif; ?>
 
@@ -568,3 +571,12 @@ $statusColors = [
 <?php endif; ?>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
+
+<style>
+@media print {
+    .sidebar, .topbar, .btn, .back-btn { display: none !important; }
+    .promo-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+    .improvement-plan-box { break-inside: avoid; }
+}
+</style>
+

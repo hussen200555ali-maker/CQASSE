@@ -12,7 +12,7 @@ $breadcrumb = ['مؤشر جودة التعليم' => 'index.php', 'تفاصيل 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/eqi.php';
 
-if (!hasPermission('teacher')) {
+if (!hasPermission('group_admin') && !hasPermission('school_admin') && !hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية.', 'danger');
     redirect('index.php');
 }

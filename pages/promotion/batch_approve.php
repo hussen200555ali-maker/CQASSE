@@ -17,6 +17,7 @@ $pageTitle = 'الاعتماد الدفعي لقرارات الترفيع';
 $breadcrumb = ['قرارات الترفيع' => 'index.php', 'اعتماد دفعي' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 require_once __DIR__ . '/../../includes/promotion.php';
 
 // التحقق من الصلاحيات - مدير النظام أو مدير المدرسة
@@ -32,25 +33,13 @@ $decisionColors = $promoEngine->getDecisionColors();
 // جلب معلمات التصفية
 $filterClass       = $_GET['class_id'] ?? '';
 $filterAcademicYear = $_GET['academic_year_id'] ?? '';
-$filterSemester    = $_GET['semester_id'] ?? '';
+$filterSemester    = $_GET['semester_id'] ?? '0';
 $filterDecision    = $_GET['decision'] ?? '';
 $filterStatus      = $_GET['status'] ?? '';
 
 // جلب القوائم المنسدلة
 // الأعوام الدراسية
 $academicYears = $db->query("SELECT id, name FROM academic_years WHERE is_active = 1 ORDER BY id DESC")->fetchAll();
-
-// الفصول الدراسية
-$semesterQuery = "SELECT id, name_ar FROM semesters WHERE is_active = 1";
-$semesterParams = [];
-if ($filterAcademicYear) {
-    $semesterQuery .= " AND academic_year_id = ?";
-    $semesterParams[] = $filterAcademicYear;
-}
-$semesterQuery .= " ORDER BY id DESC";
-$stmt = $db->prepare($semesterQuery);
-$stmt->execute($semesterParams);
-$semesters = $stmt->fetchAll();
 
 // الفصول (الشعب)
 $classQuery = "SELECT c.id, c.name_ar, gl.name_ar as grade_name
@@ -155,9 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                         $whereParts[] = "pd.academic_year_id = ?";
                         $whereParams[] = $filterAcademicYear;
                     }
-                    if ($filterSemester) {
-                        $whereParts[] = "pd.semester_id = ?";
-                        $whereParams[] = $filterSemester;
+                    if ($filterSemester && $filterSemester !== '0') {
+                        $nameAr = semesterValueToNameAr((int)$filterSemester);
+                        if ($nameAr) {
+                            $whereParts[] = "pd.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)";
+                            $whereParams[] = $nameAr;
+                        }
                     }
 
                     $whereClause = implode(' AND ', $whereParts);
@@ -263,9 +255,12 @@ if ($filterAcademicYear) {
     $whereParts[] = "pd.academic_year_id = ?";
     $whereParams[] = $filterAcademicYear;
 }
-if ($filterSemester) {
-    $whereParts[] = "pd.semester_id = ?";
-    $whereParams[] = $filterSemester;
+if ($filterSemester && $filterSemester !== '0') {
+    $nameAr = semesterValueToNameAr((int)$filterSemester);
+    if ($nameAr) {
+        $whereParts[] = "pd.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)";
+        $whereParams[] = $nameAr;
+    }
 }
 if ($filterDecision) {
     $whereParts[] = "pd.decision = ?";
@@ -377,10 +372,9 @@ $rejectedCount = $stmtRejected->fetchColumn();
                 <div class="form-group">
                     <label class="form-label">الفصل الدراسي</label>
                     <select name="semester_id" class="form-control">
-                        <option value="">الكل</option>
-                        <?php foreach ($semesters as $sem): ?>
-                        <option value="<?= $sem['id'] ?>" <?= $filterSemester == $sem['id'] ? 'selected' : '' ?>><?= e($sem['name_ar']) ?></option>
-                        <?php endforeach; ?>
+                        <option value="0" <?= $filterSemester == '0' ? 'selected' : '' ?>>جميع الفصول</option>
+                        <option value="1" <?= $filterSemester == '1' ? 'selected' : '' ?>>الفصل الدراسي الأول</option>
+                        <option value="2" <?= $filterSemester == '2' ? 'selected' : '' ?>>الفصل الدراسي الثاني</option>
                     </select>
                 </div>
                 <div class="form-group">

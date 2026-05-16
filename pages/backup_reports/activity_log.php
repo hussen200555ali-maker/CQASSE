@@ -239,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_log'])) {
                             <td><code style="font-size:11px;"><?php echo e($act['ip_address'] ?? '-'); ?></code></td>
                             <td style="white-space:nowrap;"><?php echo formatDateAr($act['created_at'], 'medium'); ?></td>
                             <td>
-                                <?php if ($act['details']): ?>
+                                 <?php if (!empty($act['details'])): ?>
                                 <button type="button" class="btn btn-sm btn-outline-info"
                                         onclick="alert(JSON.stringify(<?php echo htmlspecialchars(json_encode($act['details']), ENT_QUOTES); ?>, null, 2));">
                                     📋

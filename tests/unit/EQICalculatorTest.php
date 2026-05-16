@@ -319,4 +319,299 @@ class EQICalculatorTest extends TestCase
         $dimensions = $this->calculator->getDimensions();
         return $dimensions[$dim]['weight'];
     }
+
+    // ========================================================================
+    // TC-013: اختبار حسابات الأبعاد الفردية
+    // ========================================================================
+
+    /**
+     * TC-013.1: calculateClimateScore مع بيانات موجودة
+     */
+    public function testCalculateClimateScoreWithData(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO climate_surveys (school_id, academic_year_id, semester_id, overall_score, is_active)
+            VALUES (1, 1, 1, 75.0, 1), (1, 1, 1, 85.0, 1)");
+
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateClimateScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1);
+        $this->assertEqualsWithDelta(80.0, $result, 0.01, 'متوسط 75+85 = 80');
+    }
+
+    /**
+     * TC-013.2: calculateClimateScore بدون بيانات → null
+     */
+    public function testCalculateClimateScoreEmpty(): void
+    {
+        $this->initBasicData();
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateClimateScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1);
+        $this->assertNull($result);
+    }
+
+    /**
+     * TC-013.3: calculateBehaviorScore مع بيانات
+     */
+    public function testCalculateBehaviorScoreWithData(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO behavior_scores (student_id, school_id, academic_year_id, semester_id, current_percentage, is_active)
+            VALUES (1, 1, 1, 1, 90.0, 1), (2, 1, 1, 1, 70.0, 1)");
+        $this->db->exec("INSERT INTO students (id, school_id, full_name_ar, is_active) VALUES (2, 1, 'طالب 2', 1)");
+
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateBehaviorScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1);
+        $this->assertEqualsWithDelta(80.0, $result, 0.01, 'متوسط 90+70 = 80');
+    }
+
+    /**
+     * TC-013.4: calculateSkillsScore مع بيانات
+     */
+    public function testCalculateSkillsScoreWithData(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO skills_evaluations (student_id, school_id, academic_year_id, semester_id, score, is_active)
+            VALUES (1, 1, 1, 1, 65.0, 1)");
+
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateSkillsScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1);
+        $this->assertEqualsWithDelta(65.0, $result, 0.01);
+    }
+
+    /**
+     * TC-013.5: calculateAttendanceScore مع بيانات
+     */
+    public function testCalculateAttendanceScoreWithData(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO attendance_summaries (student_id, school_id, academic_year_id, semester_id, attendance_rate, is_active)
+            VALUES (1, 1, 1, 1, 95.0, 1)");
+
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateAttendanceScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1);
+        $this->assertEqualsWithDelta(95.0, $result, 0.01);
+    }
+
+    // ========================================================================
+    // TC-014: اختبار getEQIHistory
+    // ========================================================================
+
+    /**
+     * TC-014.1: تاريخ EQI يعيد السجلات بالترتيب
+     */
+    public function testGetEQIHistoryReturnsRecords(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO equi_results (school_id, academic_year_id, semester_id, overall_eqi, calculated_at, is_active)
+            VALUES (1, 1, 1, 75.0, '2026-01-01', 1)");
+
+        $history = $this->calculator->getEQIHistory(1, 10);
+        $this->assertCount(1, $history);
+        $this->assertEqualsWithDelta(75.0, (float)$history[0]['overall_eqi'], 0.01);
+    }
+
+    /**
+     * TC-014.2: تاريخ EQI يعيد مصفوفة فارغة عند عدم وجود بيانات
+     */
+    public function testGetEQIHistoryEmpty(): void
+    {
+        $history = $this->calculator->getEQIHistory(999, 10);
+        $this->assertEmpty($history);
+    }
+
+    // ========================================================================
+    // TC-015: اختبار getRecommendations
+    // ========================================================================
+
+    /**
+     * TC-015.1: توصيات لجميع الأبعاد
+     */
+    public function testGetRecommendationsReturnsAll(): void
+    {
+        $scores = [
+            'academic' => 90.0,
+            'teaching' => 75.0,
+            'climate' => 55.0,
+            'behavior' => 30.0,
+            'skills' => 85.0,
+            'attendance' => 95.0,
+        ];
+        $recs = $this->calculator->getRecommendations($scores);
+
+        $this->assertCount(6, $recs);
+        $this->assertEquals('ممتاز', $recs['academic']['rating']['text']);
+        $this->assertEquals('جيد جداً', $recs['teaching']['rating']['text']);
+        $this->assertEquals('مقبول', $recs['climate']['rating']['text']);
+        $this->assertEquals('ضعيف', $recs['behavior']['rating']['text']);
+        $this->assertStringContainsString('عاجلة', $recs['behavior']['recommendation']);
+    }
+
+    /**
+     * TC-015.2: أبعاد فارغة → مصفوفة فارغة
+     */
+    public function testGetRecommendationsEmpty(): void
+    {
+        $recs = $this->calculator->getRecommendations([]);
+        $this->assertEmpty($recs);
+    }
+
+    // ========================================================================
+    // TC-016: اختبار checkDataAvailability
+    // ========================================================================
+
+    /**
+     * TC-016.1: بيانات الأكاديمي متوفرة
+     */
+    public function testCheckDataAvailabilityAcademic(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO grades (student_id, school_id, academic_year_id, semester_id, grade_value, max_value, is_active)
+            VALUES (1, 1, 1, 1, 80, 100, 1)");
+
+        $checks = $this->calculator->checkDataAvailability(1, 1, 1);
+        $this->assertTrue($checks['academic']['available']);
+        $this->assertGreaterThan(0, $checks['academic']['count']);
+    }
+
+    /**
+     * TC-016.2: جميع الأبعاد غير متوفرة
+     */
+    public function testCheckDataAvailabilityAllMissing(): void
+    {
+        $this->initBasicData();
+        $checks = $this->calculator->checkDataAvailability(1, 1, 1);
+
+        foreach ($checks as $key => $check) {
+            $this->assertFalse($check['available'], "البعد $key يجب أن يكون غير متوفر");
+        }
+    }
+
+    /**
+     * TC-016.3: يحتوي على page و page_label لكل بُعد
+     */
+    public function testCheckDataAvailabilityHasPageLinks(): void
+    {
+        $this->initBasicData();
+        $checks = $this->calculator->checkDataAvailability(1, 1, 1);
+
+        foreach ($checks as $key => $check) {
+            $this->assertArrayHasKey('page', $check, "البعد $key يجب أن يحتوي على page");
+            $this->assertArrayHasKey('page_label', $check, "البعد $key يجب أن يحتوي على page_label");
+        }
+    }
+
+    // ========================================================================
+    // TC-017: مسار proxy للتدريس (calculateTeachingScore مع fallback)
+    // ========================================================================
+
+    /**
+     * TC-017.1: proxy مفعّل عند عدم وجود teaching_evaluation_summary ووجود grades
+     * يُختبر عبر calculate() لأن calculateTeachingScore خاص (private)
+     */
+    public function testTeachingScoreUsesProxyWhenNoEvalData(): void
+    {
+        // لا توجد teaching_evaluation_summary ولكن توجد grades
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO grades (student_id, school_id, academic_year_id, semester_id, grade_value, max_value, is_active)
+            VALUES (1, 1, 1, 1, 85, 100, 1)");
+
+        $result = $this->calculator->calculate(1, 1, 1);
+
+        $this->assertNotNull($result['eqi'], 'يجب حساب EQI');
+        // بعد التدريس يجب أن يكون متاحاً (source_type = proxy)
+        $this->assertArrayHasKey('teaching', $result['dimension_details']);
+        $this->assertEquals('proxy', $result['dimension_details']['teaching']['source_type'],
+            'مصدر التدريس يجب أن يكون proxy في ظل غياب تقييم التدريس');
+    }
+
+    /**
+     * TC-017.2: مسار مباشر عند وجود teaching_evaluation_summary
+     */
+    public function testTeachingScoreDirectWhenEvalDataExists(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO teaching_evaluation_summary (teacher_id, academic_year_id, semester_id, combined_score, is_active)
+            VALUES (1, 1, 1, 78.0, 1)");
+        $this->db->exec("INSERT INTO users (id, username, full_name_ar, school_id, role) VALUES (1, 't1', 'م', 1, 'teacher')");
+
+        $usedProxy = false;
+        $ref = new ReflectionClass($this->calculator);
+        $method = $ref->getMethod('calculateTeachingScore');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($this->calculator, 1, 1, 1, $usedProxy);
+        $this->assertNotNull($result);
+        $this->assertFalse($usedProxy, 'يجب ألا يكون proxy مفعّلاً مع بيانات تقييم موجودة');
+        $this->assertEqualsWithDelta(78.0, $result, 0.01);
+    }
+
+    // ========================================================================
+    // TC-018: اختبار compareSchools
+    // ========================================================================
+
+    /**
+     * TC-018.1: مقارنة مدرستين — تعتمد على equi_results (نتائج محسوبة مسبقاً)
+     */
+    public function testCompareSchoolsReturnsBoth(): void
+    {
+        $this->initBasicData();
+        $this->db->exec("INSERT INTO schools (id, name_ar) VALUES (2, 'مدرسة النجاح')");
+
+        // إدراج نتائج محسوبة مسبقاً
+        $this->db->exec("INSERT INTO equi_results (school_id, academic_year_id, semester_id, overall_eqi, calculated_at, is_active)
+            VALUES (1, 1, 1, 78.5, '2026-01-01', 1),
+                   (2, 1, 1, 82.0, '2026-01-01', 1)");
+
+        $comparisons = $this->calculator->compareSchools([1, 2], 1, 1);
+        $this->assertCount(2, $comparisons);
+        $this->assertEqualsWithDelta(78.5, (float)$comparisons[0]['overall_eqi'], 0.01);
+        $this->assertEqualsWithDelta(82.0, (float)$comparisons[1]['overall_eqi'], 0.01);
+    }
+
+    // ========================================================================
+    // TC-019: اختبار تحميل الأوزان مع استثناء DB
+    // ========================================================================
+
+    /**
+     * TC-019.1: عند حدوث استثناء في DB، يعود للأوزان الافتراضية
+     */
+    public function testLoadWeightsFallbackOnException(): void
+    {
+        // نحذف الجدول لإحداث استثناء
+        $this->db->exec("DROP TABLE IF EXISTS eqi_dimension_weights");
+
+        $calc = new EQICalculator($this->db);
+        $dims = $calc->getDimensions();
+
+        $this->assertEqualsWithDelta(0.35, $dims['academic']['weight'], 0.001);
+        $this->assertEqualsWithDelta(0.25, $dims['teaching']['weight'], 0.001);
+        $this->assertEqualsWithDelta(0.15, $dims['climate']['weight'], 0.001);
+    }
+
+    // ========================================================================
+    // دوال مساعدة
+    // ========================================================================
+
+    private function initBasicData(): void
+    {
+        $this->db->exec("INSERT INTO schools (id, name_ar, code, school_type) VALUES (1, 'مدرسة اختبار', 'T001', 'primary')");
+        $this->db->exec("INSERT INTO academic_years (id, name, is_active) VALUES (1, '2025-2026', 1)");
+        $this->db->exec("INSERT INTO semesters (id, academic_year_id, name_ar, lock_level, is_active) VALUES (1, 1, 'الفصل الأول', 'none', 1)");
+        $this->db->exec("INSERT INTO students (id, school_id, full_name_ar, is_active) VALUES (1, 1, 'طالب اختبار', 1)");
+    }
 }

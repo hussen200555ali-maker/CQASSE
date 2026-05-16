@@ -52,7 +52,7 @@ $teacherDist = $db->prepare("SELECT sub.name_ar AS subject, COUNT(DISTINCT st.te
                              FROM subject_teachers st
                              JOIN subjects sub ON st.subject_id = sub.id
                              JOIN users u ON st.teacher_id = u.id
-                             WHERE st.school_id = ? AND st.is_active = 1
+                              WHERE st.school_id = ?
                              GROUP BY sub.name_ar ORDER BY cnt DESC LIMIT 10");
 $teacherDist->execute([$schoolId]);
 $teacherData = $teacherDist->fetchAll();

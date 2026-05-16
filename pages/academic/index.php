@@ -104,6 +104,9 @@ function getLockLevelBadge($lockLevel = 'none') {
                                     <?php if ($year['is_current']): ?>
                                         <span class="badge badge-primary" style="font-size:10px;">الحالية</span>
                                     <?php endif; ?>
+                                    <?php if (!$year['is_active']): ?>
+                                        <span class="badge badge-secondary" style="font-size:10px;">مؤرشفة</span>
+                                    <?php endif; ?>
                                 </td>
                                 <td><?= formatDateAr($year['start_date']) ?></td>
                                 <td><?= formatDateAr($year['end_date']) ?></td>
@@ -123,12 +126,21 @@ function getLockLevelBadge($lockLevel = 'none') {
                                 <td><?= $year['semester_count'] ?></td>
                                 <td class="actions">
                                     <a href="view.php?id=<?= $year['id'] ?>" class="btn btn-sm btn-info" title="عرض">👁️</a>
-                                    <?php if (hasPermission('group_admin') && $year['status'] !== 'closed'): ?>
-                                        <a href="edit.php?id=<?= $year['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">✏️</a>
-                                        <a href="lock.php?year_id=<?= $year['id'] ?>" class="btn btn-sm btn-secondary" title="إدارة القفل">🔒</a>
-                                    <?php endif; ?>
-                                    <?php if (hasPermission('group_admin') && $year['status'] === 'active' && !$isAnyLocked): // [إصلاح 2026-05-11] استخدام $isAnyLocked بدلاً من is_locked ?>
-                                        <a href="lock.php?year_id=<?= $year['id'] ?>&action=close" class="btn btn-sm btn-danger" title="إغلاق السنة" onclick="return confirm('هل أنت متأكد من إغلاق هذه السنة الأكاديمية؟')">🔒 إغلاق</a>
+                                    <?php if ($year['is_active']): ?>
+                                        <?php if (hasPermission('group_admin') && $year['status'] !== 'closed'): ?>
+                                            <a href="edit.php?id=<?= $year['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">✏️</a>
+                                            <a href="lock.php?year_id=<?= $year['id'] ?>" class="btn btn-sm btn-secondary" title="إدارة القفل">🔒</a>
+                                        <?php endif; ?>
+                                        <?php if (hasPermission('group_admin') && $year['status'] === 'active' && !$isAnyLocked): ?>
+                                            <a href="lock.php?year_id=<?= $year['id'] ?>&action=close" class="btn btn-sm btn-danger" title="إغلاق السنة" onclick="return confirm('هل أنت متأكد من إغلاق هذه السنة الأكاديمية؟')">🔒 إغلاق</a>
+                                        <?php endif; ?>
+                                        <?php if (hasPermission('group_admin')): ?>
+                                            <a href="delete.php?id=<?= $year['id'] ?>" class="btn btn-sm btn-danger" title="أرشفة">🗑️</a>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <?php if (hasPermission('group_admin')): ?>
+                                            <a href="delete.php?id=<?= $year['id'] ?>&restore=1" class="btn btn-sm btn-success" title="استعادة">🔄</a>
+                                        <?php endif; ?>
                                     <?php endif; ?>
                                 </td>
                             </tr>

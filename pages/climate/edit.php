@@ -10,6 +10,7 @@ $pageTitle = 'تعديل استبيان المناخ';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيان المناخ' => 'index.php', 'تعديل الاستبيان' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 // فقط المدير يمكنه تعديل استبيانات المناخ
 if (!hasPermission('group_admin')) {
@@ -69,7 +70,8 @@ $respondentIcons = ['teacher' => '👨‍🏫', 'student' => '👨‍🎓', 'par
 $existingItems = [];
 try {
     $stmt = $db->prepare("
-        SELECT ci.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
+        SELECT ci.id, ci.survey_id, ci.item_id, ci.normalized_value, ci.numeric_value, ci.is_active,
+               ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
         FROM climate_items ci
         JOIN assessment_items ai ON ci.item_id = ai.id
@@ -86,7 +88,7 @@ try {
 // بناء مصفوفة القيم الحالية
 $currentValues = [];
 foreach ($existingItems as $ei) {
-    $currentValues[$ei['item_id']] = $ei['score'];
+    $currentValues[$ei['item_id']] = $ei['normalized_value'];
 }
 
 // جلب نموذج المناخ
@@ -145,8 +147,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // تحديث عناصر الاستبيان
             $stmtCheck = $db->prepare("SELECT id FROM climate_items WHERE survey_id = ? AND item_id = ? AND is_active = 1");
-            $stmtUpdate = $db->prepare("UPDATE climate_items SET score = ? WHERE survey_id = ? AND item_id = ?");
-            $stmtInsert = $db->prepare("INSERT INTO climate_items (survey_id, item_id, score, is_active) VALUES (?, ?, ?, 1)");
+            $stmtUpdate = $db->prepare("UPDATE climate_items SET normalized_value = ? WHERE survey_id = ? AND item_id = ?");
+            $stmtInsert = $db->prepare("INSERT INTO climate_items (survey_id, item_id, normalized_value, is_active) VALUES (?, ?, ?, 1)");
 
             foreach ($itemScores as $itemId => $scores) {
                 $stmtCheck->execute([$surveyId, $itemId]);

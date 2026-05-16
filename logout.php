@@ -6,9 +6,11 @@
  * ============================================================
  */
 
-// Start session (same name as session.php)
-session_name('EQAS_SESSION');
-session_start();
+// Include config for EQAS_URL constant
+require_once __DIR__ . '/config.php';
+
+// Include session management (same path as all pages)
+require_once __DIR__ . '/includes/session.php';
 
 // Clear remember me cookie
 if (isset($_COOKIE['eqas_remember'])) {
@@ -45,6 +47,7 @@ $_SESSION['flash_type'] = 'success';
 // Regenerate session ID
 session_regenerate_id(true);
 
-// Redirect to login page
-header('Location: login.php');
+// Redirect to login page using absolute URL
+$loginUrl = defined('EQAS_URL') ? EQAS_URL . '/login.php' : 'login.php';
+header('Location: ' . $loginUrl);
 exit;

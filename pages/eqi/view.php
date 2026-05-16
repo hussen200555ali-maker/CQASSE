@@ -12,7 +12,7 @@ $breadcrumb = ['مؤشر جودة التعليم' => 'index.php', 'تفاصيل'
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/eqi.php';
 
-if (!hasPermission('teacher')) {
+if (!hasPermission('group_admin') && !hasPermission('school_admin') && !hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول.', 'danger');
     redirect('index.php');
 }
@@ -25,9 +25,26 @@ $schoolId = (int)($_GET['school_id'] ?? 0);
 $yearId = (int)($_GET['year_id'] ?? 0);
 $semesterId = (int)($_GET['semester_id'] ?? 0);
 
-if (!$schoolId || !$yearId || !$semesterId) {
+if (!$schoolId) {
     setFlash('معرفات غير صالحة.', 'danger');
     redirect('index.php');
+}
+
+// دعم وضع "جميع السنوات" — اختيار أحدث حساب متاح
+if (!$yearId || !$semesterId) {
+    try {
+        $stmt = $db->prepare("SELECT academic_year_id, semester_id FROM equi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
+        $stmt->execute([$schoolId]);
+        $latest = $stmt->fetch();
+        if ($latest) {
+            $yearId = (int)$latest['academic_year_id'];
+            $semesterId = (int)$latest['semester_id'];
+        }
+    } catch (Exception $e) {}
+    if (!$yearId || !$semesterId) {
+        setFlash('لا توجد نتائج EQI لهذه المدرسة.', 'warning');
+        redirect('index.php');
+    }
 }
 
 $calc = $eqiCalc->getEQIDimensions($schoolId, $yearId, $semesterId);
@@ -50,11 +67,11 @@ $recommendations = $eqiCalc->getRecommendations([
 // الحساب السابق للمقارنة
 $prevCalc = null;
 try {
-    $stmt = $db->prepare("SELECT ec.* FROM eqi_calculations ec 
-                          INNER JOIN semesters s ON s.id = ec.semester_id
-                          WHERE ec.school_id = :sid AND ec.is_active = 1 
-                              AND (ec.semester_id < :sem_id OR ec.calculated_at < (SELECT calculated_at FROM eqi_calculations WHERE school_id = :sid2 AND academic_year_id = :yid AND semester_id = :sem_id2))
-                          ORDER BY ec.calculated_at DESC LIMIT 1");
+    $stmt = $db->prepare("SELECT er.* FROM equi_results er 
+                          INNER JOIN semesters s ON s.id = er.semester_id
+                          WHERE er.school_id = :sid AND er.is_active = 1 
+                              AND (er.semester_id < :sem_id OR er.calculated_at < (SELECT calculated_at FROM equi_results WHERE school_id = :sid2 AND academic_year_id = :yid AND semester_id = :sem_id2))
+                          ORDER BY er.calculated_at DESC LIMIT 1");
     $stmt->execute([':sid' => $schoolId, ':sem_id' => $semesterId, ':sid2' => $schoolId, ':yid' => $yearId, ':sem_id2' => $semesterId]);
     $prevCalc = $stmt->fetch();
 } catch (Exception $e) {}
@@ -136,7 +153,97 @@ try {
             </div>
         </div>
     </div>
+
+    <!-- السجل التاريخي -->
+    <?php
+    $history = $eqiCalc->getEQIHistory($schoolId, 20);
+    ?>
+    <div class="card mt-6">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 class="card-title">📈 السجل التاريخي</h3>
+            <a href="report.php?school_id=<?= $schoolId ?>&format=csv" class="btn btn-info btn-sm">📥 تصدير CSV</a>
+        </div>
+        <div class="card-body">
+            <?php if (!empty($history)): ?>
+            <div style="height:260px;margin-bottom:1.5rem;">
+                <canvas id="eqi-history-chart"></canvas>
+            </div>
+            <div style="overflow-x:auto;">
+                <table class="data-table" style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr>
+                            <th>السنة</th>
+                            <th>الفصل</th>
+                            <th>الأكاديمي</th>
+                            <th>التدريس</th>
+                            <th>المناخ</th>
+                            <th>السلوك</th>
+                            <th>المهارات</th>
+                            <th>الحضور</th>
+                            <th>المؤشر الكلي</th>
+                            <th>التصنيف</th>
+                            <th>تاريخ الحساب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($history as $h):
+                            $hRating = $eqiCalc->getEQIRating($h['overall_eqi'] ?? 0);
+                        ?>
+                        <tr>
+                            <td><?= e($h['year_name']) ?></td>
+                            <td><?= e($h['semester_name']) ?></td>
+                            <td><?= $h['academic_score'] !== null ? number_format($h['academic_score'], 1) : '-' ?></td>
+                            <td><?= $h['teaching_score'] !== null ? number_format($h['teaching_score'], 1) : '-' ?></td>
+                            <td><?= $h['climate_score'] !== null ? number_format($h['climate_score'], 1) : '-' ?></td>
+                            <td><?= $h['behavior_score'] !== null ? number_format($h['behavior_score'], 1) : '-' ?></td>
+                            <td><?= $h['skills_score'] !== null ? number_format($h['skills_score'], 1) : '-' ?></td>
+                            <td><?= $h['attendance_score'] !== null ? number_format($h['attendance_score'], 1) : '-' ?></td>
+                            <td><strong style="color:<?= $hRating['color'] ?>;"><?= number_format($h['overall_eqi'], 1) ?></strong></td>
+                            <td><span style="padding:2px 8px;border-radius:999px;font-size:11px;background:<?= $hRating['color'] ?>;color:#fff;"><?= $hRating['text'] ?></span></td>
+                            <td style="font-size:12px;"><?= formatDateAr($h['calculated_at'], 'short') ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+            <?php else: ?>
+            <div class="text-center" style="padding:2rem;">
+                <div style="font-size:2rem;">📊</div>
+                <p class="text-secondary">لا يوجد سجل حسابات سابقة.</p>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
 </div>
 
-<?php
+<?php if (!empty($history)):
+$histLabels = json_encode(array_map(function($h) { return $h['year_name'] . ' - ' . $h['semester_name']; }, array_reverse($history)), JSON_UNESCAPED_UNICODE);
+$histData = json_encode(array_map(function($h) { return $h['overall_eqi']; }, array_reverse($history)));
+$pageJs = "
+new Chart(document.getElementById('eqi-history-chart'), {
+    type: 'line',
+    data: {
+        labels: $histLabels,
+        datasets: [{
+            label: 'مؤشر جودة التعليم',
+            data: $histData,
+            borderColor: '#1a5632',
+            backgroundColor: 'rgba(26,86,50,0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 3,
+            pointRadius: 5,
+            pointBackgroundColor: '#1a5632'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, max: 100 } },
+        plugins: { legend: { display: false } }
+    }
+});
+";
+endif;
 require_once __DIR__ . '/../../includes/footer.php';

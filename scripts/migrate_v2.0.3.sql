@@ -35,11 +35,17 @@ CREATE TABLE IF NOT EXISTS `subject_teachers` (
     `teacher_id` INT UNSIGNED NOT NULL,
     `classroom_id` INT UNSIGNED NOT NULL,
     `semester_id` INT UNSIGNED NOT NULL,
+    `school_id` INT UNSIGNED NOT NULL,
+    `academic_year_id` INT UNSIGNED NOT NULL,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY `uk_subject_teacher_class_sem` (`subject_id`, `teacher_id`, `classroom_id`, `semester_id`),
     INDEX `idx_subject_teachers_teacher` (`teacher_id`),
     INDEX `idx_subject_teachers_classroom` (`classroom_id`),
-    INDEX `idx_subject_teachers_semester` (`semester_id`)
+    INDEX `idx_subject_teachers_semester` (`semester_id`),
+    INDEX `idx_subject_teachers_school` (`school_id`),
+    INDEX `idx_subject_teachers_year` (`academic_year_id`),
+    INDEX `idx_subject_teachers_active` (`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- جدول بنود الإدارة التعليمية
@@ -368,3 +374,37 @@ INSERT IGNORE INTO `export_logs` (`id`, `user_id`, `export_type`, `file_name`, `
 SELECT `id`, `user_id`, `export_type`, `file_name`, `file_path`, `file_size`, `row_count`, `filters`, `is_active`, `created_at`
 FROM `export_log`
 WHERE (SELECT COUNT(*) FROM `export_logs`) = 0;
+
+-- -----------------------------------------------------------
+-- v2.1.0: جدول السياق المدرسي (معامل التعديل السياقي)
+-- -----------------------------------------------------------
+SET @schema_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'school_context');
+SET @sql_create = IF(@schema_exists = 0, '
+CREATE TABLE `school_context` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `school_id` INT UNSIGNED NOT NULL,
+    `academic_year_id` INT UNSIGNED NOT NULL,
+    `location_type` ENUM(''urban'',''rural'',''suburban'') DEFAULT NULL,
+    `total_students` INT DEFAULT NULL,
+    `student_teacher_ratio` DECIMAL(5,2) DEFAULT NULL,
+    `socioeconomic_index` DECIMAL(5,2) DEFAULT NULL,
+    `parent_education_level` DECIMAL(5,2) DEFAULT NULL,
+    `students_with_special_needs_pct` DECIMAL(5,2) DEFAULT NULL,
+    `infrastructure_score` DECIMAL(5,2) DEFAULT NULL,
+    `student_mobility_rate` DECIMAL(5,2) DEFAULT NULL,
+    `challenge_index` DECIMAL(5,2) DEFAULT NULL,
+    `notes` TEXT DEFAULT NULL,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_school_context` (`school_id`, `academic_year_id`),
+    KEY `idx_school_context_school` (`school_id`),
+    KEY `idx_school_context_year` (`academic_year_id`),
+    CONSTRAINT `fk_school_context_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_school_context_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+', 'SELECT 1');
+PREPARE stmt FROM @sql_create;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

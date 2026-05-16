@@ -11,6 +11,7 @@ $pageTitle = 'ملخص الحضور';
 $breadcrumb = ['الحضور والانضباط' => 'index.php', 'ملخص الحضور' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 // التحقق من الصلاحيات
 if (!hasPermission('teacher')) {
@@ -31,8 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recalculate'])) {
         setFlash('خطأ في التحقق من الأمان.', 'danger');
     } else {
         $recalcClass = (int)($_POST['class_id'] ?? 0);
-        $recalcSem   = (int)($_POST['semester_id'] ?? 0);
+        $recalcSemVal = $_POST['semester_id'] ?? '0';
         $recalcYear  = (int)($_POST['academic_year_id'] ?? $academicYearId);
+        $recalcSem = 0;
+        if ($recalcSemVal !== '0' && $recalcYear) {
+            $semName = semesterValueToNameAr((int)$recalcSemVal);
+            if ($semName) {
+                $sStmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
+                $sStmt->execute([$semName, $recalcYear]);
+                $recalcSem = (int)$sStmt->fetchColumn();
+            }
+        }
 
         if ($recalcClass && $recalcSem && $recalcYear) {
             try {
@@ -107,7 +117,7 @@ function recalcStudentSummary($db, $studentId, $classId, $academicYearId, $semes
 // جلب بيانات العرض
 // ============================================================
 $filterClass   = $_GET['class_id'] ?? '';
-$filterSemester = $_GET['semester_id'] ?? '';
+$filterSemester = $_GET['semester_id'] ?? '0';
 $sortBy = $_GET['sort'] ?? 'name';
 
 // جلب الفصول
@@ -125,24 +135,29 @@ try {
     $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
-// جلب الفصول الدراسية
-$semesters = [];
-try {
-    $stmt = $db->query("SELECT id, name_ar FROM semesters WHERE is_active = 1 ORDER BY start_date DESC");
-    $semesters = $stmt->fetchAll();
-} catch (Exception $e) {}
-
 // جلب ملخص الحضور
-$summaryData = [];
+$resolvedSemId = 0;
+if ($filterSemester && $filterSemester !== '0' && $academicYearId) {
+    $semName = semesterValueToNameAr((int)$filterSemester);
+    if ($semName) {
+        $sStmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
+        $sStmt->execute([$semName, $academicYearId]);
+        $resolvedSemId = (int)$sStmt->fetchColumn();
+    }
+}
 if ($filterClass && $filterSemester && $academicYearId) {
     try {
         $sql = "SELECT ats.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
                 FROM attendance_summaries ats
                 INNER JOIN students s ON s.id = ats.student_id
                 INNER JOIN classes c ON c.id = ats.class_id
-                WHERE ats.class_id = ? AND ats.semester_id = ? AND ats.academic_year_id = ?
+                WHERE ats.class_id = ? AND ats.academic_year_id = ?
                     AND ats.is_active = 1 AND s.is_active = 1";
-        $params = [$filterClass, $filterSemester, $academicYearId];
+        $params = [$filterClass, $academicYearId];
+        if ($resolvedSemId) {
+            $sql .= " AND ats.semester_id = ?";
+            $params[] = $resolvedSemId;
+        }
 
         // ترتيب
         switch ($sortBy) {
@@ -213,12 +228,9 @@ if ($schoolId) {
                 <div class="form-group">
                     <label class="form-label" style="margin-left:8px;">الفصل الدراسي:</label>
                     <select name="semester_id" class="form-control" required>
-                        <option value="">-- اختر --</option>
-                        <?php foreach ($semesters as $sem): ?>
-                        <option value="<?= $sem['id'] ?>" <?= $filterSemester == $sem['id'] ? 'selected' : '' ?>>
-                            <?= e($sem['name_ar']) ?>
-                        </option>
-                        <?php endforeach; ?>
+                        <option value="0" <?= $filterSemester == '0' ? 'selected' : '' ?>>جميع الفصول</option>
+                        <option value="1" <?= $filterSemester == '1' ? 'selected' : '' ?>>الفصل الدراسي الأول</option>
+                        <option value="2" <?= $filterSemester == '2' ? 'selected' : '' ?>>الفصل الدراسي الثاني</option>
                     </select>
                 </div>
                 <div class="form-group">

@@ -6,8 +6,8 @@
  * ============================================================
  */
 
-session_name('EQAS_SESSION');
-session_start();
+// Include session management (same path as all pages)
+require_once __DIR__ . '/includes/session.php';
 
 // If already installed, redirect to login
 if (file_exists(__DIR__ . '/config.php')) {

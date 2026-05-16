@@ -81,11 +81,11 @@ try {
 $eqiScore = null;
 $eqiDimensions = [];
 try {
-    $stmt = $db->prepare("SELECT * FROM eqi_calculations WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
+    $stmt = $db->prepare("SELECT * FROM equi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
     $stmt->execute([$schoolId]);
     $eqiRow = $stmt->fetch();
-    if ($eqiRow) {
-        $eqiScore = round($eqiRow['score'], 1);
+    if ($eqiRow && isset($eqiRow['overall_eqi']) && $eqiRow['overall_eqi'] !== null) {
+        $eqiScore = round($eqiRow['overall_eqi'], 1);
     }
 } catch (Exception $e) { }
 

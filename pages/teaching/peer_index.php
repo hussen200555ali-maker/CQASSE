@@ -1,12 +1,4 @@
 <?php
-/**
- * ============================================================
- * تقييم الأقران - فهرس
- * Peer Evaluation Index
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
- */
-
 $pageTitle = 'تقييم الأقران';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'تقييم الأقران' => null];
 
@@ -22,39 +14,54 @@ $engine = new AssessmentEngine($db);
 
 $userId = $_SESSION['user']['id'];
 $userRole = $_SESSION['user']['role'];
-$schoolId = $_SESSION['user']['school_id'] ?? null;
 
-// التقييمات التي قمت بها
+$formId = 0;
+try {
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
+    $stmt->execute();
+    $formId = $stmt->fetchColumn();
+} catch (Exception $e) {}
+
 $myEvaluations = [];
-try {
-    $stmt = $db->prepare("
-        SELECT tpe.*, u.full_name_ar as teacher_name, sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_peer_evaluations tpe
-        JOIN users u ON tpe.teacher_id = u.id
-        JOIN semesters sem ON tpe.semester_id = sem.id
-        JOIN academic_years ay ON tpe.academic_year_id = ay.id
-        WHERE tpe.evaluator_id = ? AND tpe.is_active = 1
-        ORDER BY tpe.evaluation_date DESC
-    ");
-    $stmt->execute([$userId]);
-    $myEvaluations = $stmt->fetchAll();
-} catch (Exception $e) {}
-
-// التقييمات التي تمت عليّ
 $receivedEvaluations = [];
-try {
-    $stmt = $db->prepare("
-        SELECT tpe.*, u.full_name_ar as evaluator_name, sem.name_ar as semester_name, ay.name as year_name
-        FROM teaching_peer_evaluations tpe
-        JOIN users u ON tpe.evaluator_id = u.id
-        JOIN semesters sem ON tpe.semester_id = sem.id
-        JOIN academic_years ay ON tpe.academic_year_id = ay.id
-        WHERE tpe.teacher_id = ? AND tpe.is_active = 1
-        ORDER BY tpe.evaluation_date DESC
-    ");
-    $stmt->execute([$userId]);
-    $receivedEvaluations = $stmt->fetchAll();
-} catch (Exception $e) {}
+
+if ($formId) {
+    try {
+        $stmt = $db->prepare("
+            SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+                   ar.teacher_id, AVG(ar.numeric_value) AS overall_score,
+                   u.full_name_ar AS teacher_name,
+                   sem.name_ar AS semester_name, ay.name AS year_name
+            FROM assessment_responses ar
+            JOIN users u ON ar.teacher_id = u.id
+            JOIN semesters sem ON ar.semester_id = sem.id
+            JOIN academic_years ay ON ar.academic_year_id = ay.id
+            WHERE ar.form_id = ? AND ar.responded_by = ? AND ar.is_active = 1
+            GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
+            ORDER BY ar.response_date DESC
+        ");
+        $stmt->execute([$formId, $userId]);
+        $myEvaluations = $stmt->fetchAll();
+    } catch (Exception $e) {}
+
+    try {
+        $stmt = $db->prepare("
+            SELECT ar.response_date, ar.academic_year_id, ar.semester_id,
+                   ar.responded_by AS evaluator_id, AVG(ar.numeric_value) AS overall_score,
+                   u.full_name_ar AS evaluator_name,
+                   sem.name_ar AS semester_name, ay.name AS year_name
+            FROM assessment_responses ar
+            JOIN users u ON ar.responded_by = u.id
+            JOIN semesters sem ON ar.semester_id = sem.id
+            JOIN academic_years ay ON ar.academic_year_id = ay.id
+            WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.is_active = 1
+            GROUP BY ar.teacher_id, ar.responded_by, ar.response_date, ar.academic_year_id, ar.semester_id
+            ORDER BY ar.response_date DESC
+        ");
+        $stmt->execute([$formId, $userId]);
+        $receivedEvaluations = $stmt->fetchAll();
+    } catch (Exception $e) {}
+}
 ?>
 
 <!-- التقييمات التي قمت بها -->
@@ -86,17 +93,18 @@ try {
                         <tbody>
                             <?php foreach ($myEvaluations as $i => $eval): 
                                 $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
+                                $dateParam = urlencode($eval['response_date']);
                             ?>
                             <tr>
-                                <td><?php echo $i + 1; ?></td>
-                                <td style="font-weight:600;"><?php echo e($eval['teacher_name']); ?></td>
-                                <td><?php echo e($eval['semester_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
-                                <td style="font-weight:700; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                                    <?php echo $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
+                                <td><?= $i + 1; ?></td>
+                                <td style="font-weight:600;"><?= e($eval['teacher_name']); ?></td>
+                                <td><?= e($eval['semester_name']); ?></td>
+                                <td><?= formatDateAr($eval['response_date'], 'short'); ?></td>
+                                <td style="font-weight:700; color:<?= $rating['color'] ?? 'inherit'; ?>;">
+                                    <?= $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
                                 </td>
                                 <td class="actions">
-                                    <a href="peer_view.php?id=<?php echo $eval['id']; ?>" class="btn btn-sm btn-info">👁️</a>
+                                    <a href="peer_view.php?date=<?= $dateParam ?>&teacher_id=<?= $eval['teacher_id'] ?? '' ?>" class="btn btn-sm btn-info">👁️</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -134,17 +142,18 @@ try {
                         <tbody>
                             <?php foreach ($receivedEvaluations as $i => $eval): 
                                 $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
+                                $dateParam = urlencode($eval['response_date']);
                             ?>
                             <tr>
-                                <td><?php echo $i + 1; ?></td>
-                                <td><?php echo e($eval['evaluator_name']); ?></td>
-                                <td><?php echo e($eval['semester_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
-                                <td style="font-weight:700; color:<?php echo $rating['color'] ?? 'inherit'; ?>;">
-                                    <?php echo $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
+                                <td><?= $i + 1; ?></td>
+                                <td><?= e($eval['evaluator_name']); ?></td>
+                                <td><?= e($eval['semester_name']); ?></td>
+                                <td><?= formatDateAr($eval['response_date'], 'short'); ?></td>
+                                <td style="font-weight:700; color:<?= $rating['color'] ?? 'inherit'; ?>;">
+                                    <?= $eval['overall_score'] !== null ? number_format($eval['overall_score'], 1) . '%' : '—'; ?>
                                 </td>
                                 <td class="actions">
-                                    <a href="peer_view.php?id=<?php echo $eval['id']; ?>" class="btn btn-sm btn-info">👁️</a>
+                                    <a href="peer_view.php?date=<?= $dateParam ?>&evaluator_id=<?= $eval['evaluator_id'] ?? '' ?>" class="btn btn-sm btn-info">👁️</a>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

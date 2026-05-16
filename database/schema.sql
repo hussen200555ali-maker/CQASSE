@@ -1,12 +1,12 @@
 -- ============================================================================
 -- نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
 -- مخطط قاعدة البيانات الكامل
--- الإصدار: 2.0.3
+-- الإصدار: 3.2.0
 -- تاريخ الإنشاء: 2025
--- إجمالي الكائنات: 71 جدول + 1 عرض (v_student_current)
+-- إجمالي الكائنات: 69 جدول + 1 عرض (v_student_current)
 -- يشمل: governorates, permissions, role_permissions
--- تاريخ التحديث: 2026-05-11
--- تحديثات v2.0.3: إضافة وحدات الطلاب والتسجيلات وبوابة ولي الأمر
+-- تاريخ التحديث: 2026-05-16
+-- تحديثات v3.2.0: إصلاح مركز الإشعارات (ENUM→VARCHAR, حذف جداول يتيمة, إضافة value_string)
 -- ============================================================================
 
 SET NAMES utf8mb4;
@@ -483,6 +483,34 @@ CREATE TABLE `subject_grade_years` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول المواد بالصفوف الدراسية';
 
 -- -----------------------------------------------------------
+-- 2.1.1 جدول معلمي المواد
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `subject_teachers`;
+CREATE TABLE `subject_teachers` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `subject_id` INT UNSIGNED NOT NULL COMMENT 'رقم المادة',
+    `teacher_id` INT UNSIGNED NOT NULL COMMENT 'رقم المعلم',
+    `classroom_id` INT UNSIGNED NOT NULL COMMENT 'رقم الصف',
+    `semester_id` INT UNSIGNED NOT NULL COMMENT 'رقم الفصل الدراسي',
+    `school_id` INT UNSIGNED NOT NULL COMMENT 'رقم المدرسة',
+    `academic_year_id` INT UNSIGNED NOT NULL COMMENT 'رقم العام الدراسي',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_subject_teachers_teacher` (`teacher_id`),
+    KEY `idx_subject_teachers_classroom` (`classroom_id`),
+    KEY `idx_subject_teachers_semester` (`semester_id`),
+    KEY `idx_subject_teachers_school` (`school_id`),
+    KEY `idx_subject_teachers_year` (`academic_year_id`),
+    KEY `idx_subject_teachers_active` (`is_active`),
+    CONSTRAINT `fk_subject_teachers_subject` FOREIGN KEY (`subject_id`) REFERENCES `subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_subject_teachers_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_subject_teachers_classroom` FOREIGN KEY (`classroom_id`) REFERENCES `classes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_subject_teachers_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_subject_teachers_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول معلمي المواد - يربط المعلمين بالمواد والصفوف';
+
+-- -----------------------------------------------------------
 -- 2.2 جدول أنواع التقييم
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `assessment_types`;
@@ -851,30 +879,6 @@ CREATE TABLE `attendance_summary` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول ملخص الحضور';
 
 -- -----------------------------------------------------------
--- 2.7 جدول إشعارات الغياب
--- -----------------------------------------------------------
-DROP TABLE IF EXISTS `absence_notifications`;
-CREATE TABLE `absence_notifications` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `student_id` INT UNSIGNED NOT NULL COMMENT 'رقم الطالب',
-    `parent_id` INT UNSIGNED NOT NULL COMMENT 'رقم ولي الأمر (مستخدم)',
-    `absence_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'عدد أيام الغياب',
-    `notification_type` ENUM('consecutive','threshold','weekly') NOT NULL COMMENT 'نوع الإشعار',
-    `sent_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإرسال',
-    `is_read` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'هل تمت القراءة',
-    `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل الإشعار نشط',
-    PRIMARY KEY (`id`),
-    KEY `idx_absence_notifications_student` (`student_id`),
-    KEY `idx_absence_notifications_parent` (`parent_id`),
-    KEY `idx_absence_notifications_type` (`notification_type`),
-    KEY `idx_absence_notifications_sent` (`sent_at`),
-    KEY `idx_absence_notifications_read` (`is_read`),
-    KEY `idx_absence_notifications_active` (`is_active`),
-    CONSTRAINT `fk_absence_notifications_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fk_absence_notifications_parent` FOREIGN KEY (`parent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول إشعارات الغياب';
-
--- -----------------------------------------------------------
 -- 2.3 جدول فئات السلوك
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `behavior_categories`;
@@ -1072,6 +1076,7 @@ CREATE TABLE `teaching_evaluation_summary` (
     `peer_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'درجة تقييم الأقران',
     `admin_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'درجة تقييم الإدارة',
     `combined_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'الدرجة المجمعة (ذاتي*0.2+أقران*0.3+إدارة*0.5)',
+    `adjusted_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'الدرجة بعد التعديل السياقي',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإنشاء',
     PRIMARY KEY (`id`),
@@ -1271,17 +1276,18 @@ CREATE TABLE `eqi_dimension_weights` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول أوزان أبعاد مؤشر جودة التعليم';
 
 -- -----------------------------------------------------------
--- 3.2 جدال التنبيهات
+-- 3.2 جدول التنبيهات
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `alerts`;
 CREATE TABLE `alerts` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `school_id` INT UNSIGNED NOT NULL COMMENT 'رقم المدرسة',
     `student_id` INT UNSIGNED DEFAULT NULL COMMENT 'رقم الطالب',
-    `alert_type` ENUM('low_grade','failing_subject','high_absence','consecutive_absence','poor_behavior','promotion_risk','eqi_decline','attendance_below_threshold','behavior_below_threshold','custom') NOT NULL COMMENT 'نوع التنبيه',
+    `alert_type` VARCHAR(50) NOT NULL COMMENT 'نوع التنبيه',
     `severity` ENUM('info','warning','danger','critical') NOT NULL DEFAULT 'warning' COMMENT 'مستوى الخطورة',
     `title_ar` VARCHAR(200) NOT NULL COMMENT 'عنوان التنبيه بالعربية',
     `message_ar` TEXT NOT NULL COMMENT 'نص التنبيه بالعربية',
+    `notes` TEXT NULL COMMENT 'ملاحظات الحل',
     `is_read` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'هل تمت القراءة',
     `read_at` DATETIME DEFAULT NULL COMMENT 'تاريخ القراءة',
     `is_resolved` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'هل تم الحل',
@@ -1303,33 +1309,13 @@ CREATE TABLE `alerts` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول التنبيهات';
 
 -- -----------------------------------------------------------
--- 3.2 جدول إشعارات التنبيهات
--- -----------------------------------------------------------
-DROP TABLE IF EXISTS `alert_notifications`;
-CREATE TABLE `alert_notifications` (
-    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `alert_id` INT UNSIGNED NOT NULL COMMENT 'رقم التنبيه',
-    `user_id` INT UNSIGNED NOT NULL COMMENT 'رقم المستخدم',
-    `is_read` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'هل تمت القراءة',
-    `read_at` DATETIME DEFAULT NULL COMMENT 'تاريخ القراءة',
-    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإنشاء',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_alert_notifications` (`alert_id`, `user_id`),
-    KEY `idx_alert_notifications_user` (`user_id`),
-    KEY `idx_alert_notifications_read` (`is_read`),
-    KEY `idx_alert_notifications_created` (`created_at`),
-    CONSTRAINT `fk_alert_notifications_alert` FOREIGN KEY (`alert_id`) REFERENCES `alerts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT `fk_alert_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول إشعارات التنبيهات';
-
--- -----------------------------------------------------------
 -- 3.2 جدول إعدادات التنبيهات
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `alert_settings`;
 CREATE TABLE `alert_settings` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `school_id` INT UNSIGNED NOT NULL COMMENT 'رقم المدرسة',
-    `alert_type` ENUM('low_grade','failing_subject','high_absence','consecutive_absence','poor_behavior','promotion_risk','eqi_decline','attendance_below_threshold','behavior_below_threshold','custom') NOT NULL COMMENT 'نوع التنبيه',
+    `alert_type` ENUM('academic','behavior','attendance','eqi','promotion','climate','teaching') NOT NULL COMMENT 'نوع التنبيه',
     `is_enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل التنبيه مفعّل',
     `threshold_value` DECIMAL(7,2) DEFAULT NULL COMMENT 'قيمة الحد',
     `severity` ENUM('info','warning','danger','critical') NOT NULL DEFAULT 'warning' COMMENT 'مستوى الخطورة',
@@ -1525,7 +1511,7 @@ DROP TABLE IF EXISTS `notifications`;
 CREATE TABLE `notifications` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id` INT UNSIGNED NOT NULL COMMENT 'رقم المستخدم',
-    `type` ENUM('alert','reminder','ack_request','system','info') NOT NULL COMMENT 'نوع الإشعار',
+    `type` VARCHAR(50) NOT NULL COMMENT 'نوع الإشعار',
     `title_ar` VARCHAR(200) NOT NULL COMMENT 'عنوان الإشعار بالعربية',
     `message_ar` TEXT NOT NULL COMMENT 'نص الإشعار بالعربية',
     `related_entity_type` VARCHAR(50) DEFAULT NULL COMMENT 'نوع الكيان المرتبط',
@@ -1551,6 +1537,7 @@ CREATE TABLE `notification_preferences` (
     `user_id` INT UNSIGNED NOT NULL COMMENT 'رقم المستخدم',
     `notification_type` VARCHAR(50) NOT NULL COMMENT 'نوع الإشعار',
     `is_enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل الإشعار مفعّل',
+    `value_string` VARCHAR(255) DEFAULT NULL COMMENT 'قيمة نصية (للساعات والتكرار)',
     `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل الإعداد نشط',
     `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإنشاء',
     `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'تاريخ التحديث',
@@ -1707,18 +1694,18 @@ CREATE TABLE `backup_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول سجل النسخ الاحتياطي';
 
 -- -----------------------------------------------------------
--- جدول خطط التحسين
+-- جدول خطط التحسين (للطلاب المشروطين)
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `improvement_plans`;
 CREATE TABLE `improvement_plans` (
     `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
     `student_id` INT UNSIGNED NOT NULL COMMENT 'رقم الطالب',
     `decision_id` INT UNSIGNED DEFAULT NULL COMMENT 'رقم قرار الترقية',
-    `weak_areas` TEXT DEFAULT NULL COMMENT 'نقاط الضعف',
+    `weaknesses` TEXT DEFAULT NULL COMMENT 'نقاط الضعف',
     `goals` TEXT DEFAULT NULL COMMENT 'الأهداف',
     `strategies` TEXT DEFAULT NULL COMMENT 'الاستراتيجيات',
     `timeline` TEXT DEFAULT NULL COMMENT 'الجدول الزمني',
-    `responsible_teacher_id` INT UNSIGNED DEFAULT NULL COMMENT 'رقم المعلم المسؤول',
+    `responsible_user_id` INT UNSIGNED DEFAULT NULL COMMENT 'رقم المستخدم المسؤول (معلم/مرشد)',
     `parent_involvement` TEXT DEFAULT NULL COMMENT 'مشاركة ولي الأمر',
     `follow_up_date` DATE DEFAULT NULL COMMENT 'تاريخ المتابعة',
     `notes` TEXT DEFAULT NULL COMMENT 'ملاحظات',
@@ -1731,7 +1718,7 @@ CREATE TABLE `improvement_plans` (
     PRIMARY KEY (`id`),
     KEY `idx_improvement_plans_student` (`student_id`),
     KEY `idx_improvement_plans_decision` (`decision_id`),
-    KEY `idx_improvement_plans_teacher` (`responsible_teacher_id`),
+    KEY `idx_improvement_plans_responsible` (`responsible_user_id`),
     KEY `idx_improvement_plans_status` (`status`),
     KEY `idx_improvement_plans_created_by` (`created_by`),
     KEY `idx_improvement_plans_updated_by` (`updated_by`),
@@ -1739,10 +1726,42 @@ CREATE TABLE `improvement_plans` (
     KEY `idx_improvement_plans_active` (`is_active`),
     CONSTRAINT `fk_improvement_plans_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_improvement_plans_decision` FOREIGN KEY (`decision_id`) REFERENCES `promotion_decisions` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT `fk_improvement_plans_teacher` FOREIGN KEY (`responsible_teacher_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fk_improvement_plans_responsible` FOREIGN KEY (`responsible_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
     CONSTRAINT `fk_improvement_plans_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT `fk_improvement_plans_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول خطط التحسين';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول خطط التحسين للطلاب';
+
+-- -----------------------------------------------------------
+-- جدول خطط تحسين المدرسة
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `school_improvement_plans`;
+CREATE TABLE `school_improvement_plans` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `school_id` INT UNSIGNED NOT NULL COMMENT 'رقم المدرسة',
+    `trigger_type` ENUM('climate','facility','both') NOT NULL DEFAULT 'both' COMMENT 'نوع المحفز',
+    `weaknesses` TEXT DEFAULT NULL COMMENT 'نقاط الضعف',
+    `goals` TEXT DEFAULT NULL COMMENT 'الأهداف',
+    `strategies` TEXT DEFAULT NULL COMMENT 'الاستراتيجيات',
+    `timeline` VARCHAR(200) DEFAULT NULL COMMENT 'الجدول الزمني',
+    `responsible_user_id` INT UNSIGNED DEFAULT NULL COMMENT 'رقم المستخدم المسؤول',
+    `status` ENUM('active','completed','cancelled') NOT NULL DEFAULT 'active' COMMENT 'حالة الخطة',
+    `progress` INT NOT NULL DEFAULT 0 COMMENT 'نسبة التقدم',
+    `created_by` INT UNSIGNED DEFAULT NULL COMMENT 'رقم المستخدم المنشئ',
+    `updated_by` INT UNSIGNED DEFAULT NULL COMMENT 'رقم المستخدم المحدّث',
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإنشاء',
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'تاريخ التحديث',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'هل الخطة نشطة',
+    PRIMARY KEY (`id`),
+    KEY `idx_school_improvement_school` (`school_id`),
+    KEY `idx_school_improvement_status` (`status`),
+    KEY `idx_school_improvement_responsible` (`responsible_user_id`),
+    KEY `idx_school_improvement_created_by` (`created_by`),
+    KEY `idx_school_improvement_active` (`is_active`),
+    CONSTRAINT `fk_school_improvement_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_school_improvement_responsible` FOREIGN KEY (`responsible_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fk_school_improvement_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT `fk_school_improvement_updated_by` FOREIGN KEY (`updated_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول خطط تحسين المدرسة';
 
 -- ============================================================================
 -- العرض: بيانات الطلاب الحالية
@@ -1826,6 +1845,36 @@ CREATE TABLE `role_permissions` (
     CONSTRAINT `fk_role_permissions_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `fk_role_permissions_permission` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول صلاحيات الأدوار';
+
+-- -----------------------------------------------------------
+-- جدول السياق المدرسي (معامل التعديل السياقي)
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `school_context`;
+CREATE TABLE `school_context` (
+    `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `school_id` INT UNSIGNED NOT NULL COMMENT 'رقم المدرسة',
+    `academic_year_id` INT UNSIGNED NOT NULL COMMENT 'العام الدراسي',
+    `location_type` ENUM('urban','rural','suburban') DEFAULT NULL COMMENT 'نوع المنطقة',
+    `total_students` INT DEFAULT NULL COMMENT 'إجمالي الطلاب',
+    `student_teacher_ratio` DECIMAL(5,2) DEFAULT NULL COMMENT 'نسبة الطلاب إلى المعلمين',
+    `socioeconomic_index` DECIMAL(5,2) DEFAULT NULL COMMENT 'المستوى الاقتصادي الاجتماعي (0-100)',
+    `parent_education_level` DECIMAL(5,2) DEFAULT NULL COMMENT 'مستوى تعليم أولياء الأمور (0-100)',
+    `students_with_special_needs_pct` DECIMAL(5,2) DEFAULT NULL COMMENT 'نسبة الطلاب ذوي الاحتياجات الخاصة',
+    `infrastructure_score` DECIMAL(5,2) DEFAULT NULL COMMENT 'درجة البنية التحتية (0-100)',
+    `student_mobility_rate` DECIMAL(5,2) DEFAULT NULL COMMENT 'معدل تنقل الطلاب (%)',
+    `challenge_index` DECIMAL(5,2) DEFAULT NULL COMMENT 'مؤشر التحدي السياقي المحسوب',
+    `notes` TEXT DEFAULT NULL COMMENT 'ملاحظات',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_school_context` (`school_id`, `academic_year_id`),
+    KEY `idx_school_context_school` (`school_id`),
+    KEY `idx_school_context_year` (`academic_year_id`),
+    KEY `idx_school_context_active` (`is_active`),
+    CONSTRAINT `fk_school_context_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_school_context_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='السياق المدرسي لمعامل التعديل السياقي';
 
 -- ============================================================================
 -- إعادة تفعيل فحص المفاتيح الأجنبية

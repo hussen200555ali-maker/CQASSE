@@ -144,7 +144,7 @@ function generateGradeData($db, $classId, $academicYearId, $semesterId) {
     $stmt = $db->prepare("SELECT DISTINCT sub.id, sub.name_ar
                           FROM subjects sub
                           JOIN subject_teachers st ON st.subject_id = sub.id
-                          WHERE st.class_id = ? AND st.academic_year_id = ? AND sub.is_active = 1
+                           WHERE st.classroom_id = ? AND st.academic_year_id = ? AND sub.is_active = 1
                           ORDER BY sub.name_ar");
     $stmt->execute([$classId, $academicYearId]);
     $subjects = $stmt->fetchAll();

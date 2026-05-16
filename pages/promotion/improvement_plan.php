@@ -71,11 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(baseUrl("/pages/promotion/improvement_plan.php?student_id={$studentId}&decision_id={$decisionId}"));
     }
 
-    $weakAreas = sanitize($_POST['weak_areas'] ?? '');
+    $weaknesses = sanitize($_POST['weaknesses'] ?? '');
     $goals = sanitize($_POST['goals'] ?? '');
     $strategies = sanitize($_POST['strategies'] ?? '');
     $timeline = sanitize($_POST['timeline'] ?? '');
-    $responsibleTeacher = intval($_POST['responsible_teacher_id'] ?? 0);
+    $responsibleUser = intval($_POST['responsible_user_id'] ?? 0);
     $parentInvolvement = sanitize($_POST['parent_involvement'] ?? '');
     $followUpDate = sanitize($_POST['follow_up_date'] ?? '');
     $notes = sanitize($_POST['notes'] ?? '');
@@ -92,22 +92,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($plan) {
                 $stmt = $db->prepare("
                     UPDATE improvement_plans SET
-                        weak_areas = ?, goals = ?, strategies = ?,
-                        timeline = ?, responsible_teacher_id = ?,
+                        weaknesses = ?, goals = ?, strategies = ?,
+                        timeline = ?, responsible_user_id = ?,
                         parent_involvement = ?, follow_up_date = ?,
                         notes = ?, updated_at = NOW(), updated_by = ?
                     WHERE id = ?
                 ");
                 $stmt->execute([
-                    $weakAreas, $goals, $strategies, $timeline,
-                    $responsibleTeacher, $parentInvolvement, $followUpDate,
+                    $weaknesses, $goals, $strategies, $timeline,
+                    $responsibleUser, $parentInvolvement, $followUpDate,
                     $notes, $_SESSION['user']['id'], $plan['id']
                 ]);
             } else {
                 $stmt = $db->prepare("
                     INSERT INTO improvement_plans
-                    (student_id, decision_id, weak_areas, goals, strategies,
-                     timeline, responsible_teacher_id, parent_involvement,
+                    (student_id, decision_id, weaknesses, goals, strategies,
+                     timeline, responsible_user_id, parent_involvement,
                      follow_up_date, notes, status, created_by, created_at, is_active)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NOW(), 1)
                 ");
@@ -243,11 +243,11 @@ if (!$decision['attendance_pass']) $weaknesses[] = 'الحضور (أقل من 75
 
                 <!-- نقاط الضعف -->
                 <div class="form-group">
-                    <label class="form-label" for="weak_areas">
+                    <label class="form-label" for="weaknesses">
                         <i class="fas fa-exclamation-triangle text-danger"></i>
                         نقاط الضعف المحددة *
                     </label>
-                    <textarea name="weak_areas" id="weak_areas" class="form-control" rows="3" required><?= e($plan['weak_areas'] ?? implode("\n", $weaknesses)) ?></textarea>
+                    <textarea name="weaknesses" id="weaknesses" class="form-control" rows="3" required><?= e($plan['weaknesses'] ?? implode("\n", $weaknesses)) ?></textarea>
                     <small class="form-text text-muted">تم تحديد نقاط الضعف تلقائياً بناءً على معايير الترفيع</small>
                 </div>
 
@@ -281,14 +281,14 @@ if (!$decision['attendance_pass']) $weaknesses[] = 'الحضور (أقل من 75
 
                     <!-- المعلم المسؤول -->
                     <div class="form-group">
-                        <label class="form-label" for="responsible_teacher_id">
+                        <label class="form-label" for="responsible_user_id">
                             <i class="fas fa-chalkboard-teacher text-success"></i>
-                            المعلم المسؤول عن المتابعة
+                            المسؤول عن المتابعة
                         </label>
-                        <select name="responsible_teacher_id" id="responsible_teacher_id" class="form-control">
-                            <option value="">-- اختر المعلم --</option>
+                        <select name="responsible_user_id" id="responsible_user_id" class="form-control">
+                            <option value="">-- اختر المسؤول --</option>
                             <?php foreach ($teachers as $teacher): ?>
-                                <option value="<?= $teacher['id'] ?>" <?= ($plan['responsible_teacher_id'] ?? '') == $teacher['id'] ? 'selected' : '' ?>>
+                                <option value="<?= $teacher['id'] ?>" <?= ($plan['responsible_user_id'] ?? '') == $teacher['id'] ? 'selected' : '' ?>>
                                     <?= e($teacher['full_name_ar']) ?>
                                 </option>
                             <?php endforeach; ?>
