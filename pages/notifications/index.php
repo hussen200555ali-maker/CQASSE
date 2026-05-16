@@ -6,6 +6,54 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/auth.php';
+
+// معالجة التصدير - يجب أن يكون قبل أي مخرجات
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_notifications'])) {
+    $userId = $_SESSION['user']['id'];
+    $filterType = $_GET['type'] ?? '';
+    $filterRead = $_GET['read'] ?? '';
+    $filterSearch = $_GET['search'] ?? '';
+
+    $exportSql = "SELECT id, type, title_ar, message_ar, is_read, created_at FROM notifications WHERE user_id = ?";
+    $exportParams = [$userId];
+    if ($filterType) { $exportSql .= " AND type = ?"; $exportParams[] = $filterType; }
+    if ($filterRead === '0') { $exportSql .= " AND is_read = 0"; }
+    elseif ($filterRead === '1') { $exportSql .= " AND is_read = 1"; }
+    if ($filterSearch) { $exportSql .= " AND (title_ar LIKE ? OR message_ar LIKE ?)"; $exportParams[] = "%$filterSearch%"; $exportParams[] = "%$filterSearch%"; }
+    $exportSql .= " ORDER BY created_at DESC";
+    $exportStmt = $db->prepare($exportSql);
+    $exportStmt->execute($exportParams);
+    $exportData = $exportStmt->fetchAll();
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=notifications_' . date('Y-m-d') . '.csv');
+    $output = fopen('php://output', 'w');
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    fputcsv($output, ['المعرف', 'النوع', 'العنوان', 'الرسالة', 'الحالة', 'التاريخ']);
+    $typeLabelMap = [
+        'alert' => 'تنبيه', 'announcement' => 'إعلان', 'reminder' => 'تذكير',
+        'system' => 'نظام', 'acknowledgment' => 'إقرار', 'info' => 'معلومات',
+        'ack_request' => 'طلب إقرار',
+    ];
+    foreach ($exportData as $row) {
+        fputcsv($output, [
+            $row['id'],
+            $typeLabelMap[$row['type']] ?? $row['type'],
+            $row['title_ar'],
+            $row['message_ar'],
+            $row['is_read'] ? 'مقروء' : 'غير مقروء',
+            $row['created_at'],
+        ]);
+    }
+    fclose($output);
+    exit;
+}
+
 $pageTitle = 'مركز الإشعارات';
 $breadcrumb = ['مركز الإشعارات' => null];
 
@@ -98,54 +146,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notifId = (int)$_POST['delete_notif'];
         $stmt = $db->prepare("DELETE FROM notifications WHERE id = ? AND user_id = ?");
         $stmt->execute([$notifId, $userId]);
-    }
-
-    if (isset($_POST['export_notifications'])) {
-        // تصدير الإشعارات كملف CSV مع احترام الفلاتر الحالية
-        $exportSql = "SELECT id, type, title_ar, message_ar, is_read, created_at FROM notifications WHERE user_id = ?";
-        $exportParams = [$userId];
-        if ($filterType) {
-            $exportSql .= " AND type = ?";
-            $exportParams[] = $filterType;
-        }
-        if ($filterRead === '0') {
-            $exportSql .= " AND is_read = 0";
-        } elseif ($filterRead === '1') {
-            $exportSql .= " AND is_read = 1";
-        }
-        if ($filterSearch) {
-            $exportSql .= " AND (title_ar LIKE ? OR message_ar LIKE ?)";
-            $exportParams[] = "%$filterSearch%";
-            $exportParams[] = "%$filterSearch%";
-        }
-        $exportSql .= " ORDER BY created_at DESC";
-        $exportStmt = $db->prepare($exportSql);
-        $exportStmt->execute($exportParams);
-        $exportData = $exportStmt->fetchAll();
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=notifications_' . date('Y-m-d') . '.csv');
-        $output = fopen('php://output', 'w');
-        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Arabic
-        fputcsv($output, ['المعرف', 'النوع', 'العنوان', 'الرسالة', 'الحالة', 'التاريخ']);
-        $typeLabelMap = [
-            'alert' => 'تنبيه', 'announcement' => 'إعلان', 'reminder' => 'تذكير',
-            'system' => 'نظام', 'acknowledgment' => 'إقرار', 'info' => 'معلومات',
-            'ack_request' => 'طلب إقرار',
-        ];
-        foreach ($exportData as $row) {
-            fputcsv($output, [
-                $row['id'],
-                $typeLabelMap[$row['type']] ?? $row['type'],
-                $row['title_ar'],
-                $row['message_ar'],
-                $row['is_read'] ? 'مقروء' : 'غير مقروء',
-                $row['created_at']
-            ]);
-        }
-        fclose($output);
-        logActivity($db, $userId, 'notifications_export', 'تصدير الإشعارات', 'notification', null);
-        exit;
     }
 
     redirect('index.php');

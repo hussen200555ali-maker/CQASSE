@@ -41,7 +41,7 @@ if ($semester['lock_level'] === 'admin_handled') {
 // التحقق من وجود حسابات EQI لهذا الفصل
 $eqiCount = 0;
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM equi_results WHERE semester_id = ?");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM eqi_results WHERE semester_id = ?");
     $stmt->execute([$semesterId]);
     $eqiCount = (int)$stmt->fetchColumn();
 } catch (Exception $e) {}

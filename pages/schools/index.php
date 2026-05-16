@@ -34,7 +34,7 @@ $conditions = ['1=1'];
 $params = [];
 
 if (!empty($search)) {
-    $conditions[] = '(s.name_ar LIKE ? OR s.name_en LIKE ? OR s.code LIKE ?)';
+    $conditions[] = '(s.name_ar LIKE ? OR s.name_en LIKE ? OR s.reference_code LIKE ?)';
     $params[] = "%{$search}%";
     $params[] = "%{$search}%";
     $params[] = "%{$search}%";

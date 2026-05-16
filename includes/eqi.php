@@ -87,15 +87,23 @@ class EQICalculator {
      * تحميل الأوزان من قاعدة البيانات
      */
     private function loadWeights() {
+        // الأوزان الافتراضية مُعرّفة في $dimensions
+        // يمكن تخصيصها عبر eqi_results.weights_json لكل حساب
         try {
-            $stmt = $this->db->query("SELECT dimension_name, default_weight FROM eqi_dimension_weights WHERE is_active = 1");
-            while ($row = $stmt->fetch()) {
-                if (isset($this->dimensions[$row['dimension_name']])) {
-                    $this->dimensions[$row['dimension_name']]['weight'] = (float)$row['default_weight'] / 100;
+            // محاولة قراءة آخر أوزان محفوظة
+            $stmt = $this->db->query("SELECT weights_json FROM eqi_results WHERE weights_json IS NOT NULL ORDER BY id DESC LIMIT 1");
+            $row = $stmt->fetch();
+            if ($row && $row['weights_json']) {
+                $weights = json_decode($row['weights_json'], true);
+                if (is_array($weights)) {
+                    foreach ($weights as $dim => $w) {
+                        if (isset($this->dimensions[$dim])) {
+                            $this->dimensions[$dim]['weight'] = (float)$w / 100;
+                        }
+                    }
                 }
             }
         } catch (Exception $e) {
-            // استخدام الأوزان الافتراضية
             error_log('EQICalculator: Using default weights - ' . $e->getMessage());
         }
     }
@@ -349,13 +357,14 @@ class EQICalculator {
      */
     private function calculateTeachingScore($schoolId, $yearId, $semesterId, &$usedProxy = false) {
         try {
-            // 1. المحاولة الأولى: تقييمات التدريس الفعلية (مُجمّعة مسبقاً في teaching_evaluation_summary)
-            $sql = "SELECT COALESCE(AVG(tes.combined_score), 0)
-                    FROM teaching_evaluation_summary tes
-                    JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
-                    WHERE tes.academic_year_id = :year_id
-                      AND tes.semester_id = :semester_id
-                      AND tes.is_active = 1";
+            // 1. المحاولة الأولى: تقييمات التدريس الفعلية (مُجمّعة في evaluations)
+            $sql = "SELECT COALESCE(AVG(e.combined_score), 0)
+                    FROM evaluations e
+                    WHERE e.eval_type = 'teaching_summary'
+                      AND e.school_id = :school_id
+                      AND e.academic_year_id = :year_id
+                      AND e.semester_id = :semester_id
+                      AND e.is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':school_id' => $schoolId, ':year_id' => $yearId, ':semester_id' => $semesterId]);
             $result = $stmt->fetchColumn();
@@ -400,12 +409,13 @@ class EQICalculator {
      */
     private function calculateClimateScore($schoolId, $yearId, $semesterId) {
         try {
-            $sql = "SELECT AVG(cs.overall_score) AS avg_score
-                    FROM climate_surveys cs
-                    WHERE cs.school_id = :school_id 
-                        AND cs.academic_year_id = :year_id 
-                        AND cs.semester_id = :semester_id 
-                        AND cs.is_active = 1";
+            $sql = "SELECT AVG(s.overall_score) AS avg_score
+                    FROM surveys s
+                    WHERE s.survey_type = 'climate'
+                        AND s.school_id = :school_id 
+                        AND s.academic_year_id = :year_id 
+                        AND s.semester_id = :semester_id 
+                        AND s.is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -427,14 +437,13 @@ class EQICalculator {
      */
     private function calculateBehaviorScore($schoolId, $yearId, $semesterId) {
         try {
-            $sql = "SELECT AVG(bs.current_percentage) AS avg_score
-                    FROM behavior_scores bs
-                    INNER JOIN students s ON s.id = bs.student_id
-                    WHERE s.school_id = :school_id 
-                        AND bs.academic_year_id = :year_id 
-                        AND bs.semester_id = :semester_id 
-                        AND bs.is_active = 1
-                        AND s.is_active = 1";
+            $sql = "SELECT AVG(e.current_percentage) AS avg_score
+                    FROM evaluations e
+                    WHERE e.eval_type = 'behavior_score'
+                        AND e.school_id = :school_id 
+                        AND e.academic_year_id = :year_id 
+                        AND e.semester_id = :semester_id 
+                        AND e.is_active = 1";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -457,20 +466,10 @@ class EQICalculator {
      */
     private function calculateSkillsScore($schoolId, $yearId, $semesterId) {
         try {
-            $sql = "SELECT AVG(se.score) AS avg_score
-                    FROM skills_evaluations se
-                    WHERE se.school_id = :school_id 
-                        AND se.academic_year_id = :year_id 
-                        AND se.semester_id = :semester_id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':school_id' => $schoolId,
-                ':year_id' => $yearId,
-                ':semester_id' => $semesterId,
-            ]);
-            $result = $stmt->fetchColumn();
-            
-            return $result !== null && $result !== false ? round((float)$result, 2) : null;
+            // skills_evaluations تم أرشفتها (old_skills_evaluations)
+            // يمكن إضافة دعم مستقبلي إذا تم دمجها في evaluations
+            error_log('EQICalculator::calculateSkillsScore - skills_evaluations archived, returning null');
+            return null;
         } catch (Exception $e) {
             error_log('EQICalculator::calculateSkillsScore - ' . $e->getMessage());
             return null;
@@ -483,14 +482,12 @@ class EQICalculator {
      */
     private function calculateAttendanceScore($schoolId, $yearId, $semesterId) {
         try {
-            $sql = "SELECT AVG(ats.attendance_rate) AS avg_rate
-                    FROM attendance_summaries ats
-                    INNER JOIN students s ON s.id = ats.student_id
+            $sql = "SELECT AVG(v.attendance_rate) AS avg_rate
+                    FROM v_attendance_summary v
+                    INNER JOIN students s ON s.id = v.student_id
                     WHERE s.school_id = :school_id 
-                        AND ats.academic_year_id = :year_id 
-                        AND ats.semester_id = :semester_id 
-                        AND ats.is_active = 1
-                        AND s.is_active = 1";
+                        AND v.academic_year_id = :year_id 
+                        AND v.semester_id = :semester_id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -515,7 +512,7 @@ class EQICalculator {
      */
     private function saveCalculation($schoolId, $yearId, $semesterId, $scores, $weights, $eqi) {
         try {
-            $stmt = $this->db->prepare("SELECT id FROM equi_results WHERE school_id = :school_id AND academic_year_id = :year_id AND semester_id = :semester_id");
+            $stmt = $this->db->prepare("SELECT id FROM eqi_results WHERE school_id = :school_id AND academic_year_id = :year_id AND semester_id = :semester_id");
             $stmt->execute([':school_id' => $schoolId, ':year_id' => $yearId, ':semester_id' => $semesterId]);
             $existing = $stmt->fetch();
 
@@ -534,7 +531,7 @@ class EQICalculator {
             ];
 
             if ($existing) {
-                $sql = "UPDATE equi_results SET 
+                $sql = "UPDATE eqi_results SET 
                         academic_score = :academic, teaching_score = :teaching,
                         climate_score = :climate, behavior_score = :behavior,
                         skills_score = :skills, attendance_score = :attendance,
@@ -553,7 +550,7 @@ class EQICalculator {
                     ':id' => $existing['id'],
                 ];
             } else {
-                $sql = "INSERT INTO equi_results 
+                $sql = "INSERT INTO eqi_results 
                         (school_id, academic_year_id, semester_id, academic_score, teaching_score, 
                          climate_score, behavior_score, skills_score, attendance_score, overall_eqi, calculated_by)
                         VALUES (:school_id, :year_id, :semester_id, :academic, :teaching, 
@@ -589,7 +586,7 @@ class EQICalculator {
     public function getEQIHistory($schoolId, $limit = 10) {
         try {
             $sql = "SELECT ec.*, ay.name AS year_name, sem.name_ar AS semester_name
-                    FROM equi_results ec
+                    FROM eqi_results ec
                     INNER JOIN academic_years ay ON ay.id = ec.academic_year_id
                     INNER JOIN semesters sem ON sem.id = ec.semester_id
                     WHERE ec.school_id = :school_id AND ec.is_active = 1
@@ -612,7 +609,7 @@ class EQICalculator {
      */
     public function getEQIDimensions($schoolId, $yearId, $semesterId) {
         try {
-            $sql = "SELECT * FROM equi_results 
+            $sql = "SELECT * FROM eqi_results 
                     WHERE school_id = :school_id 
                         AND academic_year_id = :year_id 
                         AND semester_id = :semester_id 
@@ -638,7 +635,7 @@ class EQICalculator {
         try {
             $sql = "SELECT ec.*, s.name_ar AS school_name, ay.name AS year_name, sem.name_ar AS semester_name,
                            u.full_name_ar AS calculator_name
-                    FROM equi_results ec
+                    FROM eqi_results ec
                     INNER JOIN schools s ON s.id = ec.school_id
                     INNER JOIN academic_years ay ON ay.id = ec.academic_year_id
                     INNER JOIN semesters sem ON sem.id = ec.semester_id
@@ -729,35 +726,30 @@ class EQICalculator {
         } catch (Exception $e) { $checks['teaching'] = ['available' => false, 'partial' => false, 'count' => 0, 'page' => 'teaching/self_evaluate.php', 'page_label' => 'تقييم التدريس (تقديري)']; }
 
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM climate_surveys
-                WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM surveys
+                WHERE survey_type = 'climate' AND school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
             $stmt->execute([$schoolId, $yearId, $semesterId]);
             $count = (int)$stmt->fetchColumn();
             $checks['climate'] = ['available' => $count > 0, 'count' => $count, 'page' => 'climate/survey.php', 'page_label' => 'استبيان المناخ'];
         } catch (Exception $e) { $checks['climate'] = ['available' => false, 'count' => 0, 'page' => 'climate/survey.php', 'page_label' => 'استبيان المناخ']; }
 
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM behavior_scores bs
-                INNER JOIN students s ON s.id = bs.student_id
-                WHERE s.school_id = ? AND bs.academic_year_id = ? AND bs.semester_id = ? AND bs.is_active = 1 AND s.is_active = 1");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM evaluations
+                WHERE eval_type = 'behavior_score' AND school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
             $stmt->execute([$schoolId, $yearId, $semesterId]);
             $count = (int)$stmt->fetchColumn();
             $checks['behavior'] = ['available' => $count > 0, 'count' => $count, 'page' => 'behavior/evaluate.php', 'page_label' => 'تقييم السلوك'];
         } catch (Exception $e) { $checks['behavior'] = ['available' => false, 'count' => 0, 'page' => 'behavior/evaluate.php', 'page_label' => 'تقييم السلوك']; }
 
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM skills_evaluations se
-                INNER JOIN students s ON s.id = se.student_id
-                WHERE s.school_id = ? AND se.academic_year_id = ? AND se.semester_id = ? AND se.is_active = 1 AND s.is_active = 1");
-            $stmt->execute([$schoolId, $yearId, $semesterId]);
-            $count = (int)$stmt->fetchColumn();
-            $checks['skills'] = ['available' => $count > 0, 'count' => $count, 'page' => 'skills/evaluate.php', 'page_label' => 'تقييم المهارات'];
-        } catch (Exception $e) { $checks['skills'] = ['available' => false, 'count' => 0, 'page' => 'skills/evaluate.php', 'page_label' => 'تقييم المهارات']; }
+            // skills_evaluations تم أرشفتها
+            $checks['skills'] = ['available' => false, 'count' => 0, 'page' => null, 'page_label' => 'تقييم المهارات (غير متاح)'];
+        } catch (Exception $e) { $checks['skills'] = ['available' => false, 'count' => 0, 'page' => null, 'page_label' => 'تقييم المهارات (غير متاح)']; }
 
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM attendance_summaries ats
-                INNER JOIN students s ON s.id = ats.student_id
-                WHERE s.school_id = ? AND ats.academic_year_id = ? AND ats.semester_id = ? AND ats.is_active = 1 AND s.is_active = 1");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM v_attendance_summary v
+                INNER JOIN students s ON s.id = v.student_id
+                WHERE s.school_id = ? AND v.academic_year_id = ? AND v.semester_id = ?");
             $stmt->execute([$schoolId, $yearId, $semesterId]);
             $count = (int)$stmt->fetchColumn();
             $checks['attendance'] = ['available' => $count > 0, 'count' => $count, 'page' => 'attendance/index.php', 'page_label' => 'سجلات الحضور'];
@@ -829,7 +821,7 @@ class EQICalculator {
     public function getAllSchoolsEQI($yearId, $semesterId) {
         try {
             $sql = "SELECT ec.*, s.name_ar AS school_name, s.reference_code AS school_code
-                    FROM equi_results ec
+                    FROM eqi_results ec
                     INNER JOIN schools s ON s.id = ec.school_id
                     WHERE ec.academic_year_id = :year_id 
                         AND ec.semester_id = :semester_id 
@@ -855,7 +847,7 @@ class EQICalculator {
     public function getSchoolRanking($yearId, $semesterId, $limit = 20) {
         try {
             $sql = "SELECT ec.overall_eqi, s.name_ar AS school_name, s.reference_code AS school_code
-                    FROM equi_results ec
+                    FROM eqi_results ec
                     INNER JOIN schools s ON s.id = ec.school_id
                     WHERE ec.academic_year_id = :year_id 
                         AND ec.semester_id = :semester_id 
@@ -905,23 +897,20 @@ class EQICalculator {
             foreach ($weights as $dimName => $weight) {
                 if (isset($this->dimensions[$dimName])) {
                     $this->dimensions[$dimName]['weight'] = $weight / 100;
-                    
-                    $exists = $this->db->prepare("SELECT COUNT(*) FROM eqi_dimension_weights WHERE dimension_name = ?");
-                    $exists->execute([$dimName]);
-                    if ($exists->fetchColumn() > 0) {
-                        $sql = "UPDATE eqi_dimension_weights SET default_weight = :weight, dimension_name_ar = :name_ar WHERE dimension_name = :name";
-                    } else {
-                        $sql = "INSERT INTO eqi_dimension_weights (dimension_name, dimension_name_ar, default_weight, is_active)
-                                VALUES (:name, :name_ar, :weight, 1)";
-                    }
-                    $stmt = $this->db->prepare($sql);
-                    $stmt->execute([
-                        ':name' => $dimName,
-                        ':name_ar' => $this->dimensions[$dimName]['name'],
-                        ':weight' => $weight,
-                    ]);
                 }
             }
+            
+            // تحديث الأوزان في system_settings
+            $weightsJson = json_encode($weights, JSON_UNESCAPED_UNICODE);
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM system_settings WHERE setting_key = 'eqi_dimension_weights'");
+            $stmt->execute();
+            if ($stmt->fetchColumn() > 0) {
+                $sql = "UPDATE system_settings SET setting_value = :weights WHERE setting_key = 'eqi_dimension_weights'";
+            } else {
+                $sql = "INSERT INTO system_settings (category, setting_key, setting_value, value_type, name_ar, description_ar, is_system, sort_order, is_active, created_at) VALUES ('eqi', 'eqi_dimension_weights', :weights, 'json', 'أوزان أبعاد EQI', 'أوزان الأبعاد الستة لمؤشر جودة التعليم', 1, 106, 1, NOW())";
+            }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':weights' => $weightsJson]);
             
             return ['success' => true, 'message' => 'تم تحديث الأوزان بنجاح'];
         } catch (Exception $e) {

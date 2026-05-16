@@ -151,7 +151,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmt = $db->prepare("
                         SELECT er.overall_eqi
-                        FROM equi_results er
+                        FROM eqi_results er
                         JOIN semesters s ON er.semester_id = s.id
                         WHERE er.academic_year_id = ?
                           AND er.school_id = ?
@@ -164,7 +164,7 @@ switch ($type) {
                 } else {
                     $stmt = $db->prepare("
                         SELECT AVG(overall_eqi)
-                        FROM equi_results
+                        FROM eqi_results
                         WHERE academic_year_id = ?
                           AND school_id = ?
                           AND is_active = 1
@@ -177,7 +177,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmtComp = $db->prepare("
                         SELECT AVG(er.overall_eqi)
-                        FROM equi_results er
+                        FROM eqi_results er
                         JOIN semesters s ON er.semester_id = s.id
                         WHERE er.academic_year_id = ?
                           AND s.name_ar = ?
@@ -188,7 +188,7 @@ switch ($type) {
                 } else {
                     $stmtComp = $db->prepare("
                         SELECT AVG(overall_eqi)
-                        FROM equi_results
+                        FROM eqi_results
                         WHERE academic_year_id = ?
                           AND is_active = 1
                           AND overall_eqi IS NOT NULL
@@ -200,7 +200,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmt = $db->prepare("
                         SELECT AVG(er.overall_eqi)
-                        FROM equi_results er
+                        FROM eqi_results er
                         JOIN semesters s ON er.semester_id = s.id
                         WHERE er.academic_year_id = ?
                           AND s.name_ar = ?
@@ -211,7 +211,7 @@ switch ($type) {
                 } else {
                     $stmt = $db->prepare("
                         SELECT AVG(overall_eqi)
-                        FROM equi_results
+                        FROM eqi_results
                         WHERE academic_year_id = ?
                           AND is_active = 1
                           AND overall_eqi IS NOT NULL
@@ -255,7 +255,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmt = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         JOIN semesters sem ON ats.semester_id = sem.id
                         WHERE ats.academic_year_id = ?
@@ -267,7 +267,7 @@ switch ($type) {
                 } else {
                     $stmt = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         WHERE ats.academic_year_id = ?
                           AND s.school_id = ?
@@ -280,7 +280,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmtComp = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         JOIN semesters sem ON ats.semester_id = sem.id
                         WHERE ats.academic_year_id = ?
@@ -291,7 +291,7 @@ switch ($type) {
                 } else {
                     $stmtComp = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         WHERE ats.academic_year_id = ?
                           AND ats.is_active = 1
@@ -303,7 +303,7 @@ switch ($type) {
                 if ($semesterNameForMatch) {
                     $stmt = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         JOIN semesters sem ON ats.semester_id = sem.id
                         WHERE ats.academic_year_id = ?
@@ -314,7 +314,7 @@ switch ($type) {
                 } else {
                     $stmt = $db->prepare("
                         SELECT AVG(ats.attendance_rate)
-                        FROM attendance_summaries ats
+                        FROM v_attendance_summary ats
                         JOIN students s ON s.id = ats.student_id AND s.is_active = 1
                         WHERE ats.academic_year_id = ?
                           AND ats.is_active = 1

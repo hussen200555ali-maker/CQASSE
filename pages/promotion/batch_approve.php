@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                     $params = array_merge($selectedIds, [$_SESSION['user']['id']]);
 
                     $stmt = $db->prepare("
-                        UPDATE promotion_decisions
+                        UPDATE promotions
                         SET status = 'approved',
                             approved_by = ?,
                             approved_at = NOW(),
@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                     } else {
                         $placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
                         $stmt = $db->prepare("
-                            UPDATE promotion_decisions
+                            UPDATE promotions
                             SET status = 'rejected',
                                 rejection_reason = ?,
                                 approved_by = ?,
@@ -154,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
 
                     $whereClause = implode(' AND ', $whereParts);
                     $stmt = $db->prepare("
-                        UPDATE promotion_decisions pd
+                        UPDATE promotions pd
                         SET pd.status = 'approved',
                             pd.approved_by = ?,
                             pd.approved_at = NOW(),
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['individual_action']))
         try {
             if ($action === 'approve_individual') {
                 $stmt = $db->prepare("
-                    UPDATE promotion_decisions
+                    UPDATE promotions
                     SET status = 'approved',
                         approved_by = ?,
                         approved_at = NOW(),
@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['individual_action']))
                     setFlash('يرجى إدخال سبب الرفض.', 'warning');
                 } else {
                     $stmt = $db->prepare("
-                        UPDATE promotion_decisions
+                        UPDATE promotions
                         SET status = 'rejected',
                             rejection_reason = ?,
                             approved_by = ?,
@@ -286,7 +286,7 @@ $sql = "SELECT pd.*,
                c.name_ar as class_name,
                sc.name_ar as school_name,
                u.full_name_ar as approver_name
-        FROM promotion_decisions pd
+FROM promotions pd
         JOIN students s ON pd.student_id = s.id
         JOIN grade_levels gl ON pd.grade_level_id = gl.id
         LEFT JOIN classes c ON pd.class_id = c.id
@@ -307,15 +307,11 @@ $statsParams = array_values(array_filter($whereParams, function($w, $k) use ($wh
     return strpos($whereParts[$k], 'pd.status') === false;
 }, ARRAY_FILTER_USE_BOTH));
 
-$stmtProposed = $db->prepare("SELECT COUNT(*) FROM promotion_decisions pd WHERE pd.status = 'proposed' AND " . ($statsWhere ?: '1=1'));
-$stmtProposed->execute($statsParams);
-$proposedCount = $stmtProposed->fetchColumn();
+$stmtProposed = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'proposed' AND " . ($statsWhere ?: '1=1'));
 
-$stmtApproved = $db->prepare("SELECT COUNT(*) FROM promotion_decisions pd WHERE pd.status = 'approved' AND " . ($statsWhere ?: '1=1'));
-$stmtApproved->execute($statsParams);
-$approvedCount = $stmtApproved->fetchColumn();
+$stmtApproved = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'approved' AND " . ($statsWhere ?: '1=1'));
 
-$stmtRejected = $db->prepare("SELECT COUNT(*) FROM promotion_decisions pd WHERE pd.status = 'rejected' AND " . ($statsWhere ?: '1=1'));
+$stmtRejected = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'rejected' AND " . ($statsWhere ?: '1=1'));
 $stmtRejected->execute($statsParams);
 $rejectedCount = $stmtRejected->fetchColumn();
 ?>

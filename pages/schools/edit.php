@@ -40,7 +40,6 @@ $yemenGovernorates = [
     'حجة', 'عمران', 'صعدة', 'الجوف', 'مأرب', 'البيضاء', 'إب', 'تعز',
     'الحديدة', 'ريمة', 'ذمار', 'الضالع', 'صنعاء', 'سقطرى'
 ];
-$districts = $db->query("SELECT id, name_ar FROM districts WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name_en = trim($_POST['name_en'] ?? '');
     $address = trim($_POST['address'] ?? '');
     $governorate = $_POST['governorate'] ?? '';
-    $district_id = $_POST['district_id'] ?? '';
     $district = trim($_POST['district'] ?? '');
     $school_type = $_POST['school_type'] ?? '';
     $principal_name = trim($_POST['principal_name'] ?? '');
@@ -66,10 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         try {
-            $stmt = $db->prepare("UPDATE schools SET name_ar=?, name_en=?, address=?, governorate=?, district_id=?, district=?, school_type=?, principal_name=?, phone=?, email=?, updated_at=NOW() WHERE id=?");
+            $stmt = $db->prepare("UPDATE schools SET name_ar=?, name_en=?, address=?, governorate=?, district=?, school_type=?, principal_name=?, phone=?, email=?, updated_at=NOW() WHERE id=?");
             $stmt->execute([
                 $name_ar, $name_en ?: null, $address ?: null,
-                $governorate ?: null, $district_id ?: null, $district ?: null,
+                $governorate ?: null, $district ?: null,
                 $school_type, $principal_name ?: null, $phone ?: null,
                 $email ?: null, $schoolId
             ]);
@@ -88,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $school['name_en'] = $name_en;
     $school['address'] = $address;
     $school['governorate'] = $governorate;
-    $school['district_id'] = $district_id;
     $school['district'] = $district;
     $school['school_type'] = $school_type;
     $school['principal_name'] = $principal_name;
@@ -154,12 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="form-group">
                     <label class="form-label">المديرية</label>
-                    <select name="district_id" class="form-control">
-                        <option value="">اختر المديرية</option>
-                        <?php foreach ($districts as $dist): ?>
-                            <option value="<?= $dist['id'] ?>" <?= ($school['district_id'] ?? '') == $dist['id'] ? 'selected' : '' ?>><?= e($dist['name_ar']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" name="district" class="form-control"
+                           value="<?= e($school['district'] ?? '') ?>" placeholder="أدخل المديرية">
                 </div>
             </div>
 

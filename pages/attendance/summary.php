@@ -92,22 +92,8 @@ function recalcStudentSummary($db, $studentId, $classId, $academicYearId, $semes
         $rate = round((($c['present_days'] + $c['excused_days']) / $c['total_days']) * 100, 2);
         $minRate = 75;
 
-        $stmt = $db->prepare("
-            INSERT INTO attendance_summaries 
-                (student_id, class_id, academic_year_id, semester_id, total_days,
-                 present_days, absent_days, late_days, excused_days, attendance_rate, is_below_threshold, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-            ON DUPLICATE KEY UPDATE
-                total_days = VALUES(total_days), present_days = VALUES(present_days),
-                absent_days = VALUES(absent_days), late_days = VALUES(late_days),
-                excused_days = VALUES(excused_days), attendance_rate = VALUES(attendance_rate),
-                is_below_threshold = VALUES(is_below_threshold)
-        ");
-        $stmt->execute([
-            $studentId, $classId, $academicYearId, $semesterId,
-            $c['total_days'], $c['present_days'], $c['absent_days'], $c['late_days'], $c['excused_days'],
-            $rate, $rate < $minRate ? 1 : 0
-        ]);
+        // ملاحظة: v_attendance_summary هو VIEW يقرأ من attendance_daily
+        // لا حاجة لإدخال بيانات ملخص - العرض يتم عبر الـ View تلقائياً
     } catch (Exception $e) {
         error_log('EQAS recalcStudentSummary Error: ' . $e->getMessage());
     }
@@ -147,23 +133,22 @@ if ($filterSemester && $filterSemester !== '0' && $academicYearId) {
 }
 if ($filterClass && $filterSemester && $academicYearId) {
     try {
-        $sql = "SELECT ats.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
-                FROM attendance_summaries ats
-                INNER JOIN students s ON s.id = ats.student_id
-                INNER JOIN classes c ON c.id = ats.class_id
-                WHERE ats.class_id = ? AND ats.academic_year_id = ?
-                    AND ats.is_active = 1 AND s.is_active = 1";
+        $sql = "SELECT v.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
+                FROM v_attendance_summary v
+                INNER JOIN students s ON s.id = v.student_id
+                INNER JOIN classes c ON c.id = v.class_id
+                WHERE v.class_id = ? AND v.academic_year_id = ?";
         $params = [$filterClass, $academicYearId];
         if ($resolvedSemId) {
-            $sql .= " AND ats.semester_id = ?";
+            $sql .= " AND v.semester_id = ?";
             $params[] = $resolvedSemId;
         }
 
         // ترتيب
         switch ($sortBy) {
-            case 'rate_asc':  $sql .= " ORDER BY ats.attendance_rate ASC"; break;
-            case 'rate_desc': $sql .= " ORDER BY ats.attendance_rate DESC"; break;
-            case 'absent':    $sql .= " ORDER BY ats.absent_days DESC"; break;
+            case 'rate_asc':  $sql .= " ORDER BY v.attendance_rate ASC"; break;
+            case 'rate_desc': $sql .= " ORDER BY v.attendance_rate DESC"; break;
+            case 'absent':    $sql .= " ORDER BY v.absent_days DESC"; break;
             default:          $sql .= " ORDER BY s.full_name_ar ASC"; break;
         }
 

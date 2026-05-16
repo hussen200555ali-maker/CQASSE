@@ -56,8 +56,8 @@ $repairPriorities = [
 try {
     $stmt = $db->prepare("
         SELECT fi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM facility_items fi JOIN assessment_items ai ON fi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
+        FROM facility_items fi JOIN assessment_structure ai ON fi.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
         WHERE fi.checklist_id = ? AND fi.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$checklistId]);

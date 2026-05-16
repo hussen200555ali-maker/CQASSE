@@ -43,7 +43,7 @@ if (!$student) {
 // جلب قرار الترفيع
 $decision = $db->prepare("
     SELECT pd.*, ay.name as year_name
-    FROM promotion_decisions pd
+    FROM promotions pd
     LEFT JOIN academic_years ay ON pd.academic_year_id = ay.id
     WHERE pd.id = ? AND pd.student_id = ? AND pd.is_active = 1
 ");

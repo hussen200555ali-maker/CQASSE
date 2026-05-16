@@ -22,12 +22,132 @@ if (!hasPermission('school_admin') && !hasPermission('group_admin')) {
     redirect(baseUrl('index.php'));
 }
 
+// ═══════════════════════════════════════════
 // تحديد المدرسة حسب الدور
+// ═══════════════════════════════════════════
 if ($userRole === 'group_admin') {
     $schoolId = intval($_GET['school_id'] ?? 0);
+
+    // ───────────────────────────────────────
+    // عرض صفحة اختيار المدارس لـ group_admin
+    // ───────────────────────────────────────
     if ($schoolId === 0) {
-        setFlash('يرجى اختيار مدرسة أولاً.', 'warning');
-        redirect(baseUrl('pages/supervision/index.php'));
+        // جلب كل المدارس مع إحصائيات الخطط والدرجات
+        $schools = $db->query("
+            SELECT s.id, s.name_ar,
+                   (SELECT COUNT(*) FROM school_improvement_plans WHERE school_id = s.id AND status = 'active' AND is_active = 1) as active_plans,
+                   (SELECT COUNT(*) FROM school_improvement_plans WHERE school_id = s.id AND is_active = 1) as total_plans
+            FROM schools s WHERE s.is_active = 1 ORDER BY s.name_ar
+        ")->fetchAll();
+
+        // جلب درجات المناخ والمرافق لكل مدرسة
+        $schoolScores = [];
+        foreach ($schools as $sch) {
+            $cs = null; $fs = null;
+            try {
+                $s1 = $db->prepare("SELECT AVG(cs.overall_score) as avg FROM surveys cs WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.is_active = 1");
+                $s1->execute([$sch['id']]);
+                $r1 = $s1->fetch();
+                if ($r1 && $r1['avg'] !== null) $cs = round($r1['avg'], 1);
+
+                $s2 = $db->prepare("SELECT AVG(ar.numeric_value) as avg FROM assessment_responses ar JOIN assessment_forms af ON ar.form_id = af.id WHERE af.form_key = 'facility_checklist' AND ar.school_id = ? AND ar.is_active = 1");
+                $s2->execute([$sch['id']]);
+                $r2 = $s2->fetch();
+                if ($r2 && $r2['avg'] !== null) $fs = round($r2['avg'], 1);
+            } catch (Exception $e) {}
+            $schoolScores[$sch['id']] = ['climate' => $cs, 'facility' => $fs];
+        }
+
+        $pageTitle = 'اختر مدرسة — خطط التحسين';
+        $breadcrumb = ['التقييمات الإشرافية' => 'index.php', 'خطط التحسين المدرسية' => null];
+        ?>
+
+        <div class="section">
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div style="display:flex;align-items:flex-start;gap:16px;">
+                        <div style="font-size:40px;">📈</div>
+                        <div>
+                            <h3 style="margin-bottom:4px;">خطط التحسين المدرسية</h3>
+                            <p style="color:var(--text-secondary);margin:0;">
+                                اختر مدرسة لعرض أو إنشاء خطط التحسين. تُفعّل الخطط تلقائياً عندما يكون المناخ أو المرافق أقل من 55%.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-auto" style="gap:16px;">
+                <?php foreach ($schools as $sch):
+                    $cs = $schoolScores[$sch['id']]['climate'];
+                    $fs = $schoolScores[$sch['id']]['facility'];
+                    $needsPlan = ($cs !== null && $cs < 55) || ($fs !== null && $fs < 55);
+                    $hasActive = $sch['active_plans'] > 0;
+
+                    if ($hasActive) {
+                        $cardColor = 'var(--warning)';
+                        $cardBg = '#fffbeb';
+                        $badge = '<span style="background:var(--warning);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">📋 ' . $sch['active_plans'] . ' نشطة</span>';
+                        $btnText = 'عرض الخطط';
+                        $btnColor = 'var(--warning)';
+                    } elseif ($needsPlan) {
+                        $cardColor = 'var(--danger)';
+                        $cardBg = '#fff5f5';
+                        $reasons = [];
+                        if ($cs !== null && $cs < 55) $reasons[] = 'مناخ ' . $cs . '%';
+                        if ($fs !== null && $fs < 55) $reasons[] = 'مرافق ' . $fs . '%';
+                        $badge = '<span style="background:var(--danger);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">🚨 مطلوب (' . implode('، ', $reasons) . ')</span>';
+                        $btnText = 'إنشاء خطة';
+                        $btnColor = 'var(--danger)';
+                    } else {
+                        $cardColor = 'var(--success)';
+                        $cardBg = '#f0fff4';
+                        $badge = '<span style="background:var(--success);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">✅ لا تحتاج</span>';
+                        $btnText = 'عرض';
+                        $btnColor = 'var(--success)';
+                    }
+                ?>
+                <div style="border:2px solid <?= $cardColor ?>;border-radius:var(--radius-lg);background:<?= $cardBg ?>;padding:20px;transition:all var(--transition-base);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                        <h4 style="font-size:16px;margin:0;">🏫 <?= e($sch['name_ar']) ?></h4>
+                        <?= $badge ?>
+                    </div>
+
+                    <div style="display:flex;gap:12px;font-size:13px;margin-bottom:16px;">
+                        <?php if ($cs !== null): ?>
+                        <span style="color:<?= $cs >= 55 ? 'var(--success)' : 'var(--danger)' ?>;">🌡️ <?= $cs ?>%</span>
+                        <?php else: ?>
+                        <span style="color:var(--text-muted);">🌡️ —</span>
+                        <?php endif; ?>
+                        <?php if ($fs !== null): ?>
+                        <span style="color:<?= $fs >= 55 ? 'var(--success)' : 'var(--danger)' ?>;">🏗️ <?= $fs ?>%</span>
+                        <?php else: ?>
+                        <span style="color:var(--text-muted);">🏗️ —</span>
+                        <?php endif; ?>
+                        <?php if ($sch['total_plans'] > 0): ?>
+                        <span style="color:var(--text-muted);">📊 <?= $sch['total_plans'] ?> خطة</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <a href="improvement_plan.php?school_id=<?= $sch['id'] ?>" class="btn btn-sm" style="background:<?= $btnColor ?>;color:white;width:100%;text-align:center;text-decoration:none;"><?= $btnText ?></a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (empty($schools)): ?>
+            <div class="card">
+                <div class="card-body" style="text-align:center;padding:40px;">
+                    <div style="font-size:48px;margin-bottom:12px;">🏫</div>
+                    <h4>لا توجد مدارس نشطة</h4>
+                    <p style="color:var(--text-muted);">يرجى إضافة مدرسة أولاً من صفحة إدارة المدارس.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <?php
+        require_once __DIR__ . '/../../includes/footer.php';
+        exit;
     }
 } else {
     $schoolId = currentSchoolId();

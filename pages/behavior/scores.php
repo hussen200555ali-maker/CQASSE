@@ -61,19 +61,19 @@ $sortBy = $_GET['sort'] ?? 'percentage';
 $scores = [];
 if ($filterClass && $academicYearId && $semesterId) {
     try {
-        $sql = "SELECT bs.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
-                FROM behavior_scores bs
-                INNER JOIN students s ON s.id = bs.student_id
-                INNER JOIN classes c ON c.id = bs.class_id
-                WHERE bs.class_id = ? AND bs.academic_year_id = ? AND bs.semester_id = ?
-                    AND bs.is_active = 1 AND s.is_active = 1";
+        $sql = "SELECT e.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
+                FROM evaluations e
+                INNER JOIN students s ON s.id = e.student_id
+                INNER JOIN classes c ON c.id = e.class_id
+                WHERE e.eval_type = 'behavior_score' AND e.class_id = ? AND e.academic_year_id = ? AND e.semester_id = ?
+                    AND e.is_active = 1 AND s.is_active = 1";
         $params = [$filterClass, $academicYearId, $semesterId];
 
         // ترتيب
         switch ($sortBy) {
-            case 'percentage_asc': $sql .= " ORDER BY bs.current_percentage ASC"; break;
-            case 'percentage_desc': $sql .= " ORDER BY bs.current_percentage DESC"; break;
-            case 'deducted': $sql .= " ORDER BY bs.deducted_points DESC"; break;
+            case 'percentage_asc': $sql .= " ORDER BY e.current_percentage ASC"; break;
+            case 'percentage_desc': $sql .= " ORDER BY e.current_percentage DESC"; break;
+            case 'deducted': $sql .= " ORDER BY e.deducted_points DESC"; break;
             case 'name': default: $sql .= " ORDER BY s.full_name_ar ASC"; break;
         }
 

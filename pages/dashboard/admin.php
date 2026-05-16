@@ -56,7 +56,7 @@ try {
                COALESCE(eq.overall_eqi, 0) as eqi_score,
                eq.overall_eqi as raw_eqi
         FROM schools s
-        LEFT JOIN equi_results eq ON s.id = eq.school_id
+        LEFT JOIN eqi_results eq ON s.id = eq.school_id
             AND eq.semester_id = ?
             AND eq.academic_year_id = ?
             AND eq.is_active = 1
@@ -93,7 +93,7 @@ try {
             if ($prevSemId !== false) {
                 $trendStmt = $db->prepare("
                     SELECT school_id, overall_eqi
-                    FROM equi_results
+                    FROM eqi_results
                     WHERE semester_id = ? AND academic_year_id = ? AND is_active = 1
                 ");
                 $trendStmt->execute([$prevSemId, $prevYearId]);

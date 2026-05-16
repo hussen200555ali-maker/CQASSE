@@ -30,18 +30,18 @@ if (!$evalId) {
 
 // جلب بيانات التقييم
 $stmt = $db->prepare("
-    SELECT be.*, s.full_name_ar as student_name, s.student_number,
+    SELECT e.*, s.full_name_ar as student_name, s.student_number,
            c.name_ar as class_name, gl.name_ar as grade_name,
            u.full_name_ar as evaluator_name,
            sem.name_ar as semester_name, ay.name as year_name
-    FROM behavior_scores be
-    JOIN students s ON be.student_id = s.id
-    JOIN classes c ON be.class_id = c.id
+    FROM evaluations e
+    JOIN students s ON e.student_id = s.id
+    JOIN classes c ON e.class_id = c.id
     JOIN grade_levels gl ON c.grade_level_id = gl.id
-    JOIN users u ON be.evaluator_id = u.id
-    JOIN semesters sem ON be.semester_id = sem.id
-    JOIN academic_years ay ON be.academic_year_id = ay.id
-    WHERE be.id = ? AND be.is_active = 1
+    JOIN users u ON e.student_id = u.id
+    JOIN semesters sem ON e.semester_id = sem.id
+    JOIN academic_years ay ON e.academic_year_id = ay.id
+    WHERE e.eval_type = 'behavior_score' AND e.id = ? AND e.is_active = 1
 ");
 $stmt->execute([$evalId]);
 $evaluation = $stmt->fetch();
@@ -72,8 +72,8 @@ try {
         SELECT bi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
         FROM behavior_items bi
-        JOIN assessment_items ai ON bi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        JOIN assessment_structure ai ON bi.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id
         WHERE bi.evaluation_id = ? AND bi.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order
     ");
@@ -138,11 +138,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // تحديث التقييم الرئيسي
             $stmt = $db->prepare("
-                UPDATE behavior_scores
-                SET overall_score = ?, notes = ?, updated_at = NOW()
-                WHERE id = ?
+                UPDATE evaluations
+                SET combined_score = ?, current_percentage = ?, updated_at = NOW()
+                WHERE id = ? AND eval_type = 'behavior_score'
             ");
-            $stmt->execute([$overallScore, $notes ?: null, $evalId]);
+            $stmt->execute([$overallScore, $overallScore, $evalId]);
 
             // تحديث عناصر التقييم
             $stmtCheck = $db->prepare("SELECT id FROM behavior_items WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");

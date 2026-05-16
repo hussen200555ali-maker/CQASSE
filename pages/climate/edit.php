@@ -37,7 +37,8 @@ try {
         SELECT cs.*, s.name_ar as school_name,
                sem.name_ar as semester_name, ay.name as year_name,
                u.full_name_ar as respondent_name
-        FROM climate_surveys cs
+        FROM surveys cs
+        WHERE cs.survey_type = 'climate'
         JOIN schools s ON cs.school_id = s.id
         JOIN semesters sem ON cs.semester_id = sem.id
         JOIN academic_years ay ON cs.academic_year_id = ay.id
@@ -74,8 +75,8 @@ try {
                ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
         FROM climate_items ci
-        JOIN assessment_items ai ON ci.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        JOIN assessment_structure ai ON ci.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id
         WHERE ci.survey_id = ? AND ci.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order
     ");
@@ -139,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // تحديث الاستبيان الرئيسي
             $stmt = $db->prepare("
-                UPDATE climate_surveys
+                UPDATE surveys
                 SET overall_score = ?, notes = ?, updated_at = NOW()
                 WHERE id = ?
             ");

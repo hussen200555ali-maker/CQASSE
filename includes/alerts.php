@@ -152,16 +152,16 @@ class AlertEngine {
         $passRate = $this->thresholds['behavior_pass'];
         
         try {
-            $sql = "SELECT s.id AS student_id, s.full_name_ar,
-                           be.current_percentage AS behavior_score
-                    FROM students s
-                    INNER JOIN behavior_scores be ON be.student_id = s.id 
-                        AND be.academic_year_id = :year_id 
-                        AND be.semester_id = :semester_id 
-                        AND be.is_active = 1
-                    WHERE s.school_id = :school_id 
-                        AND s.is_active = 1
-                        AND be.current_percentage < :pass_rate";
+            $sql = "SELECT e.student_id, s.full_name_ar,
+                           e.current_percentage AS behavior_score
+                    FROM evaluations e
+                    INNER JOIN students s ON s.id = e.student_id
+                    WHERE e.eval_type = 'behavior_score'
+                        AND e.school_id = :school_id
+                        AND e.academic_year_id = :year_id 
+                        AND e.semester_id = :semester_id 
+                        AND e.is_active = 1
+                        AND e.current_percentage < :pass_rate";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -218,15 +218,13 @@ class AlertEngine {
         
         try {
             $sql = "SELECT s.id AS student_id, s.full_name_ar,
-                           ats.attendance_rate
-                    FROM students s
-                    INNER JOIN attendance_summaries ats ON ats.student_id = s.id 
-                        AND ats.academic_year_id = :year_id 
-                        AND ats.semester_id = :semester_id 
-                        AND ats.is_active = 1
-                    WHERE s.school_id = :school_id 
-                        AND s.is_active = 1
-                        AND ats.attendance_rate < :pass_rate";
+                           v.attendance_rate
+                    FROM v_attendance_summary v
+                    INNER JOIN students s ON s.id = v.student_id
+                    WHERE s.school_id = :school_id
+                        AND v.academic_year_id = :year_id 
+                        AND v.semester_id = :semester_id 
+                        AND v.attendance_rate < :pass_rate";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -245,11 +243,10 @@ class AlertEngine {
                     'severity' => $severity,
                     'title_ar' => 'حضور غير كافٍ',
                     'message_ar' => sprintf(
-                        'الطالب/ة %s نسبة حضوره %.1f%% وهي أقل من الحد المطلوب (%d%%). إجمالي أيام الغياب: %d يوم.',
+                        'الطالب/ة %s نسبة حضوره %.1f%% وهي أقل من الحد المطلوب (%d%%).',
                         $row['full_name_ar'],
                         $row['attendance_rate'],
-                        $passRate,
-                        $row['attendance_rate']
+                        $passRate
                     ),
                 ];
                 
@@ -282,7 +279,7 @@ class AlertEngine {
         $alertsCreated = 0;
 
         try {
-            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score, COUNT(id) as survey_count FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score, COUNT(id) as survey_count FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
             $stmt->execute([$schoolId, $academicYearId, $semesterId]);
             $row = $stmt->fetch();
             $avgScore = $row['avg_score'] !== null ? round((float)$row['avg_score'], 1) : null;
@@ -364,7 +361,7 @@ class AlertEngine {
         try {
             // الحصول على EQI الحالي للمدرسة
             $stmt = $this->db->prepare("
-                SELECT overall_eqi FROM equi_results
+                SELECT overall_eqi FROM eqi_results
                 WHERE school_id = :school_id
                   AND academic_year_id = :year_id
                   AND semester_id = :semester_id
@@ -418,7 +415,7 @@ class AlertEngine {
             if ($semInfo) {
                 $prevStmt = $this->db->prepare("
                     SELECT eq.overall_eqi
-                    FROM equi_results eq
+                    FROM eqi_results eq
                     JOIN semesters s ON eq.semester_id = s.id
                     WHERE eq.school_id = :school_id
                       AND s.name_ar = :name_ar
@@ -466,7 +463,7 @@ class AlertEngine {
                 // نبحث عن أقرب فصل سابق (أي فصل، وليس بالضرورة نفس الاسم)
                 $prevAnyStmt = $this->db->prepare("
                     SELECT eq.overall_eqi
-                    FROM equi_results eq
+                    FROM eqi_results eq
                     JOIN semesters s ON eq.semester_id = s.id
                     WHERE eq.school_id = :school_id
                       AND s.start_date < :start_date
@@ -526,12 +523,13 @@ class AlertEngine {
         try {
             // القاعدة 1: متوسط combined_score للمدرسة < 50%
             $stmt = $this->db->prepare("
-                SELECT AVG(tes.combined_score) AS school_avg
-                FROM teaching_evaluation_summary tes
-                JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
-                WHERE tes.academic_year_id = :year_id
-                  AND tes.semester_id = :semester_id
-                  AND tes.is_active = 1
+                SELECT AVG(e.combined_score) AS school_avg
+                FROM evaluations e
+                WHERE e.eval_type = 'teaching_summary'
+                  AND e.school_id = :school_id
+                  AND e.academic_year_id = :year_id
+                  AND e.semester_id = :semester_id
+                  AND e.is_active = 1
             ");
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -560,18 +558,21 @@ class AlertEngine {
 
             // القاعدة 2: معلمون تقييمهم < 60% بدون خطة تطوير نشطة
             $stmt = $this->db->prepare("
-                SELECT tes.teacher_id, u.full_name_ar, tes.combined_score
-                FROM teaching_evaluation_summary tes
-                JOIN users u ON tes.teacher_id = u.id AND u.school_id = :school_id
-                LEFT JOIN teacher_development_plans tdp
-                    ON tdp.teacher_id = tes.teacher_id
-                    AND tdp.status = 'active'
-                    AND tdp.is_active = 1
-                WHERE tes.academic_year_id = :year_id
-                  AND tes.semester_id = :semester_id
-                  AND tes.is_active = 1
-                  AND tes.combined_score < 60
-                  AND tdp.id IS NULL
+                SELECT e.teacher_id, u.full_name_ar, e.combined_score
+                FROM evaluations e
+                JOIN users u ON e.teacher_id = u.id AND u.school_id = :school_id
+                LEFT JOIN improvement_plans ip
+                    ON ip.teacher_id = e.teacher_id
+                    AND ip.plan_type = 'teacher'
+                    AND ip.status = 'active'
+                    AND ip.is_active = 1
+                WHERE e.eval_type = 'teaching_summary'
+                  AND e.school_id = :school_id
+                  AND e.academic_year_id = :year_id
+                  AND e.semester_id = :semester_id
+                  AND e.is_active = 1
+                  AND e.combined_score < 60
+                  AND ip.id IS NULL
             ");
             $stmt->execute([
                 ':school_id' => $schoolId,
@@ -620,17 +621,18 @@ class AlertEngine {
 
             // القاعدة 1: خطط معلمين متأخرة
             $stmt = $this->db->prepare("
-                SELECT tdp.id, tdp.follow_up_date, tdp.progress,
+                SELECT ip.id, ip.follow_up_date, ip.progress,
                        u.full_name_ar AS teacher_name,
-                       DATEDIFF(NOW(), tdp.follow_up_date) AS days_overdue
-                FROM teacher_development_plans tdp
-                JOIN users u ON tdp.teacher_id = u.id
-                WHERE tdp.school_id = :school_id
-                  AND tdp.status = 'active'
-                  AND tdp.is_active = 1
-                  AND tdp.follow_up_date IS NOT NULL
-                  AND tdp.follow_up_date < CURDATE()
-                ORDER BY tdp.follow_up_date ASC
+                       DATEDIFF(NOW(), ip.follow_up_date) AS days_overdue
+                FROM improvement_plans ip
+                JOIN users u ON ip.teacher_id = u.id
+                WHERE ip.plan_type = 'teacher'
+                  AND ip.school_id = :school_id
+                  AND ip.status = 'active'
+                  AND ip.is_active = 1
+                  AND ip.follow_up_date IS NOT NULL
+                  AND ip.follow_up_date < CURDATE()
+                ORDER BY ip.follow_up_date ASC
             ");
             $stmt->execute([':school_id' => $schoolId]);
 
@@ -664,7 +666,8 @@ class AlertEngine {
                        DATEDIFF(NOW(), ip.follow_up_date) AS days_overdue
                 FROM improvement_plans ip
                 JOIN students s ON ip.student_id = s.id
-                WHERE s.school_id = :school_id
+                WHERE ip.plan_type = 'student'
+                  AND s.school_id = :school_id
                   AND ip.status = 'active'
                   AND ip.is_active = 1
                   AND ip.follow_up_date IS NOT NULL
@@ -708,7 +711,7 @@ class AlertEngine {
         $alertsCreated = 0;
 
         try {
-            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+            $stmt = $this->db->prepare("SELECT AVG(overall_score) as avg_score FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
             $stmt->execute([$schoolId, $academicYearId, $semesterId]);
             $climateScore = $stmt->fetchColumn();
 
@@ -839,10 +842,11 @@ class AlertEngine {
                     break;
                     
                 case 'behavior':
-                    $sql = "SELECT current_percentage 
-                            FROM behavior_scores 
-                            WHERE student_id = :student_id AND is_active = 1
-                            ORDER BY semester_id DESC
+                    $sql = "SELECT e.current_percentage 
+                            FROM evaluations e
+                            WHERE e.eval_type = 'behavior_score'
+                              AND e.student_id = :student_id AND e.is_active = 1
+                            ORDER BY e.semester_id DESC
                             LIMIT :limit";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
@@ -854,10 +858,10 @@ class AlertEngine {
                     break;
                     
                 case 'attendance':
-                    $sql = "SELECT attendance_rate 
-                            FROM attendance_summaries 
-                            WHERE student_id = :student_id AND is_active = 1
-                            ORDER BY semester_id DESC
+                    $sql = "SELECT v.attendance_rate 
+                            FROM v_attendance_summary v
+                            WHERE v.student_id = :student_id
+                            ORDER BY v.semester_id DESC
                             LIMIT :limit";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);

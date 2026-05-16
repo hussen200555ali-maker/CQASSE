@@ -84,7 +84,7 @@ foreach ($children as $child) {
                    pd.approved_by, pd.approved_at, pd.decided_at,
                    ay.name as academic_year_name,
                    sem.name_ar as semester_name
-            FROM promotion_decisions pd
+            FROM promotions pd
             LEFT JOIN academic_years ay ON pd.academic_year_id = ay.id
             LEFT JOIN semesters sem ON pd.semester_id = sem.id
             WHERE pd.student_id = ? AND pd.is_active = 1

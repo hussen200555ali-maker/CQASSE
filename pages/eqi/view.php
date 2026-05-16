@@ -33,7 +33,7 @@ if (!$schoolId) {
 // دعم وضع "جميع السنوات" — اختيار أحدث حساب متاح
 if (!$yearId || !$semesterId) {
     try {
-        $stmt = $db->prepare("SELECT academic_year_id, semester_id FROM equi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
+        $stmt = $db->prepare("SELECT academic_year_id, semester_id FROM eqi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
         $stmt->execute([$schoolId]);
         $latest = $stmt->fetch();
         if ($latest) {
@@ -67,10 +67,10 @@ $recommendations = $eqiCalc->getRecommendations([
 // الحساب السابق للمقارنة
 $prevCalc = null;
 try {
-    $stmt = $db->prepare("SELECT er.* FROM equi_results er 
+    $stmt = $db->prepare("SELECT er.* FROM eqi_results er 
                           INNER JOIN semesters s ON s.id = er.semester_id
                           WHERE er.school_id = :sid AND er.is_active = 1 
-                              AND (er.semester_id < :sem_id OR er.calculated_at < (SELECT calculated_at FROM equi_results WHERE school_id = :sid2 AND academic_year_id = :yid AND semester_id = :sem_id2))
+                              AND (er.semester_id < :sem_id OR er.calculated_at < (SELECT calculated_at FROM eqi_results WHERE school_id = :sid2 AND academic_year_id = :yid AND semester_id = :sem_id2))
                           ORDER BY er.calculated_at DESC LIMIT 1");
     $stmt->execute([':sid' => $schoolId, ':sem_id' => $semesterId, ':sid2' => $schoolId, ':yid' => $yearId, ':sem_id2' => $semesterId]);
     $prevCalc = $stmt->fetch();

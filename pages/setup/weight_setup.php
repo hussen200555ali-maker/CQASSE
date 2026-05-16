@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ═══════════════════════════════════════════
 // جلب البيانات
 // ═══════════════════════════════════════════
-$assessmentTypes = $db->query("SELECT id, name_ar, code, weight_default FROM assessment_types WHERE is_active = 1 ORDER BY sort_order")->fetchAll();
+$assessmentTypes = json_decode($db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'assessment_types'")->fetchColumn() ?: '[]', true);
 
 $subjectGrades = $db->query("
     SELECT sgy.id, sgy.subject_id, sgy.grade_level_id, sgy.hours_per_week, sgy.passing_grade,

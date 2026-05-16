@@ -119,7 +119,7 @@ try {
 // 3. متوسط الحضور
 $avgAttendance = 0;
 try {
-    $sql = "SELECT AVG(a.attendance_rate) FROM attendance_summaries a WHERE 1=1";
+    $sql = "SELECT AVG(a.attendance_rate) FROM v_attendance_summary a WHERE 1=1";
     if ($selectedSemesterId > 0) $sql .= " AND a.semester_id = $selectedSemesterId";
     if ($selectedSchoolId > 0) $sql .= " AND a.student_id IN (SELECT id FROM students WHERE school_id = $selectedSchoolId)";
     $avgAttendance = (float)($db->query($sql)->fetchColumn() ?: 0);
@@ -129,11 +129,11 @@ try {
 $avgEQI = 0;
 try {
     if ($selectedSemesterId > 0) {
-        $sql = "SELECT AVG(eq.overall_eqi) FROM equi_results eq WHERE eq.semester_id = $selectedSemesterId";
+        $sql = "SELECT AVG(eq.overall_eqi) FROM eqi_results eq WHERE eq.semester_id = $selectedSemesterId";
     } elseif ($selectedAcademicYearId > 0) {
-        $sql = "SELECT AVG(eq.overall_eqi) FROM equi_results eq WHERE eq.academic_year_id = $selectedAcademicYearId";
+        $sql = "SELECT AVG(eq.overall_eqi) FROM eqi_results eq WHERE eq.academic_year_id = $selectedAcademicYearId";
     } else {
-        $sql = "SELECT AVG(eq.overall_eqi) FROM equi_results eq";
+        $sql = "SELECT AVG(eq.overall_eqi) FROM eqi_results eq";
     }
     if ($selectedSchoolId > 0) $sql .= " AND eq.school_id = $selectedSchoolId";
     $avgEQI = (float)($db->query($sql)->fetchColumn() ?: 0);
@@ -153,7 +153,7 @@ try {
         if ($semInfo) {
             $prevStmt = $db->prepare("
                 SELECT AVG(eq.overall_eqi)
-                FROM equi_results eq
+                FROM eqi_results eq
                 JOIN semesters s ON eq.semester_id = s.id
                 WHERE s.name_ar = ? AND s.start_date < ? AND s.is_active = 1
             ");
@@ -167,7 +167,7 @@ try {
         $prevYearId = $prevYearStmt->fetchColumn();
 
         if ($prevYearId) {
-            $prevStmt = $db->prepare("SELECT AVG(overall_eqi) FROM equi_results WHERE academic_year_id = ?");
+            $prevStmt = $db->prepare("SELECT AVG(overall_eqi) FROM eqi_results WHERE academic_year_id = ?");
             $prevStmt->execute([$prevYearId]);
             $prevAvgEQI = (float)($prevStmt->fetchColumn() ?: 0);
         }
@@ -206,12 +206,12 @@ try {
         $chartLabels[] = $hs['name_ar'];
 
         // EQI للمدرسة المختارة (أو جميع المدارس)
-        $sqi = $db->prepare("SELECT AVG(overall_eqi) FROM equi_results WHERE semester_id = ?" . ($selectedSchoolId > 0 ? " AND school_id = $selectedSchoolId" : ""));
+        $sqi = $db->prepare("SELECT AVG(overall_eqi) FROM eqi_results WHERE semester_id = ?" . ($selectedSchoolId > 0 ? " AND school_id = $selectedSchoolId" : ""));
         $sqi->execute([$hsId]);
         $chartSchoolData[] = round((float)($sqi->fetchColumn() ?: 0), 1);
 
         // متوسط المجموعة
-        $oqi = $db->prepare("SELECT AVG(overall_eqi) FROM equi_results WHERE semester_id = ?");
+        $oqi = $db->prepare("SELECT AVG(overall_eqi) FROM eqi_results WHERE semester_id = ?");
         $oqi->execute([$hsId]);
         $chartOverallData[] = round((float)($oqi->fetchColumn() ?: 0), 1);
     }
@@ -226,13 +226,13 @@ $bucketCounts = [];
 try {
     $buckets = ['ممتاز' => 0, 'جيد جداً' => 0, 'مقبول' => 0, 'ضعيف' => 0];
     if ($selectedSemesterId > 0) {
-        $stmt = $db->prepare("SELECT overall_eqi FROM equi_results WHERE semester_id = ?");
+        $stmt = $db->prepare("SELECT overall_eqi FROM eqi_results WHERE semester_id = ?");
         $stmt->execute([$selectedSemesterId]);
     } elseif ($selectedAcademicYearId > 0) {
-        $stmt = $db->prepare("SELECT overall_eqi FROM equi_results WHERE academic_year_id = ?");
+        $stmt = $db->prepare("SELECT overall_eqi FROM eqi_results WHERE academic_year_id = ?");
         $stmt->execute([$selectedAcademicYearId]);
     } else {
-        $stmt = $db->query("SELECT overall_eqi FROM equi_results");
+        $stmt = $db->query("SELECT overall_eqi FROM eqi_results");
     }
     while ($row = $stmt->fetch()) {
         $r = getEqiRating((float)$row['overall_eqi']);
@@ -256,7 +256,7 @@ try {
                    COALESCE(eq.overall_eqi, 0) AS eqi_score,
                    eq.overall_eqi AS raw_eqi
             FROM schools s
-            LEFT JOIN equi_results eq ON s.id = eq.school_id AND eq.semester_id = ? AND eq.academic_year_id = ?
+            LEFT JOIN eqi_results eq ON s.id = eq.school_id AND eq.semester_id = ? AND eq.academic_year_id = ?
             WHERE s.is_active = 1 $schoolFilter
             ORDER BY eqi_score DESC
         ";
@@ -269,7 +269,7 @@ try {
                    COALESCE(AVG(eq.overall_eqi), 0) AS eqi_score,
                    AVG(eq.overall_eqi) AS raw_eqi
             FROM schools s
-            LEFT JOIN equi_results eq ON s.id = eq.school_id AND eq.academic_year_id = ?
+            LEFT JOIN eqi_results eq ON s.id = eq.school_id AND eq.academic_year_id = ?
             WHERE s.is_active = 1 $schoolFilter
             GROUP BY s.id, s.name_ar, s.reference_code
             ORDER BY eqi_score DESC
@@ -298,7 +298,7 @@ try {
                 $prevSemId = $stmt->fetchColumn();
 
                 if ($prevSemId) {
-                    $stmt = $db->prepare("SELECT school_id, overall_eqi FROM equi_results WHERE semester_id = ? AND academic_year_id = ?");
+                    $stmt = $db->prepare("SELECT school_id, overall_eqi FROM eqi_results WHERE semester_id = ? AND academic_year_id = ?");
                     $stmt->execute([$prevSemId, $prevYearId]);
                     while ($row = $stmt->fetch()) {
                         $yearlyTrends[(int)$row['school_id']] = (float)$row['overall_eqi'];
@@ -306,7 +306,7 @@ try {
                 }
             } else {
                 // اتجاه سنوي: متوسط العام السابق
-                $stmt = $db->prepare("SELECT school_id, AVG(overall_eqi) as avg_eqi FROM equi_results WHERE academic_year_id = ? GROUP BY school_id");
+                $stmt = $db->prepare("SELECT school_id, AVG(overall_eqi) as avg_eqi FROM eqi_results WHERE academic_year_id = ? GROUP BY school_id");
                 $stmt->execute([$prevYearId]);
                 while ($row = $stmt->fetch()) {
                     $yearlyTrends[(int)$row['school_id']] = (float)$row['avg_eqi'];

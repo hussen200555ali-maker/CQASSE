@@ -25,18 +25,11 @@ $exportTypes = [
     'grades' => ['label' => 'الدرجات', 'icon' => '📊', 'table' => 'grades', 'desc' => 'سجلات الدرجات'],
     'attendance' => ['label' => 'الحضور', 'icon' => '📅', 'table' => 'attendance', 'desc' => 'سجلات الحضور والغياب'],
     'assessments' => ['label' => 'التقييمات', 'icon' => '📋', 'table' => 'assessment_responses', 'desc' => 'نتائج التقييمات'],
-    'eqi' => ['label' => 'مؤشر الجودة', 'icon' => '📈', 'table' => 'eqi_calculations', 'desc' => 'حسابات مؤشر جودة التعليم'],
-    'alerts' => ['label' => 'التنبيهات', 'icon' => '🔔', 'table' => 'alerts', 'desc' => 'التنبيهات الذكية'],
-    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'table' => 'promotion_decisions', 'desc' => 'قرارات الترفيع والرسوب'],
-];
+    'eqi' => ['label' => 'مؤشر الجودة', 'icon' => '📈', 'table' => 'eqi_results', 'desc' => 'حسابات مؤشر جودة التعليم'],
 
-// قوالب التصدير المسبقة
-$exportTemplates = [
-    'full_students' => ['label' => 'تقرير الطلاب الكامل', 'icon' => '📋', 'type' => 'students', 'format' => 'xlsx', 'desc' => 'جميع بيانات الطلاب المسجلين بصيغة إكسل'],
-    'semester_grades' => ['label' => 'درجات الفصل الدراسي', 'icon' => '📊', 'type' => 'grades', 'format' => 'xlsx', 'desc' => 'درجات الفصل الحالي مع التصفية'],
-    'attendance_report' => ['label' => 'تقرير الحضور الشهري', 'icon' => '📅', 'type' => 'attendance', 'format' => 'pdf', 'desc' => 'تقرير الحضور والغياب بصيغة PDF'],
-    'eqi_summary' => ['label' => 'ملخص مؤشر الجودة', 'icon' => '📈', 'type' => 'eqi', 'format' => 'html', 'desc' => 'ملخص مؤشر الجودة لجميع المدارس'],
-    'promotion_decisions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'type' => 'promotions', 'format' => 'xlsx', 'desc' => 'قرارات الترفيع والرسوب للعام الحالي'],
+    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'table' => 'promotions', 'desc' => 'قرارات الترفيع والرسوب'],
+
+    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'type' => 'promotions', 'format' => 'xlsx', 'desc' => 'قرارات الترفيع والرسوب للعام الحالي'],
     'alerts_overview' => ['label' => 'نظرة عامة على التنبيهات', 'icon' => '🔔', 'type' => 'alerts', 'format' => 'csv', 'desc' => 'جميع التنبيهات النشطة بصيغة CSV'],
 ];
 
@@ -179,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
             $headers = ['المدرسة', 'الأكاديمي', 'التدريس', 'المناخ', 'السلوك', 'المهارات', 'الحضور', 'المؤشر الكلي', 'تاريخ الحساب'];
             $sql = "SELECT sch.name_ar, eq.academic_score, eq.teaching_score, eq.climate_score,
                     eq.behavior_score, eq.skills_score, eq.attendance_score, eq.overall_eqi, eq.calculated_at
-                    FROM eqi_calculations eq
+                    FROM eqi_results eq
                     JOIN schools sch ON sch.id = eq.school_id
                     WHERE eq.is_active = 1";
             $params = [];
@@ -207,13 +200,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
 
         case 'promotions':
             $headers = ['الطالب', 'الدرجة الأكاديمية', 'درجة السلوك', 'نسبة الحضور', 'القرار', 'التاريخ'];
-            $sql = "SELECT s.full_name_ar, pd.academic_score, pd.behavior_score, pd.attendance_score, pd.decision, pd.decided_at
-                    FROM promotion_decisions pd
-                    JOIN students s ON s.id = pd.student_id
-                    WHERE pd.is_active = 1";
+            $sql = "SELECT s.full_name_ar, p.academic_score, p.behavior_score, p.attendance_score, p.decision, p.created_at
+                    FROM promotions p
+                    JOIN students s ON s.id = p.student_id
+                    WHERE p.is_active = 1";
             $params = [];
-            if ($academicYearId) { $sql .= " AND pd.academic_year_id = ?"; $params[] = $academicYearId; }
-            $sql .= " ORDER BY pd.decided_at DESC";
+            if ($academicYearId) { $sql .= " AND p.academic_year_id = ?"; $params[] = $academicYearId; }
+            $sql .= " ORDER BY p.created_at DESC";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $data = $stmt->fetchAll(PDO::FETCH_NUM);

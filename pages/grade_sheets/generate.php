@@ -6,6 +6,8 @@
  * ============================================================
  */
 
+ob_start();
+
 $pageTitle = 'إنشاء كشف درجات';
 $breadcrumb = ['كشوف الدرجات' => 'index.php', 'إنشاء كشف' => null];
 
@@ -55,6 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
             require_once __DIR__ . '/../../includes/export.php';
             $pdfResult = exportGradeSheetPDF($db, $gradeData, $baseFilename . '.pdf');
             if ($pdfResult['success']) {
+                ob_end_clean(); // مسح المخرجات المخزنة
                 if ($pdfResult['method'] === 'html_print') {
                     header('Content-Type: text/html; charset=utf-8');
                     readfile($pdfResult['file_path']);

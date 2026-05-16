@@ -93,10 +93,10 @@ try {
 
     // نسبة الحضور العامة
     if ($academicYearId && $semesterId) {
-        $sql = "SELECT AVG(ats.attendance_rate) as avg_rate
-                FROM attendance_summaries ats
-                INNER JOIN students s ON s.id = ats.student_id
-                WHERE ats.academic_year_id = ? AND ats.semester_id = ? AND ats.is_active = 1 AND s.is_active = 1";
+        $sql = "SELECT AVG(v.attendance_rate) as avg_rate
+                FROM v_attendance_summary v
+                INNER JOIN students s ON s.id = v.student_id
+                WHERE v.academic_year_id = ? AND v.semester_id = ? AND s.is_active = 1";
         $params = [$academicYearId, $semesterId];
         if ($schoolId && $userRole !== 'group_admin') {
             $sql .= " AND s.school_id = ?";
@@ -110,11 +110,11 @@ try {
 
     // عدد الطلاب تحت الحد الأدنى للحضور
     if ($academicYearId && $semesterId) {
-        $sql = "SELECT COUNT(DISTINCT ats.student_id)
-                FROM attendance_summaries ats
-                INNER JOIN students s ON s.id = ats.student_id
-                WHERE ats.academic_year_id = ? AND ats.semester_id = ?
-                    AND ats.is_below_threshold = 1 AND ats.is_active = 1 AND s.is_active = 1";
+        $sql = "SELECT COUNT(DISTINCT v.student_id)
+                FROM v_attendance_summary v
+                INNER JOIN students s ON s.id = v.student_id
+                WHERE v.academic_year_id = ? AND v.semester_id = ?
+                    AND v.is_below_threshold = 1 AND s.is_active = 1";
         $params = [$academicYearId, $semesterId];
         if ($schoolId && $userRole !== 'group_admin') {
             $sql .= " AND s.school_id = ?";
@@ -174,19 +174,19 @@ try {
 $alertStudents = [];
 if ($academicYearId && $semesterId) {
     try {
-        $sql = "SELECT ats.*, s.full_name_ar AS student_name, s.student_number,
+        $sql = "SELECT v.*, s.full_name_ar AS student_name, s.student_number,
                        c.name_ar AS class_name
-                FROM attendance_summaries ats
-                INNER JOIN students s ON s.id = ats.student_id
-                INNER JOIN classes c ON c.id = ats.class_id
-                WHERE ats.academic_year_id = ? AND ats.semester_id = ?
-                    AND ats.is_below_threshold = 1 AND ats.is_active = 1 AND s.is_active = 1";
+                FROM v_attendance_summary v
+                INNER JOIN students s ON s.id = v.student_id
+                INNER JOIN classes c ON c.id = v.class_id
+                WHERE v.academic_year_id = ? AND v.semester_id = ?
+                    AND v.is_below_threshold = 1 AND s.is_active = 1";
         $params = [$academicYearId, $semesterId];
         if ($schoolId && $userRole !== 'group_admin') {
             $sql .= " AND s.school_id = ?";
             $params[] = $schoolId;
         }
-        $sql .= " ORDER BY ats.attendance_rate ASC LIMIT 15";
+        $sql .= " ORDER BY v.attendance_rate ASC LIMIT 15";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $alertStudents = $stmt->fetchAll();

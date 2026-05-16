@@ -193,7 +193,7 @@ try {
         $r = $stmt->fetch();
         $classPerformance['avgGrades'][] = $r && $r['avg_pct'] !== null ? round($r['avg_pct'], 1) : 0;
         // نسبة حضور الفصل
-        $stmt = $db->prepare("SELECT AVG(attendance_rate) as avg_rate FROM attendance_summaries WHERE class_id = ? AND is_active = 1 AND academic_year_id = ?");
+        $stmt = $db->prepare("SELECT AVG(attendance_rate) as avg_rate FROM v_attendance_summary WHERE class_id = ? AND academic_year_id = ?");
         $stmt->execute([$cl['id'], $academicYearId]);
         $r = $stmt->fetch();
         $classPerformance['avgAttendance'][] = $r && $r['avg_rate'] !== null ? round($r['avg_rate'], 1) : 0;
@@ -207,7 +207,7 @@ $classAttendance = ['labels' => [], 'present' => [], 'absent' => [], 'late' => [
 try {
     foreach ($myClasses as $cl) {
         $classAttendance['labels'][] = $cl['name_ar'];
-        $stmt = $db->prepare("SELECT SUM(present_days) as p, SUM(absent_days) as a, SUM(late_days) as l FROM attendance_summaries WHERE class_id = ? AND is_active = 1 AND academic_year_id = ?");
+        $stmt = $db->prepare("SELECT SUM(present_days) as p, SUM(absent_days) as a, SUM(late_days) as l FROM v_attendance_summary WHERE class_id = ? AND academic_year_id = ?");
         $stmt->execute([$cl['id'], $academicYearId]);
         $r = $stmt->fetch();
         $classAttendance['present'][] = $r ? (int)$r['p'] : 0;
@@ -266,16 +266,16 @@ try {
         // حضور ضعيف
         $stmt = $db->prepare("
             SELECT s.id, s.full_name_ar, c.name_ar as class_name, gl.name_ar as grade_name,
-                   ats.attendance_rate, 'poor_attendance' as reason
+                   v.attendance_rate, 'poor_attendance' as reason
             FROM students s
             JOIN student_enrollments se ON s.id = se.student_id
             JOIN classes c ON se.class_id = c.id
             JOIN grade_levels gl ON c.grade_level_id = gl.id
-            JOIN attendance_summaries ats ON ats.student_id = s.id AND ats.class_id = c.id
+            JOIN v_attendance_summary v ON v.student_id = s.id AND v.class_id = c.id
             WHERE se.class_id IN ($placeholders) AND se.is_active = 1 AND se.status = 'enrolled'
-            AND s.is_active = 1 AND ats.is_active = 1 AND ats.attendance_rate < 75
+            AND s.is_active = 1 AND v.attendance_rate < 75
             GROUP BY s.id
-            ORDER BY ats.attendance_rate ASC
+            ORDER BY v.attendance_rate ASC
             LIMIT 5
         ");
         $stmt->execute($classIds);
@@ -284,16 +284,16 @@ try {
         // سلوك سيء
         $stmt = $db->prepare("
             SELECT s.id, s.full_name_ar, c.name_ar as class_name, gl.name_ar as grade_name,
-                   bs.current_percentage as behavior_pct, 'poor_behavior' as reason
+                   e.current_percentage as behavior_pct, 'poor_behavior' as reason
             FROM students s
             JOIN student_enrollments se ON s.id = se.student_id
             JOIN classes c ON se.class_id = c.id
             JOIN grade_levels gl ON c.grade_level_id = gl.id
-            JOIN behavior_scores bs ON bs.student_id = s.id AND bs.class_id = c.id
+            JOIN evaluations e ON e.student_id = s.id AND e.class_id = c.id
             WHERE se.class_id IN ($placeholders) AND se.is_active = 1 AND se.status = 'enrolled'
-            AND s.is_active = 1 AND bs.is_active = 1 AND bs.current_percentage < 60
+            AND s.is_active = 1 AND e.eval_type = 'behavior_score' AND e.is_active = 1 AND e.current_percentage < 60
             GROUP BY s.id
-            ORDER BY bs.current_percentage ASC
+            ORDER BY e.current_percentage ASC
             LIMIT 5
         ");
         $stmt->execute($classIds);

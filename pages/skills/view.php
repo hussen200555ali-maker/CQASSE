@@ -1,10 +1,11 @@
 <?php
 /**
- * ============================================================
- * عرض تقييم المهارات - View Skills Evaluation
- * نظام التقييم الشامل لجودة التعليم المدرسي 
- * ============================================================
+ * عرض تقييم المهارات
+ * ملاحظة: جدول skills_evaluations تم أرشفته في الترحيل v3.3.0
  */
+require_once __DIR__ . '/../../includes/header.php';
+setFlash('وحدة عرض المهارات قيد التحديث.', 'warning');
+redirect(baseUrl('pages/assessment/index.php'));
 
 $pageTitle = 'عرض تقييم المهارات';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة المهارات' => 'index.php', 'عرض التقييم' => null];

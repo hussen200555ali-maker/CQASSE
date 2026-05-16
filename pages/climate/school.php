@@ -61,12 +61,14 @@ try {
     $yearFilter = buildYearFilter($ayId);
     $semFilter = buildSemesterSubquery($semesterId);
     if ($semesterId > 0) {
-        $sql = "SELECT AVG(cs.overall_score) as avg_score, COUNT(cs.id) as total FROM climate_surveys cs WHERE cs.school_id = ? AND cs.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}";
+        $sql = "SELECT AVG(cs.overall_score) as avg_score, COUNT(cs.id) as total FROM surveys cs
+        WHERE cs.survey_type = 'climate' WHERE cs.school_id = ? AND cs.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}";
         $params = array_merge([$schoolId], $yearFilter['params'], $semFilter['params']);
     } else {
         $sql = "SELECT AVG(sem_avg) as avg_score, SUM(survey_count) as total FROM (
                     SELECT AVG(cs.overall_score) as sem_avg, COUNT(cs.id) as survey_count
-                    FROM climate_surveys cs WHERE cs.school_id = ? AND cs.is_active = 1{$yearFilter['sql']}
+                    FROM surveys cs
+        WHERE cs.survey_type = 'climate' WHERE cs.school_id = ? AND cs.is_active = 1{$yearFilter['sql']}
                     GROUP BY cs.semester_id
                 ) sub";
         $params = array_merge([$schoolId], $yearFilter['params']);
@@ -79,7 +81,7 @@ try {
 
     // DS-02: check if items exist
     if ($totalSurveys > 0) {
-        $iSql = "SELECT COUNT(*) FROM climate_items ci JOIN climate_surveys cs ON ci.survey_id = cs.id WHERE cs.school_id = ? AND cs.is_active = 1 AND ci.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}";
+        $iSql = "SELECT COUNT(*) FROM climate_items ci JOIN surveys cs ON ci.survey_id = cs.id WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.is_active = 1 AND ci.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}";
         $iParams = array_merge([$schoolId], $yearFilter['params'], $semFilter['params']);
         $iStmt = $db->prepare($iSql);
         $iStmt->execute($iParams);
@@ -88,10 +90,11 @@ try {
 
     if ($hasItems) {
         $catSql = "SELECT ac.name_ar as category_name, AVG(ci.normalized_value) as cat_score, COUNT(DISTINCT ci.item_id) as item_count
-                              FROM climate_surveys cs
+                              FROM surveys cs
+        WHERE cs.survey_type = 'climate'
                               JOIN climate_items ci ON ci.survey_id = cs.id
-                              JOIN assessment_items ai ON ci.item_id = ai.id
-                              JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+                              JOIN assessment_structure ai ON ci.item_id = ai.id
+                              JOIN assessment_structure ac ON ai.parent_id = ac.id
                               WHERE cs.school_id = ? AND cs.is_active = 1 AND ci.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}
                               GROUP BY ac.id, ac.name_ar ORDER BY cat_score ASC";
         $catParams = array_merge([$schoolId], $yearFilter['params'], $semFilter['params']);
@@ -133,7 +136,7 @@ try {
             $stmt->execute([$semName, $prevAyId]);
             $prevSemId = $stmt->fetchColumn();
             if ($prevSemId) {
-                $stmt3 = $db->prepare("SELECT AVG(overall_score) FROM climate_surveys WHERE school_id = ? AND semester_id = ? AND is_active = 1");
+                $stmt3 = $db->prepare("SELECT AVG(overall_score) FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND semester_id = ? AND is_active = 1");
                 $stmt3->execute([$schoolId, $prevSemId]);
                 $prevScore = $stmt3->fetchColumn();
                 if ($prevScore !== null) $prevScore = round((float)$prevScore, 1);
@@ -145,7 +148,7 @@ try {
         $stmt->execute([$ayId]);
         $prevAyId = $stmt->fetchColumn();
         if ($prevAyId) {
-            $stmt3 = $db->prepare("SELECT AVG(overall_score) FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND is_active = 1");
+            $stmt3 = $db->prepare("SELECT AVG(overall_score) FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND academic_year_id = ? AND is_active = 1");
             $stmt3->execute([$schoolId, $prevAyId]);
             $prevScore = $stmt3->fetchColumn();
             if ($prevScore !== null) $prevScore = round((float)$prevScore, 1);
@@ -158,7 +161,8 @@ try {
     $tYearFilter = buildYearFilter($ayId);
     $tSemFilter = buildSemesterSubquery($semesterId);
     $trendSql = "SELECT sem.name_ar, AVG(cs.overall_score) as avg_score
-                 FROM climate_surveys cs
+                 FROM surveys cs
+        WHERE cs.survey_type = 'climate'
                  JOIN semesters sem ON cs.semester_id = sem.id
                  WHERE cs.school_id = ? AND cs.overall_score IS NOT NULL AND cs.is_active = 1{$tYearFilter['sql']}{$tSemFilter['sql']}
                  GROUP BY cs.semester_id, sem.name_ar, sem.start_date

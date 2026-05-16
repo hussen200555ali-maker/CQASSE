@@ -55,24 +55,22 @@ foreach ($schoolPlans as $sp) {
 }
 
 // === 2. خطط المعلمين ===
-$teacherPlanWhere = 'tdp.is_active = 1';
+$teacherPlanWhere = 'ip.is_active = 1';
 $teacherPlanParams = [];
 if ($selectedSchool > 0) {
-    $teacherPlanWhere .= ' AND tdp.school_id = ?';
+    $teacherPlanWhere .= ' AND ip.school_id = ?';
     $teacherPlanParams[] = $selectedSchool;
 }
 
 $teacherPlansStmt = $db->prepare("
-    SELECT tdp.*, u.full_name_ar AS teacher_name, s.name_ar AS school_name,
-           cb.full_name_ar AS created_by_name,
-           sip.id AS school_plan_id
-    FROM teacher_development_plans tdp
-    JOIN users u ON tdp.teacher_id = u.id
-    JOIN schools s ON tdp.school_id = s.id
-    LEFT JOIN users cb ON tdp.created_by = cb.id
-    LEFT JOIN school_improvement_plans sip ON tdp.school_improvement_plan_id = sip.id
-    WHERE $teacherPlanWhere
-    ORDER BY tdp.status ASC, tdp.created_at DESC
+    SELECT ip.*, u.full_name_ar AS teacher_name, s.name_ar AS school_name,
+           cb.full_name_ar AS created_by_name
+    FROM improvement_plans ip
+    JOIN users u ON ip.teacher_id = u.id
+    JOIN schools s ON ip.school_id = s.id
+    LEFT JOIN users cb ON ip.created_by = cb.id
+    WHERE ip.plan_type = 'teacher' AND $teacherPlanWhere
+    ORDER BY ip.status ASC, ip.created_at DESC
 ");
 $teacherPlansStmt->execute($teacherPlanParams);
 $teacherPlans = $teacherPlansStmt->fetchAll();

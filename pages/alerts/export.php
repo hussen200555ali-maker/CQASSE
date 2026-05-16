@@ -6,11 +6,38 @@
  * ============================================================
  */
 
+// تحميل الأساسيات أولاً (بدون مخرجات HTML)
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/alerts.php';
+
+// معالجة التصدير - يجب أن يكون قبل أي مخرجات
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
+    $db = Database::getInstance()->getConnection();
+    $alertEngine = new AlertEngine($db);
+    
+    $filters = [];
+    if (!empty($_POST['school_id'])) $filters['school_id'] = $_POST['school_id'];
+    if (!empty($_POST['alert_type'])) $filters['alert_type'] = $_POST['alert_type'];
+    if (!empty($_POST['severity'])) $filters['severity'] = $_POST['severity'];
+    if (isset($_POST['is_resolved']) && $_POST['is_resolved'] !== '') $filters['is_resolved'] = $_POST['is_resolved'];
+    
+    $format = $_POST['format'] ?? 'csv';
+    
+    $csv = $alertEngine->exportAlerts($filters, $format);
+    
+    if ($csv) {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="alerts_export_' . date('Y-m-d_His') . '.csv"');
+        echo $csv;
+        exit;
+    }
+}
+
 $pageTitle = 'تصدير التنبيهات';
 $breadcrumb = ['التنبيهات الذكية' => 'index.php', 'تصدير' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
-require_once __DIR__ . '/../../includes/alerts.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة.', 'danger');
@@ -20,32 +47,6 @@ if (!hasPermission('school_admin')) {
 $alertEngine = new AlertEngine($db);
 $userRole = $_SESSION['user']['role'] ?? '';
 $userSchoolId = $_SESSION['user']['school_id'] ?? null;
-
-// معالجة التصدير
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
-    if (!verifyCsrf()) {
-        setFlash('خطأ في التحقق من الأمان.', 'danger');
-    } else {
-        $filters = [];
-        if (!empty($_POST['school_id'])) $filters['school_id'] = $_POST['school_id'];
-        if (!empty($_POST['alert_type'])) $filters['alert_type'] = $_POST['alert_type'];
-        if (!empty($_POST['severity'])) $filters['severity'] = $_POST['severity'];
-        if (isset($_POST['is_resolved']) && $_POST['is_resolved'] !== '') $filters['is_resolved'] = $_POST['is_resolved'];
-        
-        $format = $_POST['format'] ?? 'csv';
-        
-        $csv = $alertEngine->exportAlerts($filters, $format);
-        
-        if ($csv) {
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="alerts_export_' . date('Y-m-d_His') . '.csv"');
-            echo $csv;
-            exit;
-        } else {
-            setFlash('لا توجد بيانات للتصدير.', 'warning');
-        }
-    }
-}
 
 $schools = [];
 try {

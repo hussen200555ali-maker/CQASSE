@@ -83,7 +83,7 @@ try {
 // 5. معدل الحضور
 $attendanceRate = null;
 try {
-    $stmt = $db->prepare("SELECT AVG(attendance_rate) AS avg_rate FROM attendance_summaries WHERE school_id = ?");
+    $stmt = $db->prepare("SELECT AVG(attendance_rate) AS avg_rate FROM v_attendance_summary WHERE school_id = ?");
     $stmt->execute([$schoolId]);
     $attRow = $stmt->fetch();
     $attendanceRate = $attRow ? $attRow['avg_rate'] : null;

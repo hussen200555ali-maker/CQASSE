@@ -20,36 +20,152 @@ if (!hasPermission('school_admin') && !hasPermission('group_admin')) {
     redirect(baseUrl('index.php'));
 }
 
+// ═══════════════════════════════════════════
 // تحديد المدرسة حسب الدور
+// ═══════════════════════════════════════════
 $userRole = $_SESSION['user']['role'] ?? '';
 if ($userRole === 'group_admin') {
     $schoolId = isset($_GET['school_id']) ? (int)$_GET['school_id'] : 0;
+
+    // ───────────────────────────────────────
+    // عرض صفحة اختيار المدارس لـ group_admin
+    // ───────────────────────────────────────
     if ($schoolId === 0) {
-        setFlash('يرجى اختيار مدرسة أولاً.', 'warning');
-        redirect(baseUrl('pages/supervision/teaching_dashboard.php'));
+        // جلب كل المدارس مع إحصائيات خطط التطوير
+        $schools = $db->query("
+            SELECT s.id, s.name_ar,
+                   (SELECT COUNT(*) FROM improvement_plans WHERE school_id = s.id AND plan_type = 'teacher' AND status = 'active' AND is_active = 1) as active_plans,
+                   (SELECT COUNT(*) FROM improvement_plans WHERE school_id = s.id AND plan_type = 'teacher' AND is_active = 1) as total_plans
+            FROM schools s WHERE s.is_active = 1 ORDER BY s.name_ar
+        ")->fetchAll();
+
+        // جلب متوسط تقييم المعلمين لكل مدرسة
+        $schoolScores = [];
+        foreach ($schools as $sch) {
+            $avgScore = null;
+            try {
+                $s1 = $db->prepare("SELECT AVG(ar.numeric_value) as avg FROM assessment_responses ar JOIN assessment_forms af ON ar.form_id = af.id WHERE af.form_key IN ('teaching_self','teaching_peer','teaching_admin') AND ar.school_id = ? AND ar.is_active = 1");
+                $s1->execute([$sch['id']]);
+                $r1 = $s1->fetch();
+                if ($r1 && $r1['avg'] !== null) $avgScore = round($r1['avg'], 1);
+            } catch (Exception $e) {}
+            $schoolScores[$sch['id']] = $avgScore;
+        }
+
+        // جلب عدد المعلمين الذين يحتاجون خطة تطوير
+        $teachersNeeding = [];
+        foreach ($schools as $sch) {
+            try {
+                $s2 = $db->prepare("
+                    SELECT COUNT(DISTINCT u.id) as cnt
+                    FROM users u JOIN roles r ON u.role_id = r.id
+                    WHERE r.name = 'teacher' AND u.is_active = 1 AND u.school_id = ?
+                    AND (
+                        SELECT AVG(ar.numeric_value) FROM assessment_responses ar
+                        JOIN assessment_forms af ON ar.form_id = af.id
+                        WHERE af.form_key IN ('teaching_self','teaching_peer','teaching_admin')
+                        AND ar.teacher_id = u.id AND ar.school_id = ? AND ar.is_active = 1
+                    ) < 60
+                    AND NOT EXISTS (
+                        SELECT 1 FROM improvement_plans ip
+                        WHERE ip.plan_type = 'teacher' AND ip.teacher_id = u.id AND ip.school_id = ? AND ip.status = 'active' AND ip.is_active = 1
+                    )
+                ");
+                $s2->execute([$sch['id'], $sch['id'], $sch['id']]);
+                $teachersNeeding[$sch['id']] = (int)$s2->fetchColumn();
+            } catch (Exception $e) {
+                $teachersNeeding[$sch['id']] = 0;
+            }
+        }
+
+        $pageTitle = 'اختر مدرسة — خطط تطوير المعلمين';
+        $breadcrumb = ['التقييمات الإشرافية' => 'index.php', 'خطط تطوير المعلمين' => null];
+        ?>
+
+        <div class="section">
+            <div class="card mb-6">
+                <div class="card-body">
+                    <div style="display:flex;align-items:flex-start;gap:16px;">
+                        <div style="font-size:40px;">🎯</div>
+                        <div>
+                            <h3 style="margin-bottom:4px;">خطط تطوير المعلمين</h3>
+                            <p style="color:var(--text-secondary);margin:0;">
+                                اختر مدرسة لعرض أو إنشاء خطط تطوير المعلمين. تُفعّل الخطط تلقائياً عندما يكون تقييم المعلم أقل من 60%.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-auto" style="gap:16px;">
+                <?php foreach ($schools as $sch):
+                    $avgScore = $schoolScores[$sch['id']];
+                    $needing = $teachersNeeding[$sch['id']];
+                    $hasActive = $sch['active_plans'] > 0;
+
+                    if ($hasActive) {
+                        $cardColor = 'var(--warning)';
+                        $cardBg = '#fffbeb';
+                        $badge = '<span style="background:var(--warning);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">📋 ' . $sch['active_plans'] . ' نشطة</span>';
+                        $btnText = 'عرض الخطط';
+                        $btnColor = 'var(--warning)';
+                    } elseif ($needing > 0) {
+                        $cardColor = 'var(--danger)';
+                        $cardBg = '#fff5f5';
+                        $badge = '<span style="background:var(--danger);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">🚨 ' . $needing . ' معلم يحتاج خطة</span>';
+                        $btnText = 'إنشاء خطة';
+                        $btnColor = 'var(--danger)';
+                    } else {
+                        $cardColor = 'var(--success)';
+                        $cardBg = '#f0fff4';
+                        $badge = '<span style="background:var(--success);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:11px;font-weight:600;">✅ لا تحتاج</span>';
+                        $btnText = 'عرض';
+                        $btnColor = 'var(--success)';
+                    }
+                ?>
+                <div style="border:2px solid <?= $cardColor ?>;border-radius:var(--radius-lg);background:<?= $cardBg ?>;padding:20px;transition:all var(--transition-base);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                        <h4 style="font-size:16px;margin:0;">🏫 <?= e($sch['name_ar']) ?></h4>
+                        <?= $badge ?>
+                    </div>
+
+                    <div style="display:flex;gap:12px;font-size:13px;margin-bottom:16px;">
+                        <?php if ($avgScore !== null): ?>
+                        <span style="color:<?= $avgScore >= 60 ? 'var(--success)' : 'var(--danger)' ?>;">👨‍🏫 متوسط <?= $avgScore ?>%</span>
+                        <?php else: ?>
+                        <span style="color:var(--text-muted);">👨‍🏫 لا توجد تقييمات</span>
+                        <?php endif; ?>
+                        <?php if ($sch['total_plans'] > 0): ?>
+                        <span style="color:var(--text-muted);">📊 <?= $sch['total_plans'] ?> خطة</span>
+                        <?php endif; ?>
+                    </div>
+
+                    <a href="development_plan.php?school_id=<?= $sch['id'] ?>" class="btn btn-sm" style="background:<?= $btnColor ?>;color:white;width:100%;text-align:center;text-decoration:none;"><?= $btnText ?></a>
+                </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if (empty($schools)): ?>
+            <div class="card">
+                <div class="card-body" style="text-align:center;padding:40px;">
+                    <div style="font-size:48px;margin-bottom:12px;">🏫</div>
+                    <h4>لا توجد مدارس نشطة</h4>
+                    <p style="color:var(--text-muted);">يرجى إضافة مدرسة أولاً من صفحة إدارة المدارس.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <?php
+        require_once __DIR__ . '/../../includes/footer.php';
+        exit;
     }
 } else {
     $schoolId = currentSchoolId();
 }
 $schoolIdExpr = (int)$schoolId;
 
-// إنشاء الجدول إذا لم يكن موجوداً
-$db->exec("CREATE TABLE IF NOT EXISTS teacher_development_plans (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    teacher_id INT UNSIGNED NOT NULL,
-    school_id INT UNSIGNED NOT NULL DEFAULT 0,
-    weaknesses TEXT,
-    goals TEXT,
-    strategies TEXT,
-    follow_up_date DATE,
-    follow_up_notes TEXT,
-    status ENUM('active','completed','cancelled') DEFAULT 'active',
-    progress INT DEFAULT 0,
-    created_by INT UNSIGNED,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_active TINYINT(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+// ملاحظة: جدول teacher_development_plans تم دمجه في improvement_plans عبر الترحيل v3.3.0
 
 // معالجة الحفظ
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -68,9 +184,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty($teacherId) || empty($weaknesses) || empty($goals) || empty($strategies)) {
                 setFlash('يرجى ملء جميع الحقول المطلوبة.', 'warning');
             } else {
-                $stmt = $db->prepare("INSERT INTO teacher_development_plans (teacher_id, school_id, weaknesses, goals, strategies, follow_up_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                $stmt = $db->prepare("INSERT INTO improvement_plans (plan_type, teacher_id, school_id, weaknesses, goals, strategies, follow_up_date, created_by, is_active) VALUES ('teacher', ?, ?, ?, ?, ?, ?, ?, 1)");
                 $stmt->execute([$teacherId, $schoolId, $weaknesses, $goals, $strategies, $followUpDate ?: null, $_SESSION['user']['id']]);
-                logActivity($db, $_SESSION['user']['id'], 'dev_plan_create', "إنشاء خطة تطوير للمعلم رقم {$teacherId}", 'teacher_development_plans', $db->lastInsertId());
+                logActivity($db, $_SESSION['user']['id'], 'dev_plan_create', "إنشاء خطة تطوير للمعلم رقم {$teacherId}", 'improvement_plans', $db->lastInsertId());
                 setFlash('تم إنشاء خطة التطوير بنجاح.', 'success');
             }
 
@@ -79,20 +195,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $progress = (int)$_POST['progress'];
             $followUpNotes = trim($_POST['follow_up_notes'] ?? '');
             $status = $progress >= 100 ? 'completed' : 'active';
-            $stmt = $db->prepare("UPDATE teacher_development_plans SET progress = ?, follow_up_notes = ?, status = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE improvement_plans SET progress = ?, follow_up_notes = ?, status = ? WHERE id = ? AND plan_type = 'teacher'");
             $stmt->execute([$progress, $followUpNotes, $status, $id]);
-            logActivity($db, $_SESSION['user']['id'], 'dev_plan_progress', "تحديث تقدم خطة تطوير رقم {$id} إلى {$progress}%", 'teacher_development_plans', $id);
+            logActivity($db, $_SESSION['user']['id'], 'dev_plan_progress', "تحديث تقدم خطة تطوير رقم {$id} إلى {$progress}%", 'improvement_plans', $id);
             setFlash('تم تحديث التقدم.', 'success');
 
         } elseif ($action === 'complete_plan') {
             $id = (int)$_POST['plan_id'];
-            $stmt = $db->prepare("UPDATE teacher_development_plans SET status = 'completed', progress = 100 WHERE id = ?");
+            $stmt = $db->prepare("UPDATE improvement_plans SET status = 'completed', progress = 100 WHERE id = ? AND plan_type = 'teacher'");
             $stmt->execute([$id]);
             setFlash('تم إكمال خطة التطوير! 🎉', 'success');
 
         } elseif ($action === 'cancel_plan') {
             $id = (int)$_POST['plan_id'];
-            $stmt = $db->prepare("UPDATE teacher_development_plans SET status = 'cancelled' WHERE id = ?");
+            $stmt = $db->prepare("UPDATE improvement_plans SET status = 'cancelled' WHERE id = ? AND plan_type = 'teacher'");
             $stmt->execute([$id]);
             setFlash('تم إلغاء الخطة.', 'warning');
         }
@@ -126,11 +242,11 @@ $currentSchool = $schoolStmt->fetch();
 
 // جلب الخطط
 $stmt = $db->prepare("
-    SELECT tdp.*, u.full_name_ar as teacher_name
-    FROM teacher_development_plans tdp
-    JOIN users u ON tdp.teacher_id = u.id
-    WHERE tdp.school_id = ? AND tdp.is_active = 1
-    ORDER BY tdp.status ASC, tdp.created_at DESC
+    SELECT ip.*, u.full_name_ar as teacher_name
+    FROM improvement_plans ip
+    JOIN users u ON ip.teacher_id = u.id
+    WHERE ip.plan_type = 'teacher' AND ip.school_id = ? AND ip.is_active = 1
+    ORDER BY ip.status ASC, ip.created_at DESC
 ");
 $stmt->execute([$schoolIdExpr]);
 $plans = $stmt->fetchAll();

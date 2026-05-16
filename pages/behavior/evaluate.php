@@ -122,14 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // حفظ التقييم الرئيسي
             $stmt = $db->prepare("
-                INSERT INTO behavior_scores 
-                (student_id, class_id, academic_year_id, semester_id, evaluator_id, 
-                 evaluation_date, overall_score, notes, is_active)
-                VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, 1)
+                INSERT INTO evaluations 
+                (eval_type, student_id, class_id, school_id, academic_year_id, semester_id, 
+                 combined_score, current_percentage, is_active, created_at, updated_at)
+                VALUES ('behavior_score', ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             ");
             $stmt->execute([
-                $studentId, $classId, $academicYearId, $semesterId,
-                $userId, $overallScore, $notes ?: null
+                $studentId, $classId, $schoolId, $academicYearId, $semesterId,
+                $overallScore, $overallScore
             ]);
             $evaluationId = $db->lastInsertId();
             

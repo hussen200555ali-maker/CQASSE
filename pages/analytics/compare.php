@@ -65,7 +65,7 @@ if (!empty($selectedSchoolIds)) {
         LEFT JOIN students st ON s.id = st.school_id AND st.is_active = 1
         LEFT JOIN users u ON s.id = u.school_id AND u.role_id = (SELECT id FROM roles WHERE name = 'teacher') AND u.is_active = 1
         LEFT JOIN student_subject_summary sss ON st.id = sss.student_id AND sss.semester_id = ?
-        LEFT JOIN equi_results eqi ON s.id = eqi.school_id AND eqi.semester_id = ? AND eqi.is_active = 1
+        LEFT JOIN eqi_results eqi ON s.id = eqi.school_id AND eqi.semester_id = ? AND eqi.is_active = 1
         WHERE s.id IN ($placeholders) AND s.is_active = 1
         GROUP BY s.id, s.name_ar, s.reference_code
     ");

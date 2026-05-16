@@ -13,7 +13,7 @@ $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيا�
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/filters.php';
 
-if (!hasPermission('school_admin')) {
+if (!hasPermission('group_admin') && !hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
 }
@@ -49,6 +49,25 @@ $respondentInfo = [
     'grade_level' => '',
 ];
 
+// دعم وضع التعديل
+$editId = (int)($_GET['edit'] ?? 0);
+$existingSurvey = null;
+$savedItems = [];
+if ($editId) {
+    $stmt = $db->prepare("SELECT * FROM surveys WHERE id = ? AND survey_type = 'climate' AND is_active = 1");
+    $stmt->execute([$editId]);
+    $existingSurvey = $stmt->fetch();
+    if (!$existingSurvey) { setFlash('الاستبيان غير موجود', 'danger'); redirect('index.php'); }
+    
+    // جلب العناصر المحفوظة
+    $stmt = $db->prepare("SELECT item_id, normalized_value FROM climate_items WHERE survey_id = ? AND is_active = 1");
+    $stmt->execute([$editId]);
+    while ($row = $stmt->fetch()) { $savedItems[$row['item_id']] = $row['normalized_value']; }
+    
+    $pageTitle = 'تعديل استبيان المناخ';
+    $breadcrumb = ['التقييمات' => '../assessment/index.php', 'استبيان المناخ' => 'index.php', 'تعديل الاستبيان' => null];
+}
+
 // جلب نموذج المناخ
 $climateForm = null;
 $climateItems = [];
@@ -73,9 +92,9 @@ $previousSurveys = [];
 try {
     $stmt = $db->prepare("
         SELECT cs.id, cs.overall_score, cs.survey_date, cs.respondent_type, sem.name_ar as semester_name
-        FROM climate_surveys cs
+        FROM surveys cs
         JOIN semesters sem ON cs.semester_id = sem.id
-        WHERE cs.school_id = ? AND cs.is_active = 1
+        WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.is_active = 1
         ORDER BY cs.survey_date DESC LIMIT 10
     ");
     $stmt->execute([$schoolId ?: 0]);
@@ -90,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $db->beginTransaction();
             
-            $schoolIdPost = (int)($_POST['school_id'] ?? 0);
+            $schoolIdPost = $_POST['school_id'] ?? '';
             $respondentType = $_POST['respondent_type'] ?? '';
             $academicYearId = (int)($_POST['academic_year_id'] ?? 0);
             $semesterId = (int)($_POST['semester_id'] ?? 0);
@@ -115,6 +134,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             $semesterId = (int)$resolvedSemId;
             
+            // جمع المدارس المستهدفة
+            $targetSchools = [];
+            if ($schoolIdPost === 'all' && $userRole === 'group_admin') {
+                $stmt = $db->query("SELECT id, name_ar FROM schools WHERE is_active = 1");
+                $targetSchools = $stmt->fetchAll();
+            } else {
+                $sid = (int)$schoolIdPost;
+                $stmt = $db->prepare("SELECT id, name_ar FROM schools WHERE id = ? AND is_active = 1");
+                $stmt->execute([$sid]);
+                $row = $stmt->fetch();
+                if ($row) $targetSchools[] = $row;
+            }
+            
+            if (empty($targetSchools)) {
+                throw new Exception('لا توجد مدارس نشطة');
+            }
+            
+            // جمع الاستجابات والدرجات
             $responses = [];
             $itemScores = [];
             foreach ($climateItems as $item) {
@@ -132,23 +169,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $overallScore = $engine->calculateScore($responses);
             
-            $stmt = $db->prepare("
-                INSERT INTO climate_surveys 
-                (school_id, academic_year_id, semester_id, respondent_type, respondent_id, survey_date, overall_score, notes, is_active)
-                VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, 1)
-            ");
-            $stmt->execute([$schoolIdPost, $academicYearId, $semesterId, $respondentType, $userId, $overallScore, $notes ?: null]);
-            $surveyId = $db->lastInsertId();
-            
-            $stmt = $db->prepare("INSERT INTO climate_items (survey_id, item_id, normalized_value, is_active) VALUES (?, ?, ?, 1)");
-            foreach ($itemScores as $itemId => $scores) {
-                $stmt->execute([$surveyId, $itemId, $scores['normalized']]);
+            if ($editId) {
+                // وضع التعديل - تحديث الاستبيان الموجود
+                $stmt = $db->prepare("
+                    UPDATE surveys SET respondent_type = ?, academic_year_id = ?, semester_id = ?, overall_score = ?, notes = ?, updated_at = NOW()
+                    WHERE id = ? AND survey_type = 'climate'
+                ");
+                $stmt->execute([$respondentType, $academicYearId, $semesterId, $overallScore, $notes ?: null, $editId]);
+                $surveyId = $editId;
+                
+                // حذف العناصر القديمة وإدراج الجديدة
+                $db->prepare("DELETE FROM climate_items WHERE survey_id = ?")->execute([$surveyId]);
+                foreach ($itemScores as $itemId => $scores) {
+                    $stmt = $db->prepare("INSERT INTO climate_items (survey_id, item_id, normalized_value, is_active) VALUES (?, ?, ?, 1)");
+                    $stmt->execute([$surveyId, $itemId, $scores['normalized']]);
+                }
+                
+                $db->commit();
+                logActivity($db, $userId, 'climate_survey_update', 'تحديث استبيان مناخ - الدرجة: ' . number_format($overallScore, 1) . '%', 'climate_survey', $surveyId);
+                setFlash('تم تحديث الاستبيان بنجاح', 'success');
+                redirect('view.php?id=' . $surveyId);
+            } else {
+                // وضع الإنشاء الجديد
+                $createdCount = 0;
+                foreach ($targetSchools as $school) {
+                    $stmt = $db->prepare("
+                        INSERT INTO surveys 
+                        (survey_type, school_id, academic_year_id, semester_id, respondent_type, respondent_id, survey_date, overall_score, notes, status, is_active, created_by)
+                        VALUES ('climate', ?, ?, ?, ?, ?, CURDATE(), ?, ?, 'closed', 1, ?)
+                    ");
+                    $stmt->execute([$school['id'], $academicYearId, $semesterId, $respondentType, $userId, $overallScore, $notes ?: null, $userId]);
+                    $surveyId = $db->lastInsertId();
+                    
+                    foreach ($itemScores as $itemId => $scores) {
+                        $stmt = $db->prepare("INSERT INTO climate_items (survey_id, item_id, normalized_value, is_active) VALUES (?, ?, ?, 1)");
+                        $stmt->execute([$surveyId, $itemId, $scores['normalized']]);
+                    }
+                    $createdCount++;
+                }
+                
+                $db->commit();
+                
+                if ($createdCount > 1) {
+                    logActivity($db, $userId, 'climate_survey_batch', 'استبيانات مناخ لـ ' . $createdCount . ' مدرسة - الدرجة: ' . number_format($overallScore, 1) . '%', 'climate_survey', null);
+                    setFlash('تم إنشاء ' . $createdCount . ' استبيان مناخ لجميع المدارس بنجاح', 'success');
+                    redirect('index.php');
+                } else {
+                    logActivity($db, $userId, 'climate_survey_create', 'استبيان مناخ جديد - الدرجة: ' . number_format($overallScore, 1) . '% - النوع: ' . $respondentTypes[$respondentType], 'climate_survey', $surveyId);
+                    setFlash('تم حفظ الاستبيان بنجاح', 'success');
+                    redirect('view.php?id=' . $surveyId);
+                }
             }
-            
-            $db->commit();
-            logActivity($db, $userId, 'climate_survey_create', 'استبيان مناخ جديد - الدرجة: ' . number_format($overallScore, 1) . '% - النوع: ' . $respondentTypes[$respondentType], 'climate_survey', $surveyId);
-            setFlash('تم حفظ الاستبيان بنجاح', 'success');
-            redirect('view.php?id=' . $surveyId);
         } catch (Exception $e) {
             $db->rollBack();
             setFlash('خطأ: ' . $e->getMessage(), 'danger');
@@ -168,19 +239,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">المدرسة <span class="required">*</span></label>
-                        <select name="school_id" class="form-control" required>
+                        <select name="school_id" class="form-control" required <?= $editId ? 'disabled' : '' ?>>
                             <option value="">-- اختر المدرسة --</option>
+                            <?php if ($userRole === 'group_admin' && !$editId): ?>
+                                <option value="all">🏫 جميع المدارس</option>
+                            <?php endif; ?>
                             <?php foreach ($schools as $s): ?>
-                                <option value="<?php echo $s['id']; ?>"><?php echo e($s['name_ar']); ?></option>
+                                <option value="<?php echo $s['id']; ?>" <?= ($existingSurvey['school_id'] ?? '') == $s['id'] ? 'selected' : '' ?>><?php echo e($s['name_ar']); ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if ($editId): ?><input type="hidden" name="school_id" value="<?= $existingSurvey['school_id'] ?>"><?php endif; ?>
                     </div>
                     <div class="form-group">
                         <label class="form-label">نوع المستجيب <span class="required">*</span></label>
                         <select name="respondent_type" class="form-control" required id="respondent-type-select">
                             <option value="">-- اختر النوع --</option>
                             <?php foreach ($respondentTypes as $key => $label): ?>
-                                <option value="<?php echo $key; ?>"><?php echo $respondentIcons[$key] . ' ' . e($label); ?></option>
+                                <option value="<?php echo $key; ?>" <?= ($existingSurvey['respondent_type'] ?? '') === $key ? 'selected' : '' ?>><?php echo $respondentIcons[$key] . ' ' . e($label); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -191,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <select name="academic_year_id" class="form-control" required>
                             <option value="">-- اختر السنة --</option>
                             <?php foreach ($academicYears as $ay): ?>
-                                <option value="<?php echo $ay['id']; ?>"><?php echo e($ay['name']); ?></option>
+                                <option value="<?php echo $ay['id']; ?>" <?= ($existingSurvey['academic_year_id'] ?? '') == $ay['id'] ? 'selected' : '' ?>><?php echo e($ay['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -199,8 +274,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label">الفصل الدراسي <span class="required">*</span></label>
                         <select name="semester_id" class="form-control" required>
                             <option value="">-- اختر الفصل الدراسي --</option>
-                            <option value="1">الفصل الدراسي الأول</option>
-                            <option value="2">الفصل الدراسي الثاني</option>
+                            <?php
+                            $semMap = ['الفصل الدراسي الأول' => 1, 'الفصل الدراسي الثاني' => 2];
+                            foreach ($semMap as $semName => $semVal):
+                            ?>
+                                <option value="<?= $semVal ?>" <?= ($existingSurvey['semester_id'] ?? '') == $semVal ? 'selected' : '' ?>><?= $semName ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
@@ -281,7 +360,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <div style="padding:16px;">
                         <?php foreach ($cat['items'] as $item): ?>
-                            <?php echo $engine->renderTool($item, null, 'item_'); ?>
+                            <?php 
+                            $savedValue = $savedItems[$item['id']] ?? null;
+                            echo $engine->renderTool($item, $savedValue, 'item_'); 
+                            ?>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -337,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card mb-4">
             <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
             <div class="card-body">
-                <textarea name="notes" class="form-control" rows="3" placeholder="أضف ملاحظاتك هنا..."></textarea>
+                <textarea name="notes" class="form-control" rows="3" placeholder="أضف ملاحظاتك هنا..."><?= e($existingSurvey['notes'] ?? '') ?></textarea>
             </div>
         </div>
 
@@ -445,6 +527,15 @@ document.addEventListener('change', function(e) {
                     warnEl.innerHTML = '';
                 }
             }
+        }
+    }
+});
+
+// تأكيد عند اختيار "جميع المدارس"
+document.querySelector('select[name="school_id"]')?.addEventListener('change', function() {
+    if (this.value === 'all') {
+        if (!confirm('سيتم إنشاء استبيان مناخ مدرسي لكل المدارس النشطة. هل أنت متأكد؟')) {
+            this.value = '';
         }
     }
 });

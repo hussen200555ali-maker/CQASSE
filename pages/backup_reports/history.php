@@ -6,6 +6,8 @@
  * ============================================================
  */
 
+ob_start();
+
 $pageTitle = 'سجل النسخ الاحتياطية';
 $breadcrumb = ['النسخ الاحتياطي' => 'index.php', 'السجل' => null];
 
@@ -51,6 +53,7 @@ if (isset($_GET['download'])) {
     $stmt->execute([$downloadId]);
     $backup = $stmt->fetch();
     if ($backup && file_exists($backup['file_path'])) {
+        ob_end_clean(); // مسح المخرجات المخزنة
         header('Content-Type: application/gzip');
         header('Content-Disposition: attachment; filename="' . basename($backup['file_path']) . '"');
         header('Content-Length: ' . filesize($backup['file_path']));

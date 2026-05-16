@@ -76,17 +76,17 @@ foreach ($children as $child) {
         'evaluations' => []
     ];
 
-    // 1. درجة السلوك الحالية من behavior_scores
+    // 1. درجة السلوك الحالية من evaluations
     try {
         $stmt = $db->prepare("
-            SELECT bs.id, bs.starting_points, bs.earned_points, bs.deducted_points,
-                   bs.current_percentage, bs.is_passing, bs.semester_id,
+            SELECT e.id, e.starting_points, e.earned_points, e.deducted_points,
+                   e.current_percentage, e.is_passing, e.semester_id,
                    sem.name_ar as semester_name
-            FROM behavior_scores bs
-            LEFT JOIN semesters sem ON bs.semester_id = sem.id
-            WHERE bs.student_id = ? AND bs.is_active = 1
-            AND bs.academic_year_id = ?
-            ORDER BY bs.semester_id DESC
+            FROM evaluations e
+            LEFT JOIN semesters sem ON e.semester_id = sem.id
+            WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.is_active = 1
+            AND e.academic_year_id = ?
+            ORDER BY e.semester_id DESC
             LIMIT 1
         ");
         $stmt->execute([$sid, $academicYearId]);
@@ -96,11 +96,11 @@ foreach ($children as $child) {
     // 2. تاريخ درجات السلوك عبر الفصول (للاتجاهات)
     try {
         $stmt = $db->prepare("
-            SELECT bs.current_percentage, bs.semester_id, sem.name_ar as semester_name
-            FROM behavior_scores bs
-            LEFT JOIN semesters sem ON bs.semester_id = sem.id
-            WHERE bs.student_id = ? AND bs.is_active = 1
-            ORDER BY bs.semester_id ASC
+            SELECT e.current_percentage, e.semester_id, sem.name_ar as semester_name
+            FROM evaluations e
+            LEFT JOIN semesters sem ON e.semester_id = sem.id
+            WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.is_active = 1
+            ORDER BY e.semester_id ASC
         ");
         $stmt->execute([$sid]);
         $data['scores_history'] = $stmt->fetchAll();
@@ -132,9 +132,9 @@ foreach ($children as $child) {
                    ai.text_ar as item_text, ai.tool_type,
                    af.name_ar as form_name
             FROM assessment_responses ar
-            JOIN assessment_items ai ON ar.item_id = ai.id
+            JOIN assessment_structure ai ON ar.item_id = ai.id
             JOIN assessment_forms af ON ar.form_id = af.id
-            LEFT JOIN assessment_criteria acr ON ar.criteria_id = acr.id
+            LEFT JOIN assessment_structure acr ON ar.criteria_id = acr.id
             LEFT JOIN semesters sem ON ar.semester_id = sem.id
             WHERE ar.student_id = ? AND ar.is_active = 1
             AND af.form_key = 'behavior_eval'

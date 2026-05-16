@@ -83,9 +83,9 @@ foreach ($children as $child) {
                    ai.max_value as item_max_value,
                    sem.name_ar as semester_name
             FROM assessment_responses ar
-            JOIN assessment_items ai ON ar.item_id = ai.id
+            JOIN assessment_structure ai ON ar.item_id = ai.id
             JOIN assessment_forms af ON ar.form_id = af.id
-            LEFT JOIN assessment_criteria acr ON ar.criteria_id = acr.id
+            LEFT JOIN assessment_structure acr ON ar.criteria_id = acr.id
             LEFT JOIN semesters sem ON ar.semester_id = sem.id
             WHERE ar.student_id = ? AND ar.is_active = 1
             AND af.form_key = 'skills_checklist'

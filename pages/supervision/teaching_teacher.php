@@ -13,7 +13,7 @@ $teacherId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $selectedAcademicYearId = isset($_GET['academic_year_id']) ? (int)$_GET['academic_year_id'] : (int)currentAcademicYearId();
 $selectedSemesterId = isset($_GET['semester_id']) ? (int)$_GET['semester_id'] : 0;
 
-$isGroupAdmin = ($_SESSION['user']['role_name'] === 'group_admin');
+$isGroupAdmin = ($_SESSION['user']['role'] === 'group_admin');
 if ($isGroupAdmin) {
     $schoolId = isset($_GET['school_id']) ? (int)$_GET['school_id'] : 0;
 } else {
@@ -97,12 +97,12 @@ $currentCombined = $totalWeight > 0 ? round($combined / $totalWeight, 1) : null;
 $history = [];
 try {
     $stmt = $db->prepare("
-        SELECT tes.academic_year_id, tes.semester_id, ay.name AS year_name, s.name_ar AS sem_name,
-               tes.self_score, tes.peer_score, tes.admin_score, tes.combined_score
-        FROM teaching_evaluation_summary tes
-        JOIN academic_years ay ON tes.academic_year_id = ay.id
-        JOIN semesters s ON tes.semester_id = s.id
-        WHERE tes.teacher_id = ? AND tes.is_active = 1
+        SELECT e.academic_year_id, e.semester_id, ay.name AS year_name, s.name_ar AS sem_name,
+               e.self_score, e.peer_score, e.admin_score, e.combined_score
+        FROM evaluations e
+        JOIN academic_years ay ON e.academic_year_id = ay.id
+        JOIN semesters s ON e.semester_id = s.id
+        WHERE e.eval_type = 'teaching_summary' AND e.teacher_id = ? AND e.is_active = 1
         ORDER BY ay.start_date DESC, s.start_date DESC
     ");
     $stmt->execute([$teacherId]);
@@ -114,10 +114,10 @@ $trendHistory = [];
 $trendLabels = [];
 try {
     $stmt = $db->prepare("
-        SELECT tes.academic_year_id, tes.semester_id, tes.combined_score, s.name_ar AS sem_name
-        FROM teaching_evaluation_summary tes
-        JOIN semesters s ON tes.semester_id = s.id
-        WHERE tes.teacher_id = ? AND tes.is_active = 1
+        SELECT e.academic_year_id, e.semester_id, e.combined_score, s.name_ar AS sem_name
+        FROM evaluations e
+        JOIN semesters s ON e.semester_id = s.id
+        WHERE e.eval_type = 'teaching_summary' AND e.teacher_id = ? AND e.is_active = 1
         ORDER BY s.start_date ASC
         LIMIT 12
     ");
@@ -133,8 +133,8 @@ foreach ($trendHistory as $th) {
 $activePlan = null;
 try {
     $stmt = $db->prepare("
-        SELECT * FROM teacher_development_plans
-        WHERE teacher_id = ? AND status = 'active' AND is_active = 1
+        SELECT * FROM improvement_plans
+        WHERE plan_type = 'teacher' AND teacher_id = ? AND status = 'active' AND is_active = 1
         ORDER BY created_at DESC LIMIT 1
     ");
     $stmt->execute([$teacherId]);
@@ -171,6 +171,9 @@ $needsPlan = $currentCombined !== null && $currentCombined < 60 && !$activePlan;
                 </div>
                 <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom:1px;">تطبيق</button>
                 <a href="teaching_school.php<?= $schoolId > 0 ? "?id=$schoolId" : '' ?>" class="btn btn-light btn-sm" style="margin-bottom:1px;">↩ عودة للمدرسة</a>
+                <?php if ($isGroupAdmin): ?>
+                <a href="teaching_dashboard.php?academic_year_id=<?= $selectedAcademicYearId ?>&semester_id=<?= $selectedSemesterId ?>" class="btn btn-light btn-sm" style="margin-bottom:1px;">📊 مركز القيادة</a>
+                <?php endif; ?>
             </form>
         </div>
     </div>

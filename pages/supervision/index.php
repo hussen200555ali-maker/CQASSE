@@ -105,16 +105,7 @@ try {
 // 5. خطة تطوير المعلم - هل توجد خطة؟
 $developmentActive = false;
 try {
-    $db->exec("CREATE TABLE IF NOT EXISTS teacher_development_plans (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        teacher_id INT UNSIGNED NOT NULL,
-        school_id INT UNSIGNED NOT NULL,
-        weaknesses TEXT, goals TEXT, strategies TEXT,
-        follow_up_date DATE, status ENUM('active','completed','cancelled') DEFAULT 'active',
-        created_by INT UNSIGNED, created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        is_active TINYINT(1) DEFAULT 1
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    $stmt = $db->prepare("SELECT COUNT(*) FROM teacher_development_plans WHERE school_id = ? AND status = 'active' AND is_active = 1");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM improvement_plans WHERE plan_type = 'teacher' AND school_id = ? AND status = 'active' AND is_active = 1");
     $stmt->execute([$schoolId]);
     $developmentActive = $stmt->fetchColumn() > 0;
 } catch (Exception $e) { }

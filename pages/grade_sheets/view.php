@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
 }
 
 // جلب معلومات الفصل
-$stmt = $db->prepare("SELECT c.*, gl.name_ar as grade_name, gl.level_number, s.name_ar as school_name, s.code as school_code
+$stmt = $db->prepare("SELECT c.*, gl.name_ar as grade_name, gl.level_number, s.name_ar as school_name, s.reference_code as school_code
                       FROM classes c
                       JOIN grade_levels gl ON c.grade_level_id = gl.id
                       JOIN schools s ON c.school_id = s.id
@@ -109,18 +109,14 @@ foreach ($students as &$student) {
     $student['subject_count'] = $subjectCount;
 
     // جلب تقييم السلوك
-    $stmt = $db->prepare("SELECT overall_score FROM behavior_scores
-                          WHERE student_id = ? AND class_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1
-                          ORDER BY evaluation_date DESC LIMIT 1");
-    $stmt->execute([$student['id'], $classId, $academicYearId, $semesterId]);
+    $stmt = $db->prepare("SELECT e.current_percentage AS overall_score FROM evaluations e WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.academic_year_id = ? AND e.semester_id = ? AND e.is_active = 1 ORDER BY e.id DESC LIMIT 1");
+    $stmt->execute([$student['id'], $academicYearId, $semesterId]);
     $behavior = $stmt->fetch();
     $student['behavior_score'] = $behavior ? $behavior['overall_score'] : null;
 
     // جلب نسبة الحضور
-    $stmt = $db->prepare("SELECT attendance_rate FROM attendance_summaries
-                          WHERE student_id = ? AND class_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1
-                          LIMIT 1");
-    $stmt->execute([$student['id'], $classId, $academicYearId, $semesterId]);
+    $stmt = $db->prepare("SELECT v.attendance_rate FROM v_attendance_summary v WHERE v.student_id = ? AND v.academic_year_id = ? AND v.semester_id = ? LIMIT 1");
+    $stmt->execute([$student['id'], $academicYearId, $semesterId]);
     $attendance = $stmt->fetch();
     $student['attendance_rate'] = $attendance ? $attendance['attendance_rate'] : null;
 }

@@ -45,7 +45,8 @@ if (!in_array($semesterId, [0, 1, 2])) {
 // DS-01: Check if ANY surveys exist in the system
 $totalSystemSurveys = 0;
 try {
-    $stmt = $db->query("SELECT COUNT(*) FROM climate_surveys WHERE is_active = 1");
+    $stmt = $db->query("SELECT COUNT(*) FROM surveys
+        WHERE survey_type = 'climate' AND is_active = 1");
     $totalSystemSurveys = (int)$stmt->fetchColumn();
 } catch (Exception $e) {}
 
@@ -86,7 +87,8 @@ try {
     $yearFilter = buildYearFilter($ayId);
     $semFilter = buildSemesterSubquery($semesterId);
     $schoolFilter = buildSchoolFilter($schoolId);
-    $sql = "SELECT COUNT(*) FROM climate_surveys cs WHERE cs.is_active = 1";
+    $sql = "SELECT COUNT(*) FROM surveys cs
+        WHERE cs.survey_type = 'climate' AND cs.is_active = 1";
     $params = [];
     if ($yearFilter['sql']) { $sql .= $yearFilter['sql']; $params = array_merge($params, $yearFilter['params']); }
     if ($semFilter['sql']) { $sql .= $semFilter['sql']; $params = array_merge($params, $semFilter['params']); }
@@ -100,10 +102,10 @@ $fallbackPeriod = null;
 if (!$filterHasData) {
     try {
         $stmt = $db->query("SELECT cs.academic_year_id, cs.semester_id, ay.name as year_name, sem.name_ar as semester_name
-                            FROM climate_surveys cs
+                            FROM surveys cs
                             JOIN academic_years ay ON cs.academic_year_id = ay.id
                             JOIN semesters sem ON cs.semester_id = sem.id
-                            WHERE cs.is_active = 1
+                            WHERE cs.survey_type = 'climate' AND cs.is_active = 1
                             ORDER BY cs.survey_date DESC LIMIT 1");
         $fallbackPeriod = $stmt->fetch();
         if ($fallbackPeriod) {
@@ -129,9 +131,9 @@ try {
         $sql = "SELECT cs.school_id, s.name_ar as school_name,
                        AVG(cs.overall_score) as avg_score,
                        COUNT(cs.id) as survey_count
-                FROM climate_surveys cs
+                FROM surveys cs
                 JOIN schools s ON cs.school_id = s.id
-                WHERE cs.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}{$schoolFilter['sql']}
+                WHERE cs.survey_type = 'climate' AND cs.is_active = 1{$yearFilter['sql']}{$semFilter['sql']}{$schoolFilter['sql']}
                 GROUP BY cs.school_id ORDER BY avg_score DESC";
         $params = array_merge($yearFilter['params'], $semFilter['params'], $schoolFilter['params']);
     } else {
@@ -143,9 +145,9 @@ try {
                     SELECT cs.school_id, s.name_ar as school_name,
                            AVG(cs.overall_score) as sem_avg,
                            COUNT(cs.id) as survey_count
-                    FROM climate_surveys cs
+                    FROM surveys cs
                     JOIN schools s ON cs.school_id = s.id
-                    WHERE cs.is_active = 1{$yearFilter['sql']}{$schoolFilter['sql']}
+                    WHERE cs.survey_type = 'climate' AND cs.is_active = 1{$yearFilter['sql']}{$schoolFilter['sql']}
                     GROUP BY cs.school_id, cs.semester_id
                 ) sub
                 GROUP BY sub.school_id ORDER BY avg_score DESC";
@@ -247,7 +249,7 @@ if ($schoolId > 0) {
     try {
         $gYearFilter = buildYearFilter($ayId);
         $gSemFilter = buildSemesterSubquery($semesterId);
-        $gSql = "SELECT AVG(cs.overall_score) FROM climate_surveys cs WHERE cs.is_active = 1";
+        $gSql = "SELECT AVG(cs.overall_score) FROM surveys cs WHERE cs.survey_type = 'climate' AND cs.is_active = 1";
         $gParams = [];
         if ($gYearFilter['sql']) { $gSql .= $gYearFilter['sql']; $gParams = array_merge($gParams, $gYearFilter['params']); }
         if ($gSemFilter['sql']) { $gSql .= $gSemFilter['sql']; $gParams = array_merge($gParams, $gSemFilter['params']); }
@@ -263,13 +265,15 @@ if ($schoolId > 0) {
 $trendLabels = []; $trendData = [];
 $groupTrendLabels = []; $groupTrendData = [];
 $trendIsAnnual = ($ayId === 0);
+$trendHasData = false;
+$trendFallbackMsg = '';
 try {
     if ($trendIsAnnual) {
         // Phase 3: Bar chart by year when "جميع السنوات"
         $trendSql = "SELECT ay.name as period_name, AVG(cs.overall_score) as avg_score
-                     FROM climate_surveys cs
+                     FROM surveys cs
                      JOIN academic_years ay ON cs.academic_year_id = ay.id
-                     WHERE cs.is_active = 1 AND cs.overall_score IS NOT NULL";
+                     WHERE cs.survey_type = 'climate' AND cs.is_active = 1 AND cs.overall_score IS NOT NULL";
         $trendParams = [];
         if ($semesterId > 0) {
             $semName = semesterValueToNameAr($semesterId);
@@ -280,12 +284,12 @@ try {
             $trendSql .= " AND cs.school_id = ?";
             $trendParams[] = $schoolId;
         }
-        $trendSql .= " GROUP BY cs.academic_year_id, ay.name, ay.start_date ORDER BY ay.start_date DESC LIMIT 6";
+        $trendSql .= " GROUP BY cs.academic_year_id, ay.name, ay.start_date ORDER BY COALESCE(ay.start_date, '1900-01-01') DESC LIMIT 6";
     } else {
         $trendSql = "SELECT sem.name_ar as period_name, AVG(cs.overall_score) as avg_score
-                     FROM climate_surveys cs
+                     FROM surveys cs
                      JOIN semesters sem ON cs.semester_id = sem.id
-                     WHERE cs.is_active = 1 AND cs.overall_score IS NOT NULL";
+                     WHERE cs.survey_type = 'climate' AND cs.is_active = 1 AND cs.overall_score IS NOT NULL";
         $trendParams = [];
         if ($ayId > 0) {
             $trendSql .= " AND cs.academic_year_id = ?";
@@ -300,7 +304,7 @@ try {
             $trendSql .= " AND cs.school_id = ?";
             $trendParams[] = $schoolId;
         }
-        $trendSql .= " GROUP BY cs.semester_id, sem.name_ar, sem.start_date ORDER BY sem.start_date DESC LIMIT 6";
+        $trendSql .= " GROUP BY cs.semester_id, sem.name_ar, sem.start_date ORDER BY COALESCE(sem.start_date, '1900-01-01') DESC LIMIT 6";
     }
     $stmt = $db->prepare($trendSql);
     $stmt->execute($trendParams);
@@ -309,26 +313,53 @@ try {
         $trendLabels[] = $row['period_name'];
         $trendData[] = round((float)$row['avg_score'], 1);
     }
+    $trendHasData = count($trendData) > 0;
+
+    // Fallback: if filtered data is empty, get last 6 periods regardless of filter
+    if (!$trendHasData) {
+        $fallbackSql = "SELECT sem.name_ar as period_name, AVG(cs.overall_score) as avg_score
+                        FROM surveys cs
+                        JOIN semesters sem ON cs.semester_id = sem.id
+                        WHERE cs.survey_type = 'climate' AND cs.is_active = 1 AND cs.overall_score IS NOT NULL";
+        $fallbackParams = [];
+        if ($schoolId > 0) {
+            $fallbackSql .= " AND cs.school_id = ?";
+            $fallbackParams[] = $schoolId;
+        }
+        $fallbackSql .= " GROUP BY cs.semester_id, sem.name_ar, sem.start_date ORDER BY COALESCE(sem.start_date, '1900-01-01') DESC LIMIT 6";
+        $fStmt = $db->prepare($fallbackSql);
+        $fStmt->execute($fallbackParams);
+        $fRows = $fStmt->fetchAll();
+        if (!empty($fRows)) {
+            $trendIsAnnual = false; // switch to semester view for fallback
+            foreach (array_reverse($fRows) as $row) {
+                $trendLabels[] = $row['period_name'];
+                $trendData[] = round((float)$row['avg_score'], 1);
+            }
+            $trendHasData = true;
+            $trendFallbackMsg = 'لا توجد بيانات للفترة المحددة. يتم عرض آخر الفصول المتاحة.';
+        }
+    }
 
     // SC-03: When a specific school is selected, also get group average trend (for dual line/chart)
     if ($schoolId > 0) {
         if ($trendIsAnnual) {
             $gTrendSql = "SELECT ay.name as period_name, AVG(cs.overall_score) as avg_score
-                          FROM climate_surveys cs
+                          FROM surveys cs
                           JOIN academic_years ay ON cs.academic_year_id = ay.id
-                          WHERE cs.is_active = 1 AND cs.overall_score IS NOT NULL";
+                          WHERE cs.survey_type = 'climate' AND cs.is_active = 1 AND cs.overall_score IS NOT NULL";
             $gTrendParams = [];
             if ($semesterId > 0) {
                 $semName = semesterValueToNameAr($semesterId);
                 $gTrendSql .= " AND cs.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)";
                 $gTrendParams[] = $semName;
             }
-            $gTrendSql .= " GROUP BY cs.academic_year_id, ay.name, ay.start_date ORDER BY ay.start_date DESC LIMIT 6";
+            $gTrendSql .= " GROUP BY cs.academic_year_id, ay.name, ay.start_date ORDER BY COALESCE(ay.start_date, '1900-01-01') DESC LIMIT 6";
         } else {
             $gTrendSql = "SELECT sem.name_ar as period_name, AVG(cs.overall_score) as avg_score
-                          FROM climate_surveys cs
+                          FROM surveys cs
                           JOIN semesters sem ON cs.semester_id = sem.id
-                          WHERE cs.is_active = 1 AND cs.overall_score IS NOT NULL";
+                          WHERE cs.survey_type = 'climate' AND cs.is_active = 1 AND cs.overall_score IS NOT NULL";
             $gTrendParams = [];
             if ($ayId > 0) {
                 $gTrendSql .= " AND cs.academic_year_id = ?";
@@ -339,7 +370,7 @@ try {
                 $gTrendSql .= " AND cs.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)";
                 $gTrendParams[] = $semName;
             }
-            $gTrendSql .= " GROUP BY cs.semester_id, sem.name_ar, sem.start_date ORDER BY sem.start_date DESC LIMIT 6";
+            $gTrendSql .= " GROUP BY cs.semester_id, sem.name_ar, sem.start_date ORDER BY COALESCE(sem.start_date, '1900-01-01') DESC LIMIT 6";
         }
         $stmt2 = $db->prepare($gTrendSql);
         $stmt2->execute($gTrendParams);
@@ -368,7 +399,7 @@ try {
             if ($prevSemId) {
                 foreach ($schoolsClimate as $sc) {
                     if ($sc['avg_score'] === null) continue;
-                    $stmt2 = $db->prepare("SELECT AVG(overall_score) FROM climate_surveys WHERE school_id = ? AND semester_id = ? AND is_active = 1");
+                    $stmt2 = $db->prepare("SELECT AVG(overall_score) FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND semester_id = ? AND is_active = 1");
                     $stmt2->execute([$sc['school_id'], $prevSemId]);
                     $prevAvg = $stmt2->fetchColumn();
                     if ($prevAvg !== null && $prevAvg !== false) {
@@ -387,7 +418,7 @@ try {
         if ($prevAyId) {
             foreach ($schoolsClimate as $sc) {
                 if ($sc['avg_score'] === null) continue;
-                $stmt2 = $db->prepare("SELECT AVG(overall_score) FROM climate_surveys WHERE school_id = ? AND academic_year_id = ? AND is_active = 1");
+                $stmt2 = $db->prepare("SELECT AVG(overall_score) FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND academic_year_id = ? AND is_active = 1");
                 $stmt2->execute([$sc['school_id'], $prevAyId]);
                 $prevAvg = $stmt2->fetchColumn();
                 if ($prevAvg !== null && $prevAvg !== false) {
@@ -633,29 +664,44 @@ if ($overallAvg > 0) {
 <?php $noDataForFilter = empty($schoolsClimate) || $participatingSchools === 0; ?>
 <?php if (!$noDataForFilter): ?>
 <div class="section">
-    <div class="grid grid-2">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">📊 <?= $schoolId > 0 ? 'مقارنة بمتوسط المجموعة' : 'مقارنة المدارس' ?></h3></div>
-            <div class="card-body">
-                <div style="height:300px;"><canvas id="schoolsBarChart"></canvas></div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">📈 اتجاه المناخ<?= $schoolId > 0 ? '' : ' (آخر 6 فصول)' ?></h3></div>
-            <div class="card-body">
-                <?php if (count($trendData) <= 1): ?>
-                <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
-                    <div style="font-size:48px; margin-bottom:12px;">📉</div>
-                    <p>بيانات غير كافية لعرض اتجاه. انتظر جمع بيانات الفصل القادم.</p>
-                </div>
-                <?php else: ?>
-                <div style="height:300px;"><canvas id="trendLineChart"></canvas></div>
-                <?php endif; ?>
-            </div>
+    <div class="card">
+        <div class="card-header"><h3 class="card-title">📊 <?= $schoolId > 0 ? 'مقارنة بمتوسط المجموعة' : 'مقارنة المدارس' ?></h3></div>
+        <div class="card-body">
+            <div style="height:300px;"><canvas id="schoolsBarChart"></canvas></div>
         </div>
     </div>
 </div>
 <?php endif; ?>
+
+<?php /* قسم اتجاه المناخ — مستقل عن $noDataForFilter */ ?>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📈 اتجاه المناخ<?= $schoolId > 0 ? '' : ' (آخر 6 فصول)' ?></h3>
+        </div>
+        <div class="card-body">
+            <?php if ($trendFallbackMsg): ?>
+            <div class="alert alert-warning mb-3" style="padding:10px 14px; border-radius:var(--radius-md); background:#fff3cd; border:1px solid #ffc107; color:#856404; font-size:13px;">
+                ⚠️ <?= e($trendFallbackMsg) ?>
+                <a href="dashboard.php" style="margin-right:8px; color:#856404; text-decoration:underline;">إعادة تعيين الفلاتر</a>
+            </div>
+            <?php endif; ?>
+
+            <?php if (count($trendData) <= 1): ?>
+            <div style="text-align:center; padding:40px 20px; color:var(--text-muted);">
+                <div style="font-size:48px; margin-bottom:12px;">📉</div>
+                <h4 style="margin-bottom:8px;">بيانات غير كافية لعرض الاتجاه</h4>
+                <p style="margin-bottom:16px;">يحتاج الرسم البياني للاتجاه إلى فصلين دراسيين على الأقل. <?php if ($totalSystemSurveys === 0): ?>لم يتم إنشاء أي استبيان بعد.<?php elseif (count($trendData) === 1): ?>تم جمع استبيان واحد فقط حتى الآن.<?php endif; ?></p>
+                <?php if ($totalSystemSurveys === 0): ?>
+                <a href="survey.php" class="btn btn-primary">🌡️ إنشاء أول استبيان</a>
+                <?php endif; ?>
+            </div>
+            <?php else: ?>
+            <div style="height:300px;"><canvas id="trendLineChart"></canvas></div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
 
 <?php if ($schoolId === 0): ?>
 <div class="section">
@@ -796,6 +842,107 @@ if ($overallAvg > 0) {
         </div>
     </div>
 </div>
+<?php endif; ?>
+
+<?php
+// ═══════════════════════════════════════════════════════════
+// بطاقات الاستبيانات المنشأة
+// ═══════════════════════════════════════════════════════════
+
+$recentSurveys = [];
+try {
+    $sql = "SELECT s.id, s.school_id, s.survey_date, s.overall_score, s.respondent_type, s.notes, s.status,
+                   sch.name_ar AS school_name,
+                   sem.name_ar AS semester_name, ay.name AS year_name
+            FROM surveys s
+            JOIN schools sch ON s.school_id = sch.id
+            JOIN semesters sem ON s.semester_id = sem.id
+            JOIN academic_years ay ON s.academic_year_id = ay.id
+            WHERE s.survey_type = 'climate' AND s.is_active = 1";
+    $params = [];
+    if ($schoolId > 0) { $sql .= " AND s.school_id = ?"; $params[] = $schoolId; }
+    if ($ayId > 0) { $sql .= " AND s.academic_year_id = ?"; $params[] = $ayId; }
+    $sql .= " ORDER BY s.survey_date DESC, s.created_at DESC LIMIT 50";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $recentSurveys = $stmt->fetchAll();
+} catch (Exception $e) {}
+
+$respondentTypeLabels = [
+    'teacher' => '👨‍🏫 معلم', 'student' => '👨‍🎓 طالب',
+    'parent' => '👨‍👧 ولي أمر', 'admin' => '👨‍💼 إداري',
+];
+?>
+
+<?php if (!empty($recentSurveys)): ?>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📋 الاستبيانات المنشأة (<?= count($recentSurveys) ?>)</h3>
+            <a href="survey.php" class="btn btn-primary btn-sm">➕ استبيان جديد</a>
+        </div>
+        <div class="card-body" style="padding:0;">
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المدرسة</th>
+                            <th>نوع المستجيب</th>
+                            <th>الدرجة</th>
+                            <th>التقييم</th>
+                            <th>الفصل</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($recentSurveys as $idx => $sv): 
+                            $rating = $engine->getScoreRating($sv['overall_score']);
+                            $statusBadge = '';
+                            if ($sv['status'] === 'closed') $statusBadge = '<span class="badge badge-success">مكتمل</span>';
+                            elseif ($sv['status'] === 'active') $statusBadge = '<span class="badge badge-info">نشط</span>';
+                            else $statusBadge = '<span class="badge badge-secondary">مسودة</span>';
+                        ?>
+                        <tr>
+                            <td><?= $idx + 1 ?></td>
+                            <td><strong><?= e($sv['school_name']) ?></strong></td>
+                            <td><?= $respondentTypeLabels[$sv['respondent_type']] ?? e($sv['respondent_type']) ?></td>
+                            <td>
+                                <div class="progress-bar-mini">
+                                    <div class="progress-fill" style="width:<?= $sv['overall_score'] ?>%;background:<?= $rating['color'] ?>"></div>
+                                    <span><?= number_format($sv['overall_score'], 1) ?>%</span>
+                                </div>
+                            </td>
+                            <td><span style="color:<?= $rating['color'] ?>"><?= $rating['label'] ?></span></td>
+                            <td><?= e($sv['semester_name'] ?? '-') ?></td>
+                            <td><?= e($sv['survey_date']) ?></td>
+                            <td><?= $statusBadge ?></td>
+                            <td>
+                                <div style="display:flex;gap:4px;">
+                                    <a href="view.php?id=<?= $sv['id'] ?>" class="btn btn-sm btn-info" title="عرض">👁️</a>
+                                    <a href="survey.php?edit=<?= $sv['id'] ?>" class="btn btn-sm btn-warning" title="تعديل">✏️</a>
+                                    <a href="export.php?id=<?= $sv['id'] ?>" class="btn btn-sm btn-success" title="تصدير">📥</a>
+                                    <button onclick="deleteSurvey(<?= $sv['id'] ?>, '<?= addslashes($sv['school_name']) ?>')" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function deleteSurvey(id, schoolName) {
+    if (confirm('هل أنت متأكد من حذف استبيان "' + schoolName + '"؟\nسيتم حذف جميع البيانات المرتبطة.')) {
+        window.location.href = 'delete_survey.php?id=' + id;
+    }
+}
+</script>
 <?php endif; ?>
 
 <?php

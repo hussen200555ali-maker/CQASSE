@@ -750,24 +750,19 @@ class AssessmentEngine {
      */
     public function getFormWithItems($formId) {
         try {
-            // جلب بيانات النموذج
             $stmt = $this->db->prepare("SELECT * FROM assessment_forms WHERE id = ? AND is_active = 1");
             $stmt->execute([$formId]);
             $form = $stmt->fetch();
             
             if (!$form) return false;
             
-            // جلب المعايير (الفئات)
-            // [إصلاح 2026-05-11] assessment_categories → assessment_criteria (تطابق schema)
-            $stmt = $this->db->prepare("SELECT * FROM assessment_criteria WHERE form_id = ? AND is_active = 1 ORDER BY sort_order ASC");
+            $stmt = $this->db->prepare("SELECT * FROM assessment_structure WHERE form_id = ? AND type = 'criteria' AND is_active = 1 ORDER BY sort_order ASC");
             $stmt->execute([$formId]);
             $categories = $stmt->fetchAll();
             
-            // جلب العناصر لكل فئة
-            // [إصلاح 2026-05-11] category_id → criteria_id (تطابق schema)
             foreach ($categories as &$category) {
-                $stmt = $this->db->prepare("SELECT * FROM assessment_items WHERE criteria_id = ? AND form_id = ? AND is_active = 1 ORDER BY sort_order ASC");
-                $stmt->execute([$category['id'], $formId]);
+                $stmt = $this->db->prepare("SELECT * FROM assessment_structure WHERE parent_id = ? AND type = 'item' AND is_active = 1 ORDER BY sort_order ASC");
+                $stmt->execute([$category['id']]);
                 $category['items'] = $stmt->fetchAll();
             }
             
@@ -787,8 +782,8 @@ class AssessmentEngine {
      */
     public function getForms($formType = null) {
         $sql = "SELECT af.*, 
-                (SELECT COUNT(*) FROM assessment_criteria WHERE form_id = af.id AND is_active = 1) as category_count,
-                (SELECT COUNT(*) FROM assessment_items WHERE form_id = af.id AND is_active = 1) as item_count
+                (SELECT COUNT(*) FROM assessment_structure WHERE form_id = af.id AND type = 'criteria' AND is_active = 1) as category_count,
+                (SELECT COUNT(*) FROM assessment_structure WHERE form_id = af.id AND type = 'item' AND is_active = 1) as item_count
                 FROM assessment_forms af 
                 WHERE af.is_active = 1";
         $params = [];
@@ -859,15 +854,19 @@ class AssessmentEngine {
      */
     public function createForm($data) {
         try {
-            // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+            $category = $data['category'] ?? $this->deriveCategoryFromKey($data['form_key']);
+            $target = $data['target'] ?? $this->deriveTargetFromKey($data['form_key']);
+            
             $stmt = $this->db->prepare("
-                INSERT INTO assessment_forms (name_ar, name_en, form_key, description, is_active)
-                VALUES (?, ?, ?, ?, 1)
+                INSERT INTO assessment_forms (name_ar, name_en, form_key, category, target, description, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, 1)
             ");
             $stmt->execute([
                 $data['name_ar'],
                 $data['name_en'] ?? null,
-                $data['form_key'],  // [إصلاح 2026-05-11] مفتاح المصفوفة: form_type → form_key (تطابق اسم العمود)
+                $data['form_key'],
+                $category,
+                $target,
                 $data['description'] ?? null
             ]);
             return $this->db->lastInsertId();
@@ -875,6 +874,32 @@ class AssessmentEngine {
             error_log('خطأ في إنشاء النموذج: ' . $e->getMessage());
             return false;
         }
+    }
+    
+    private function deriveCategoryFromKey($formKey) {
+        $map = [
+            'behavior_eval' => 'behavior',
+            'skills_checklist' => 'skills',
+            'teaching_self' => 'teaching',
+            'teaching_peer' => 'teaching',
+            'teaching_admin' => 'teaching',
+            'climate_survey' => 'climate',
+            'facility_checklist' => 'climate',
+        ];
+        return $map[$formKey] ?? 'climate';
+    }
+    
+    private function deriveTargetFromKey($formKey) {
+        $map = [
+            'behavior_eval' => 'student',
+            'skills_checklist' => 'student',
+            'teaching_self' => 'teacher',
+            'teaching_peer' => 'teacher',
+            'teaching_admin' => 'teacher',
+            'climate_survey' => 'school',
+            'facility_checklist' => 'school',
+        ];
+        return $map[$formKey] ?? 'school';
     }
     
     /**
@@ -885,10 +910,9 @@ class AssessmentEngine {
      */
     public function createCategory($data) {
         try {
-            // [إصلاح 2026-05-11] assessment_categories → assessment_criteria (تطابق schema)
             $stmt = $this->db->prepare("
-                INSERT INTO assessment_criteria (form_id, name_ar, name_en, sort_order, is_active)
-                VALUES (?, ?, ?, ?, 1)
+                INSERT INTO assessment_structure (form_id, parent_id, type, name_ar, name_en, sort_order, is_active)
+                VALUES (?, NULL, 'criteria', ?, ?, ?, 1)
             ");
             $stmt->execute([
                 $data['form_id'],
@@ -911,15 +935,14 @@ class AssessmentEngine {
      */
     public function createItem($data) {
         try {
-            // [إصلاح 2026-05-11] category_id → criteria_id و form_type → form_key (تطابق schema)
             $stmt = $this->db->prepare("
-                INSERT INTO assessment_items 
-                (criteria_id, form_id, text_ar, text_en, tool_type, weight, is_inverse, max_value, sort_order, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                INSERT INTO assessment_structure 
+                (form_id, parent_id, type, text_ar, text_en, tool_type, weight, is_inverse, max_value, sort_order, is_active)
+                VALUES (?, ?, 'item', ?, ?, ?, ?, ?, ?, ?, 1)
             ");
             $stmt->execute([
-                $data['criteria_id'],  // [إصلاح 2026-05-11] مفتاح المصفوفة: category_id → criteria_id (تطابق اسم العمود)
                 $data['form_id'],
+                $data['criteria_id'],
                 $data['text_ar'],
                 $data['text_en'] ?? null,
                 $data['tool_type'],

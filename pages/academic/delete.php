@@ -52,13 +52,13 @@ try {
 } catch (Exception $e) { $stats['assessments'] = 0; }
 
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM eqi_calculations WHERE academic_year_id = ?");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM eqi_results WHERE academic_year_id = ?");
     $stmt->execute([$yearId]);
     $stats['eqi'] = (int)$stmt->fetchColumn();
 } catch (Exception $e) { $stats['eqi'] = 0; }
 
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM equi_results WHERE academic_year_id = ?");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM eqi_results WHERE academic_year_id = ?");
     $stmt->execute([$yearId]);
     $stats['equi'] = (int)$stmt->fetchColumn();
 } catch (Exception $e) { $stats['equi'] = 0; }

@@ -78,7 +78,7 @@ foreach ($children as $child) {
             FROM grades g
             JOIN tests t ON g.test_id = t.id
             JOIN subjects s ON t.subject_id = s.id
-            LEFT JOIN assessment_types at ON t.assessment_type_id = at.id
+            LEFT JOIN system_settings ast ON t.assessment_type_id = CAST(ast.setting_value AS UNSIGNED)
             LEFT JOIN semesters sem ON t.semester_id = sem.id
             WHERE g.student_id = ? AND g.is_active = 1
             AND t.academic_year_id = ?

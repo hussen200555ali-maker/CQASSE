@@ -2,8 +2,8 @@
 /**
  * ============================================================
  * تقييم مهارات جديد - New Skills Evaluation
- * Skills Evaluation Form (rubric_4 and yes_no tools)
- * نظام التقييم الشامل لجودة التعليم المدرسي 
+ * ملاحظة: جدول skills_evaluations تم أرشفته في الترحيل v3.3.0
+ * يرجى استخدام نظام التقييم الموحد عبر assessments
  * ============================================================
  */
 
@@ -12,6 +12,9 @@ $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة ا
 
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/filters.php';
+
+setFlash('وحدة تقييم المهارات قيد التحديث. يرجى استخدام نظام التقييم الموحد.', 'warning');
+redirect(baseUrl('pages/assessment/index.php'));
 
 if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');

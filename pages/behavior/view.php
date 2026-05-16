@@ -29,18 +29,18 @@ if (!$evalId) {
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT be.*, s.full_name_ar as student_name, s.student_number,
+        SELECT e.*, s.full_name_ar as student_name, s.student_number,
                c.name_ar as class_name, gl.name_ar as grade_name,
                u.full_name_ar as evaluator_name,
                sem.name_ar as semester_name, ay.name as year_name
-        FROM behavior_scores be
-        JOIN students s ON be.student_id = s.id
-        JOIN classes c ON be.class_id = c.id
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        JOIN classes c ON e.class_id = c.id
         JOIN grade_levels gl ON c.grade_level_id = gl.id
-        JOIN users u ON be.evaluator_id = u.id
-        JOIN semesters sem ON be.semester_id = sem.id
-        JOIN academic_years ay ON be.academic_year_id = ay.id
-        WHERE be.id = ? AND be.is_active = 1
+        JOIN users u ON e.student_id = u.id
+        JOIN semesters sem ON e.semester_id = sem.id
+        JOIN academic_years ay ON e.academic_year_id = ay.id
+        WHERE e.eval_type = 'behavior_score' AND e.id = ? AND e.is_active = 1
     ");
     $stmt->execute([$evalId]);
     $evaluation = $stmt->fetch();
@@ -51,30 +51,14 @@ if (!$evaluation) {
     redirect('index.php');
 }
 
-// جلب عناصر التقييم
-$items = [];
-try {
-    $stmt = $db->prepare("
-        SELECT bi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
-               ac.name_ar as category_name
-        FROM behavior_items bi
-        JOIN assessment_items ai ON bi.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
-        WHERE bi.evaluation_id = ? AND bi.is_active = 1
-        ORDER BY ac.sort_order, ai.sort_order
-    ");
-    $stmt->execute([$evalId]);
-    $items = $stmt->fetchAll();
-} catch (Exception $e) {}
-
 // جلب التقييمات السابقة للمقارنة
 $previousEvals = [];
 try {
     $stmt = $db->prepare("
-        SELECT id, evaluation_date, overall_score 
-        FROM behavior_scores 
-        WHERE student_id = ? AND id != ? AND is_active = 1
-        ORDER BY evaluation_date DESC LIMIT 5
+        SELECT id, e.created_at as evaluation_date, e.combined_score as overall_score 
+        FROM evaluations e
+        WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.id != ? AND e.is_active = 1
+        ORDER BY e.created_at DESC LIMIT 5
     ");
     $stmt->execute([$evaluation['student_id'], $evalId]);
     $previousEvals = $stmt->fetchAll();

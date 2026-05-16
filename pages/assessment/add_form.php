@@ -34,6 +34,20 @@ if ($editId) {
     $pageTitle = 'تعديل نموذج تقييم';
 }
 
+// فحص النموذج المكرر عند الدخول عبر form_type
+if (!$editId) {
+    $formTypeParam = $_GET['form_type'] ?? $_GET['form_key'] ?? '';
+    if (!empty($formTypeParam)) {
+        $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = ? AND is_active = 1 LIMIT 1");
+        $stmt->execute([$formTypeParam]);
+        $existingFormRow = $stmt->fetch();
+        if ($existingFormRow) {
+            setFlash('نموذج "' . $formTypeParam . '" موجود مسبقاً - يتم تحويلك لصفحة التعديل', 'info');
+            redirect('add_form.php?edit=' . $existingFormRow['id']);
+        }
+    }
+}
+
 // معالجة الحفظ
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf()) {
@@ -52,16 +66,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             if ($editId) {
-                // تحديث النموذج
-                $stmt = $db->prepare("UPDATE assessment_forms SET name_ar = ?, name_en = ?, form_key = ?, description = ? WHERE id = ?"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
-                $stmt->execute([$nameAr, $nameEn ?: null, $formType, $description ?: null, $editId]);
+                // تحديث النموذج - category و target يُشتقان تلقائياً من form_key
+                $categoryMap = [
+                    'behavior_eval' => 'behavior', 'skills_checklist' => 'skills',
+                    'teaching_self' => 'teaching', 'teaching_peer' => 'teaching', 'teaching_admin' => 'teaching',
+                    'climate_survey' => 'climate', 'facility_checklist' => 'climate',
+                ];
+                $targetMap = [
+                    'behavior_eval' => 'student', 'skills_checklist' => 'student',
+                    'teaching_self' => 'teacher', 'teaching_peer' => 'teacher', 'teaching_admin' => 'teacher',
+                    'climate_survey' => 'school', 'facility_checklist' => 'school',
+                ];
+                $category = $categoryMap[$formType] ?? 'climate';
+                $target = $targetMap[$formType] ?? 'school';
+                $stmt = $db->prepare("UPDATE assessment_forms SET name_ar = ?, name_en = ?, form_key = ?, category = ?, target = ?, description = ? WHERE id = ?");
+                $stmt->execute([$nameAr, $nameEn ?: null, $formType, $category, $target, $description ?: null, $editId]);
                 $formId = $editId;
             } else {
-                // إنشاء نموذج جديد
+                // إنشاء نموذج جديد - category و target يُشتقان تلقائياً من form_key
                 $formId = $engine->createForm([
                     'name_ar' => $nameAr,
                     'name_en' => $nameEn ?: null,
-                    'form_key' => $formType,  // [إصلاح 2026-05-11] مفتاح المصفوفة: form_type → form_key (تطابق اسم العمود)
+                    'form_key' => $formType,
                     'description' => $description ?: null
                 ]);
                 
@@ -72,8 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // حذف الفئات والعناصر القديمة في وضع التعديل
             if ($editId) {
-                $db->prepare("DELETE FROM assessment_items WHERE form_id = ?")->execute([$formId]);
-                $db->prepare("DELETE FROM assessment_criteria WHERE form_id = ?")->execute([$formId]);  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
+                $db->prepare("DELETE FROM assessment_structure WHERE form_id = ?")->execute([$formId]);
             }
             
             // إضافة الفئات والعناصر

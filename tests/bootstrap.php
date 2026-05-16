@@ -107,19 +107,20 @@ function createTestDB(): PDO {
         default_weight REAL, is_active INTEGER DEFAULT 1
     )");
 
-    $db->exec("CREATE TABLE IF NOT EXISTS equi_results (
+    $db->exec("CREATE TABLE IF NOT EXISTS eqi_results (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id INTEGER, academic_year_id INTEGER, semester_id INTEGER,
         academic_score REAL, teaching_score REAL, climate_score REAL,
         behavior_score REAL, skills_score REAL, attendance_score REAL,
-        overall_eqi REAL, calculated_by INTEGER, calculated_at TEXT,
+        overall_eqi REAL, weights_json TEXT, challenge_index REAL, adjusted_eqi REAL,
+        calculated_by INTEGER, calculated_at TEXT,
         is_active INTEGER DEFAULT 1,
         UNIQUE(school_id, academic_year_id, semester_id)
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS system_settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        setting_key TEXT UNIQUE, setting_value TEXT, value_type TEXT DEFAULT 'string',
+        setting_key TEXT UNIQUE, name_ar TEXT, setting_value TEXT, value_type TEXT DEFAULT 'string',
         category TEXT, description_ar TEXT, sort_order INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1
     )");
@@ -235,12 +236,128 @@ function createTestDB(): PDO {
         tool_type TEXT, numeric_value REAL, is_active INTEGER DEFAULT 1
     )");
 
-    // جداول الحضور
+    // جداول الحضور (v_attendance_summary view mocked as table for SQLite)
+    $db->exec("CREATE TABLE IF NOT EXISTS v_attendance_summary (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER, school_id INTEGER DEFAULT 1,
+        academic_year_id INTEGER, semester_id INTEGER,
+        attendance_rate REAL, is_active INTEGER DEFAULT 1
+    )");
+
     $db->exec("CREATE TABLE IF NOT EXISTS attendance_summaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER, school_id INTEGER DEFAULT 1,
         academic_year_id INTEGER, semester_id INTEGER,
         attendance_rate REAL, is_active INTEGER DEFAULT 1
+    )");
+
+    // جداول التقييم الموحدة
+    $db->exec("CREATE TABLE IF NOT EXISTS evaluations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        eval_type TEXT NOT NULL,
+        student_id INTEGER, teacher_id INTEGER, class_id INTEGER,
+        school_id INTEGER DEFAULT 1, academic_year_id INTEGER, semester_id INTEGER,
+        score REAL, combined_score REAL, current_percentage REAL,
+        is_passing INTEGER DEFAULT 1,
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS surveys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        survey_type TEXT NOT NULL,
+        school_id INTEGER DEFAULT 1, academic_year_id INTEGER, semester_id INTEGER,
+        respondent_type TEXT, overall_score REAL DEFAULT 0,
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // جداول الترفيع
+    $db->exec("CREATE TABLE IF NOT EXISTS promotions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER, academic_year_id INTEGER, semester_id INTEGER,
+        academic_score REAL, behavior_score REAL, attendance_score REAL,
+        academic_pass INTEGER DEFAULT 1, behavior_pass INTEGER DEFAULT 1, attendance_pass INTEGER DEFAULT 1,
+        decision TEXT, status TEXT DEFAULT 'proposed',
+        approved_by INTEGER, approved_at TEXT,
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS promotion_overrides (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER, academic_year_id INTEGER, semester_id INTEGER,
+        criterion TEXT, override_reason TEXT,
+        approved_by INTEGER, approved_at TEXT,
+        is_active INTEGER DEFAULT 1
+    )");
+
+    // جداول الإقرارات
+    $db->exec("CREATE TABLE IF NOT EXISTS parent_acknowledgments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        parent_id INTEGER, student_id INTEGER,
+        ack_type TEXT, entity_id INTEGER,
+        is_acknowledged INTEGER DEFAULT 0, acknowledged_at TEXT,
+        notes TEXT, is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // جداول التقييم الأكاديمي
+    $db->exec("CREATE TABLE IF NOT EXISTS assessment_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name_ar TEXT, name_en TEXT, code TEXT,
+        weight_default REAL, sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1
+    )");
+    $db->exec("INSERT OR IGNORE INTO assessment_types (id, name_ar, name_en, code, weight_default, sort_order, is_active) VALUES
+        (1, 'شهري', 'Monthly', 'monthly', 20.00, 1, 1),
+        (2, 'واجب', 'Homework', 'homework', 10.00, 2, 1),
+        (3, 'اختبار قصير', 'Quiz', 'quiz', 10.00, 3, 1),
+        (4, 'نهائي', 'Final', 'final', 50.00, 4, 1),
+        (5, 'مشروع', 'Project', 'project', 10.00, 5, 1)
+    ");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS tests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_id INTEGER, class_id INTEGER, assessment_type_id INTEGER,
+        academic_year_id INTEGER, semester_id INTEGER,
+        title_ar TEXT, max_grade REAL, test_date TEXT,
+        status TEXT DEFAULT 'draft', created_by INTEGER,
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS subject_weight_distribution (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_grade_year_id INTEGER, assessment_type_id INTEGER,
+        weight REAL, academic_year_id INTEGER,
+        is_active INTEGER DEFAULT 1
+    )");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS subject_grade_years (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject_id INTEGER, grade_level_id INTEGER, academic_year_id INTEGER,
+        is_active INTEGER DEFAULT 1
+    )");
+
+    // جداول EQI الجديدة
+    $db->exec("CREATE TABLE IF NOT EXISTS eqi_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id INTEGER, academic_year_id INTEGER, semester_id INTEGER,
+        academic_score REAL, teaching_score REAL, climate_score REAL,
+        behavior_score REAL, skills_score REAL, attendance_score REAL,
+        overall_eqi REAL, weights_json TEXT, challenge_index REAL, adjusted_eqi REAL,
+        calculated_by INTEGER, calculated_at TEXT,
+        is_active INTEGER DEFAULT 1,
+        UNIQUE(school_id, academic_year_id, semester_id)
+    )");
+
+    // alias for backward compatibility (tests use equi_results)
+    $db->exec("CREATE TABLE IF NOT EXISTS equi_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id INTEGER, academic_year_id INTEGER, semester_id INTEGER,
+        academic_score REAL, teaching_score REAL, climate_score REAL,
+        behavior_score REAL, skills_score REAL, attendance_score REAL,
+        overall_eqi REAL, weights_json TEXT, challenge_index REAL, adjusted_eqi REAL,
+        calculated_by INTEGER, calculated_at TEXT,
+        is_active INTEGER DEFAULT 1,
+        UNIQUE(school_id, academic_year_id, semester_id)
     )");
 
     // إدراج بيانات افتراضية

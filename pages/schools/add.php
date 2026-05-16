@@ -24,30 +24,24 @@ if (!hasPermission('group_admin')) {
 $errors = [];
 $old = [];
 
-// المحافظات ة
+// المحافظات اليمنية
 $yemenGovernorates = [
     'أمانة العاصمة', 'عدن', 'لحج', 'أبين', 'شبوة', 'حضرموت', 'المهرة',
     'حجة', 'عمران', 'صعدة', 'الجوف', 'مأرب', 'البيضاء', 'إب', 'تعز',
     'الحديدة', 'ريمة', 'ذمار', 'الضالع', 'صنعاء', 'سقطرى'
 ];
 
-// جلب المديريات
-$districts = $db->query("SELECT id, governorate_id, name_ar FROM districts WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
-
-// توليد رمز المدرسة تلقائياً
+// توليد رمز المدرسة تلقائياً (reference_code = varchar(5))
 function generateSchoolCode($db) {
-    $stmt = $db->query("SELECT COUNT(*) FROM schools");
-    $count = $stmt->fetchColumn();
-    $number = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-    // التأكد من عدم تكرار الرمز
-    $code = 'SCH-' . $number;
-    $stmt = $db->prepare("SELECT id FROM schools WHERE code = ?");
+    $stmt = $db->query("SELECT MAX(CAST(reference_code AS UNSIGNED)) FROM schools");
+    $maxNum = (int)$stmt->fetchColumn();
+    $code = str_pad($maxNum + 1, 5, '0', STR_PAD_LEFT);
+    $stmt = $db->prepare("SELECT id FROM schools WHERE reference_code = ?");
     $stmt->execute([$code]);
     while ($stmt->fetch()) {
-        $count++;
-        $number = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-        $code = 'SCH-' . $number;
-        $stmt = $db->prepare("SELECT id FROM schools WHERE code = ?");
+        $maxNum++;
+        $code = str_pad($maxNum + 1, 5, '0', STR_PAD_LEFT);
+        $stmt = $db->prepare("SELECT id FROM schools WHERE reference_code = ?");
         $stmt->execute([$code]);
     }
     return $code;
@@ -65,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'name_en' => trim($_POST['name_en'] ?? ''),
         'address' => trim($_POST['address'] ?? ''),
         'governorate' => $_POST['governorate'] ?? '',
-        'district_id' => $_POST['district_id'] ?? '',
         'district' => trim($_POST['district'] ?? ''),
         'school_type' => $_POST['school_type'] ?? '',
         'principal_name' => trim($_POST['principal_name'] ?? ''),
@@ -86,14 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $code = generateSchoolCode($db);
 
-            $stmt = $db->prepare("INSERT INTO schools (name_ar, name_en, code, address, governorate, district_id, district, school_type, principal_name, phone, email, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())");
+            $stmt = $db->prepare("INSERT INTO schools (name_ar, name_en, reference_code, address, governorate, district, school_type, principal_name, phone, email, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())");
             $stmt->execute([
                 $old['name_ar'],
                 $old['name_en'] ?: null,
                 $code,
                 $old['address'] ?: null,
                 $old['governorate'] ?: null,
-                $old['district_id'] ?: null,
                 $old['district'] ?: null,
                 $old['school_type'],
                 $old['principal_name'] ?: null,
@@ -162,12 +154,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label class="form-label">المديرية</label>
-                    <select name="district_id" id="district-select" class="form-control">
-                        <option value="">اختر المديرية</option>
-                        <?php foreach ($districts as $dist): ?>
-                            <option value="<?= $dist['id'] ?>" <?= ($old['district_id'] ?? '') == $dist['id'] ? 'selected' : '' ?>><?= e($dist['name_ar']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                    <input type="text" name="district" class="form-control"
+                           value="<?= e($old['district'] ?? '') ?>" placeholder="أدخل المديرية">
                 </div>
             </div>
 

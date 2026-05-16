@@ -6,11 +6,34 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/promotion.php';
+
+// معالجة التصدير - يجب أن يكون قبل أي مخرجات
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
+    $filters = [];
+    if (!empty($_POST['school_id'])) $filters['school_id'] = $_POST['school_id'];
+    if (!empty($_POST['academic_year_id'])) $filters['academic_year_id'] = $_POST['academic_year_id'];
+    if (!empty($_POST['decision'])) $filters['decision'] = $_POST['decision'];
+    
+    $promoEngine = new PromotionEngine($db);
+    $csv = $promoEngine->exportReport($filters, 'csv');
+    if ($csv) {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="promotion_report_' . date('Y-m-d') . '.csv"');
+        echo $csv;
+        exit;
+    }
+}
+
 $pageTitle = 'تقرير الترفيع';
 $breadcrumb = ['قرارات الترفيع' => 'index.php', 'تقرير' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
-require_once __DIR__ . '/../../includes/promotion.php';
 
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية.', 'danger');
@@ -20,25 +43,6 @@ if (!hasPermission('school_admin')) {
 $promoEngine = new PromotionEngine($db);
 $userRole = $_SESSION['user']['role'] ?? '';
 $userSchoolId = $_SESSION['user']['school_id'] ?? null;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
-    if (!verifyCsrf()) { setFlash('خطأ أمني.', 'danger'); }
-    else {
-        $filters = [];
-        if (!empty($_POST['school_id'])) $filters['school_id'] = $_POST['school_id'];
-        if (!empty($_POST['academic_year_id'])) $filters['academic_year_id'] = $_POST['academic_year_id'];
-        if (!empty($_POST['decision'])) $filters['decision'] = $_POST['decision'];
-        
-        $csv = $promoEngine->exportReport($filters, 'csv');
-        if ($csv) {
-            header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename="promotion_report_' . date('Y-m-d') . '.csv"');
-            echo $csv;
-            exit;
-        }
-        setFlash('لا توجد بيانات.', 'warning');
-    }
-}
 
 $schools = [];
 try {

@@ -28,11 +28,11 @@ $survey = null;
 try {
     $stmt = $db->prepare("
         SELECT cs.*, s.name_ar as school_name, sem.name_ar as semester_name, ay.name as year_name
-        FROM climate_surveys cs
+        FROM surveys cs
         JOIN schools s ON cs.school_id = s.id
         JOIN semesters sem ON cs.semester_id = sem.id
         JOIN academic_years ay ON cs.academic_year_id = ay.id
-        WHERE cs.id = ? AND cs.is_active = 1
+        WHERE cs.survey_type = 'climate' AND cs.id = ? AND cs.is_active = 1
     ");
     $stmt->execute([$surveyId]);
     $survey = $stmt->fetch();
@@ -48,10 +48,12 @@ $categoryScores = [];
 try {
     $stmt = $db->prepare("
         SELECT ci.id, ci.survey_id, ci.item_id, ci.numeric_value, ci.normalized_value AS score, ci.is_active,
-               ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM climate_items ci JOIN assessment_items ai ON ci.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
-        WHERE ci.survey_id = ? AND ci.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
+               ast.text_ar, ast.tool_type, ast.weight, ast.is_inverse, ast.max_value, parent.name_ar as category_name
+        FROM climate_items ci 
+        JOIN assessment_structure ast ON ci.item_id = ast.id
+        JOIN assessment_structure parent ON ast.parent_id = parent.id
+        WHERE ci.survey_id = ? AND ci.is_active = 1 
+        ORDER BY parent.sort_order, ast.sort_order
     ");
     $stmt->execute([$surveyId]);
     $items = $stmt->fetchAll();
@@ -75,9 +77,9 @@ $trendSurveys = [];
 try {
     $stmt = $db->prepare("
         SELECT cs.id, cs.overall_score, cs.survey_date, cs.respondent_type, sem.name_ar as semester_name
-        FROM climate_surveys cs
+        FROM surveys cs
         JOIN semesters sem ON cs.semester_id = sem.id
-        WHERE cs.school_id = ? AND cs.is_active = 1
+        WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.is_active = 1
         ORDER BY cs.survey_date ASC
     ");
     $stmt->execute([$survey['school_id']]);
@@ -89,8 +91,8 @@ $periodComparisons = [];
 try {
     $stmt = $db->prepare("
         SELECT cs.respondent_type, AVG(cs.overall_score) as avg_score, COUNT(*) as count
-        FROM climate_surveys cs
-        WHERE cs.school_id = ? AND cs.semester_id = ? AND cs.is_active = 1
+        FROM surveys cs
+        WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.semester_id = ? AND cs.is_active = 1
         GROUP BY cs.respondent_type
     ");
     $stmt->execute([$survey['school_id'], $survey['semester_id']]);

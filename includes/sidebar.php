@@ -126,8 +126,24 @@ $menuPermissions = [
      'alerts'              => ['group_admin', 'school_admin', 'teacher'],
      'eqi'                 => ['group_admin', 'school_admin', 'teacher'],
      'eqi_settings'        => ['group_admin'],
-     'alerts_settings'     => ['group_admin'],
      'permissions_matrix'  => ['group_admin'],
+
+     // التحليلات
+     'analytics'           => ['group_admin'],
+
+     // الترفيع
+     'promotion'           => ['group_admin', 'school_admin'],
+     'promotion_approve'   => ['group_admin', 'school_admin'],
+
+     // المخرجات
+     'grade_sheets'        => ['group_admin', 'school_admin', 'teacher', 'parent'],
+     'export'              => ['group_admin', 'school_admin'],
+     'backup'              => ['group_admin'],
+
+     // التواصل
+     'notifications'       => ['group_admin', 'school_admin', 'teacher', 'parent'],
+     'notes'               => ['group_admin', 'school_admin', 'teacher'],
+     'parent_ack'          => ['group_admin', 'school_admin', 'parent'],
 
      // النظام
      'settings'            => ['group_admin', 'school_admin'],
@@ -286,16 +302,20 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
 
 <!-- ⭐ الجودة والإشراف -->
 <div class="sidebar-section-title">الجودة والإشراف</div>
+<?php if ($isGroupAdmin): ?>
 <a href="<?php echo baseUrl('pages/climate/dashboard.php'); ?>"
    class="sidebar-menu-link <?php echo menuActiveClass(['climate'], $currentSection, $currentScript); ?>">
     <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
     <span class="menu-text">لوحة المناخ الاستراتيجية</span>
 </a>
+<?php endif; ?>
+<?php if ($isSchoolAdmin): ?>
 <a href="<?php echo baseUrl('pages/climate/school.php'); ?>"
    class="sidebar-menu-link <?php echo ($currentSection === 'climate' && strpos($currentScript, 'school.php') !== false) ? 'active' : ''; ?>">
     <span class="menu-icon"><i class="fas fa-school"></i></span>
     <span class="menu-text">تحليل مناخ المدرسة</span>
 </a>
+<?php endif; ?>
 <a href="<?php echo baseUrl('pages/supervision/teaching_dashboard.php'); ?>"
    class="sidebar-menu-link <?php echo ($currentSection === 'supervision' && strpos($currentScript, 'teaching_dashboard') !== false) ? 'active' : ''; ?>">
     <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>

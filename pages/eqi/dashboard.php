@@ -74,7 +74,7 @@ $allSchoolResults = [];
 try {
     if ($selectedSemester > 0) {
         $sql = "SELECT eq.*, s.name_ar AS school_name, s.reference_code AS school_code
-                FROM equi_results eq
+                FROM eqi_results eq
                 JOIN schools s ON s.id = eq.school_id
                 WHERE eq.academic_year_id = ? AND eq.semester_id = ? AND eq.is_active = 1
                 ORDER BY eq.overall_eqi DESC";
@@ -82,7 +82,7 @@ try {
         $stmt->execute([$selectedYear, $selectedSemester]);
     } elseif (!$allYearsMode) {
         $sql = "SELECT AVG(eq.overall_eqi) AS avg_eqi, s.id, s.name_ar, s.reference_code
-                FROM equi_results eq
+                FROM eqi_results eq
                 JOIN schools s ON s.id = eq.school_id
                 WHERE eq.academic_year_id = ? AND eq.is_active = 1
                 GROUP BY s.id, s.name_ar, s.reference_code
@@ -91,7 +91,7 @@ try {
         $stmt->execute([$selectedYear]);
     } else {
         $sql = "SELECT AVG(eq.overall_eqi) AS avg_eqi, s.id, s.name_ar, s.reference_code
-                FROM equi_results eq
+                FROM eqi_results eq
                 JOIN schools s ON s.id = eq.school_id
                 WHERE eq.is_active = 1
                 GROUP BY s.id, s.name_ar, s.reference_code
@@ -130,7 +130,7 @@ try {
 
         if ($semInfo) {
             $stmt = $db->prepare("SELECT AVG(eq.overall_eqi)
-                FROM equi_results eq
+                FROM eqi_results eq
                 JOIN semesters s ON eq.semester_id = s.id
                 WHERE s.name_ar = ? AND s.start_date < ? AND s.is_active = 1 AND eq.is_active = 1");
             $stmt->execute([$semInfo['name_ar'], $semInfo['start_date']]);
@@ -142,7 +142,7 @@ try {
         $prevYearId = $stmt->fetchColumn();
 
         if ($prevYearId) {
-            $stmt = $db->prepare("SELECT AVG(overall_eqi) FROM equi_results WHERE academic_year_id = ? AND is_active = 1");
+            $stmt = $db->prepare("SELECT AVG(overall_eqi) FROM eqi_results WHERE academic_year_id = ? AND is_active = 1");
             $stmt->execute([$prevYearId]);
             $prevAvgEqi = (float)($stmt->fetchColumn() ?: 0);
         }
@@ -183,7 +183,7 @@ try {
 
     foreach ($histSems as $hs) {
         $chartLabels[] = $hs['name_ar'];
-        $sqi = $db->prepare("SELECT AVG(overall_eqi) FROM equi_results WHERE semester_id = ? AND is_active = 1");
+        $sqi = $db->prepare("SELECT AVG(overall_eqi) FROM eqi_results WHERE semester_id = ? AND is_active = 1");
         $sqi->execute([(int)$hs['id']]);
         $chartEqiAvg[] = round((float)($sqi->fetchColumn() ?: 0), 1);
     }
@@ -204,7 +204,7 @@ try {
                        eq.academic_score, eq.teaching_score, eq.climate_score,
                        eq.behavior_score, eq.skills_score, eq.attendance_score
                 FROM schools s
-                LEFT JOIN equi_results eq ON s.id = eq.school_id AND eq.semester_id = ? AND eq.academic_year_id = ?
+                LEFT JOIN eqi_results eq ON s.id = eq.school_id AND eq.semester_id = ? AND eq.academic_year_id = ?
                 WHERE s.is_active = 1
                 ORDER BY eq.overall_eqi DESC";
         $stmt = $db->prepare($sql);
@@ -219,7 +219,7 @@ try {
                        AVG(eq.skills_score) AS skills_score,
                        AVG(eq.attendance_score) AS attendance_score
                 FROM schools s
-                LEFT JOIN equi_results eq ON s.id = eq.school_id AND eq.academic_year_id = ?
+                LEFT JOIN eqi_results eq ON s.id = eq.school_id AND eq.academic_year_id = ?
                 WHERE s.is_active = 1
                 GROUP BY s.id, s.name_ar, s.reference_code
                 ORDER BY raw_eqi DESC";
@@ -235,7 +235,7 @@ try {
                        AVG(eq.skills_score) AS skills_score,
                        AVG(eq.attendance_score) AS attendance_score
                 FROM schools s
-                LEFT JOIN equi_results eq ON s.id = eq.school_id
+                LEFT JOIN eqi_results eq ON s.id = eq.school_id
                 WHERE s.is_active = 1
                 GROUP BY s.id, s.name_ar, s.reference_code
                 ORDER BY raw_eqi DESC";
@@ -256,14 +256,14 @@ try {
                 $prevSemId = $stmt->fetchColumn();
 
                 if ($prevSemId) {
-                    $stmt = $db->prepare("SELECT school_id, overall_eqi FROM equi_results WHERE semester_id = ? AND academic_year_id = ? AND is_active = 1");
+                    $stmt = $db->prepare("SELECT school_id, overall_eqi FROM eqi_results WHERE semester_id = ? AND academic_year_id = ? AND is_active = 1");
                     $stmt->execute([$prevSemId, $prevYearId]);
                     while ($row = $stmt->fetch()) {
                         $yearlyTrends[(int)$row['school_id']] = (float)$row['overall_eqi'];
                     }
                 }
             } else {
-                $stmt = $db->prepare("SELECT school_id, AVG(overall_eqi) AS avg_eqi FROM equi_results WHERE academic_year_id = ? AND is_active = 1 GROUP BY school_id");
+                $stmt = $db->prepare("SELECT school_id, AVG(overall_eqi) AS avg_eqi FROM eqi_results WHERE academic_year_id = ? AND is_active = 1 GROUP BY school_id");
                 $stmt->execute([$prevYearId]);
                 while ($row = $stmt->fetch()) {
                     $yearlyTrends[(int)$row['school_id']] = (float)$row['avg_eqi'];

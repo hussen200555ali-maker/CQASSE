@@ -228,8 +228,8 @@ if ($filterClass && $academicYearId && $semesterId) {
     try {
         $stmt = $db->prepare("
             SELECT AVG(attendance_rate) as avg_rate
-            FROM attendance_summaries
-            WHERE class_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1
+            FROM v_attendance_summary
+            WHERE class_id = ? AND academic_year_id = ? AND semester_id = ?
         ");
         $stmt->execute([$filterClass, $academicYearId, $semesterId]);
         $avgRate = $stmt->fetchColumn();
@@ -297,38 +297,8 @@ function updateAttendanceSummary($db, $studentId, $classId, $academicYearId, $se
 
         $isBelowThreshold = $attendanceRate < $minRate ? 1 : 0;
 
-        // إدراج أو تحديث ملخص الحضور
-        $stmt = $db->prepare("
-            INSERT INTO attendance_summaries 
-                (student_id, class_id, academic_year_id, semester_id, total_days, 
-                 present_days, absent_days, late_days, excused_days, 
-                 attendance_rate, is_below_threshold, is_active)
-            VALUES 
-                (:student_id, :class_id, :year_id, :semester_id, :total_days,
-                 :present_days, :absent_days, :late_days, :excused_days,
-                 :rate, :below_threshold, 1)
-            ON DUPLICATE KEY UPDATE
-                total_days = VALUES(total_days),
-                present_days = VALUES(present_days),
-                absent_days = VALUES(absent_days),
-                late_days = VALUES(late_days),
-                excused_days = VALUES(excused_days),
-                attendance_rate = VALUES(attendance_rate),
-                is_below_threshold = VALUES(is_below_threshold)
-        ");
-        $stmt->execute([
-            ':student_id'      => $studentId,
-            ':class_id'        => $classId,
-            ':year_id'         => $academicYearId,
-            ':semester_id'     => $semesterId,
-            ':total_days'      => $totalDays,
-            ':present_days'    => $presentDays,
-            ':absent_days'     => $absentDays,
-            ':late_days'       => $lateDays,
-            ':excused_days'    => $excusedDays,
-            ':rate'            => $attendanceRate,
-            ':below_threshold' => $isBelowThreshold
-        ]);
+        // ملاحظة: v_attendance_summary هو VIEW يقرأ من attendance_daily
+        // لا حاجة لإدخال بيانات ملخص - العرض يتم عبر الـ View تلقائياً
     } catch (Exception $e) {
         error_log('EQAS updateAttendanceSummary Error: ' . $e->getMessage());
     }

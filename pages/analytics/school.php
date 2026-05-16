@@ -281,19 +281,19 @@ $eqiSchoolFilter = buildSchoolFilter($schoolId, 'eqi');
 if ($selectedSemesterId > 0) {
     $eqiSemFilter = buildSemesterSubquery($selectedSemesterId, 'eqi');
     $avgEQIStmt = $db->prepare("
-        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM equi_results eqi
+        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM eqi_results eqi
         WHERE eqi.is_active = 1{$eqiSchoolFilter['sql']}{$eqiYearFilter['sql']}{$eqiSemFilter['sql']}
     ");
     $avgEQIStmt->execute(array_merge($eqiSchoolFilter['params'], $eqiYearFilter['params'], $eqiSemFilter['params']));
 } elseif ($selectedAcademicYearId > 0) {
     $avgEQIStmt = $db->prepare("
-        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM equi_results eqi
+        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM eqi_results eqi
         WHERE eqi.is_active = 1{$eqiSchoolFilter['sql']}{$eqiYearFilter['sql']}
     ");
     $avgEQIStmt->execute(array_merge($eqiSchoolFilter['params'], $eqiYearFilter['params']));
 } else {
     $avgEQIStmt = $db->prepare("
-        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM equi_results eqi
+        SELECT AVG(eqi.overall_eqi) AS overall_eqi FROM eqi_results eqi
         WHERE eqi.is_active = 1{$eqiSchoolFilter['sql']}
     ");
     $avgEQIStmt->execute($eqiSchoolFilter['params']);
@@ -325,7 +325,7 @@ if ($selectedSemesterId > 0 && $selectedAcademicYearId > 0) {
         $prevSemesterId = $prevSemStmt->fetchColumn();
         
         if ($prevSemesterId) {
-            $prevEQIStmt = $db->prepare("SELECT overall_eqi FROM equi_results WHERE school_id = ? AND semester_id = ? AND is_active = 1");
+            $prevEQIStmt = $db->prepare("SELECT overall_eqi FROM eqi_results WHERE school_id = ? AND semester_id = ? AND is_active = 1");
             $prevEQIStmt->execute([$schoolId, $prevSemesterId]);
             $prevEQI = $prevEQIStmt->fetchColumn();
             
@@ -356,7 +356,7 @@ if ($selectedSemesterId > 0) {
 }
 $eqiTrendStmt = $db->prepare("
     SELECT s.name_ar AS semester_name, eqi.overall_eqi, s.start_date
-    FROM equi_results eqi
+    FROM eqi_results eqi
     JOIN semesters s ON eqi.semester_id = s.id
     WHERE eqi.school_id = ? AND eqi.is_active = 1 AND eqi.overall_eqi IS NOT NULL{$trendExtraSql}
     ORDER BY s.start_date DESC

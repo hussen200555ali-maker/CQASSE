@@ -30,7 +30,8 @@ $filterSemester = $_GET['semester_id'] ?? '';
 $filterAy = (int)($_GET['academic_year_id'] ?? 0);
 
 $sql = "SELECT cs.*, s.name_ar as school_name, sem.name_ar as semester_name, ay.name as year_name
-        FROM climate_surveys cs
+        FROM surveys cs
+        WHERE cs.survey_type = 'climate'
         JOIN schools s ON cs.school_id = s.id
         JOIN semesters sem ON cs.semester_id = sem.id
         JOIN academic_years ay ON cs.academic_year_id = ay.id

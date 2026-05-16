@@ -16,6 +16,9 @@
  * ============================================================
  */
 
+// استخدام output buffering للسماح بالتصدير بعد تحميل القالب
+ob_start();
+
 $pageTitle = 'ملخص الدرجات';
 $breadcrumb = [
     'التقييم الأكاديمي' => 'index.php',
@@ -242,6 +245,7 @@ if ($selectedClassId > 0 && $selectedSubjectId > 0 && $selectedSemesterId > 0) {
 // معالجة التصدير
 // ============================================================
 if (isset($_GET['export']) && $_GET['export'] === 'excel' && !empty($studentsData)) {
+    ob_end_clean(); // مسح المخرجات المخزنة
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=grades_summary_' . date('Ymd') . '.csv');
     echo "\xEF\xBB\xBF"; // BOM for UTF-8

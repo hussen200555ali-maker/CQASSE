@@ -15,7 +15,7 @@ $selectedAcademicYearId = isset($_GET['academic_year_id']) ? (int)$_GET['academi
 $selectedSemesterId = isset($_GET['semester_id']) ? (int)$_GET['semester_id'] : 0;
 
 // تحديد المدرسة
-$isGroupAdmin = ($_SESSION['user']['role_name'] === 'group_admin');
+$isGroupAdmin = ($_SESSION['user']['role'] === 'group_admin');
 if ($isGroupAdmin) {
     $selectedSchoolId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 } else {
@@ -65,9 +65,9 @@ $schoolStats = getSchoolQuickStats($db, $selectedSchoolId, $selectedAcademicYear
 // متوسط التقييم العام للمدرسة
 $schoolAvgScore = null;
 try {
-    $sql = "SELECT AVG(tes.combined_score) FROM teaching_evaluation_summary tes
-            JOIN users u ON tes.teacher_id = u.id AND u.school_id = ?
-            WHERE tes.academic_year_id = ? AND tes.semester_id = ? AND tes.is_active = 1";
+    $sql = "SELECT AVG(e.combined_score) FROM evaluations e
+            JOIN users u ON e.teacher_id = u.id AND u.school_id = ?
+            WHERE e.eval_type = 'teaching_summary' AND e.academic_year_id = ? AND e.semester_id = ? AND e.is_active = 1";
     $stmt = $db->prepare($sql);
     $stmt->execute([$selectedSchoolId, $selectedAcademicYearId, $selectedSemesterId]);
     $schoolAvgScore = $stmt->fetchColumn();
@@ -87,11 +87,11 @@ if ($schoolAvgScore !== null && $schoolAvgScore > 0) {
 $groupSelfAvg = $groupPeerAvg = $groupAdminAvg = $groupCombinedAvg = 0;
 try {
     $stmt = $db->prepare("
-        SELECT AVG(tes.self_score) AS s_self, AVG(tes.peer_score) AS s_peer,
-               AVG(tes.admin_score) AS s_admin, AVG(tes.combined_score) AS s_combined
-        FROM teaching_evaluation_summary tes
-        JOIN users u ON tes.teacher_id = u.id
-        WHERE tes.academic_year_id = ? AND tes.semester_id = ? AND tes.is_active = 1
+        SELECT AVG(e.self_score) AS s_self, AVG(e.peer_score) AS s_peer,
+               AVG(e.admin_score) AS s_admin, AVG(e.combined_score) AS s_combined
+        FROM evaluations e
+        JOIN users u ON e.teacher_id = u.id
+        WHERE e.eval_type = 'teaching_summary' AND e.academic_year_id = ? AND e.semester_id = ? AND e.is_active = 1
     ");
     $stmt->execute([$selectedAcademicYearId, $selectedSemesterId]);
     $g = $stmt->fetch();
@@ -105,10 +105,10 @@ try {
 $schoolSelfAvg = $schoolPeerAvg = $schoolAdminAvg = 0;
 try {
     $stmt = $db->prepare("
-        SELECT AVG(tes.self_score) AS s_self, AVG(tes.peer_score) AS s_peer, AVG(tes.admin_score) AS s_admin
-        FROM teaching_evaluation_summary tes
-        JOIN users u ON tes.teacher_id = u.id AND u.school_id = ?
-        WHERE tes.academic_year_id = ? AND tes.semester_id = ? AND tes.is_active = 1
+        SELECT AVG(e.self_score) AS s_self, AVG(e.peer_score) AS s_peer, AVG(e.admin_score) AS s_admin
+        FROM evaluations e
+        JOIN users u ON e.teacher_id = u.id AND u.school_id = ?
+        WHERE e.eval_type = 'teaching_summary' AND e.academic_year_id = ? AND e.semester_id = ? AND e.is_active = 1
     ");
     $stmt->execute([$selectedSchoolId, $selectedAcademicYearId, $selectedSemesterId]);
     $r = $stmt->fetch();
@@ -182,12 +182,12 @@ try {
 
         if ($semInfo) {
             $stmt = $db->prepare("
-                SELECT tes.teacher_id, AVG(tes.combined_score) AS prev_avg
-                FROM teaching_evaluation_summary tes
-                JOIN users u ON tes.teacher_id = u.id AND u.school_id = ?
-                JOIN semesters s ON tes.semester_id = s.id
-                WHERE s.name_ar = ? AND s.start_date < ? AND s.is_active = 1 AND tes.is_active = 1
-                GROUP BY tes.teacher_id
+                SELECT e.teacher_id, AVG(e.combined_score) AS prev_avg
+                FROM evaluations e
+                JOIN users u ON e.teacher_id = u.id AND u.school_id = ?
+                JOIN semesters s ON e.semester_id = s.id
+                WHERE e.eval_type = 'teaching_summary' AND s.name_ar = ? AND s.start_date < ? AND s.is_active = 1 AND e.is_active = 1
+                GROUP BY e.teacher_id
             ");
             $stmt->execute([$selectedSchoolId, $semInfo['name_ar'], $semInfo['start_date']]);
             while ($row = $stmt->fetch()) {
@@ -200,7 +200,7 @@ try {
 // التحقق من وجود خطة تطوير نشطة لكل معلم
 $activePlans = [];
 try {
-    $stmt = $db->prepare("SELECT teacher_id FROM teacher_development_plans WHERE school_id = ? AND status = 'active' AND is_active = 1");
+    $stmt = $db->prepare("SELECT teacher_id FROM improvement_plans WHERE plan_type = 'teacher' AND school_id = ? AND status = 'active' AND is_active = 1");
     $stmt->execute([$selectedSchoolId]);
     while ($row = $stmt->fetch()) {
         $activePlans[] = (int)$row['teacher_id'];
@@ -212,11 +212,11 @@ $subjectLabels = [];
 $subjectScores = [];
 try {
     $stmt = $db->prepare("
-        SELECT sub.name_ar, AVG(tes.combined_score) AS avg_score
+        SELECT sub.name_ar, AVG(e.combined_score) AS avg_score
         FROM subject_teachers st
         JOIN subjects sub ON st.subject_id = sub.id
-        JOIN teaching_evaluation_summary tes ON tes.teacher_id = st.teacher_id AND tes.is_active = 1
-        WHERE st.school_id = ? AND tes.academic_year_id = ? AND tes.semester_id = ?
+        JOIN evaluations e ON e.teacher_id = st.teacher_id AND e.is_active = 1
+        WHERE st.school_id = ? AND e.eval_type = 'teaching_summary' AND e.academic_year_id = ? AND e.semester_id = ?
         GROUP BY sub.id, sub.name_ar
         ORDER BY avg_score DESC
     ");

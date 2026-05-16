@@ -15,6 +15,8 @@
  * ============================================================
  */
 
+ob_start();
+
 $pageTitle = 'حساب نتائج الفصل';
 $breadcrumb = [
     'التقييم الأكاديمي' => 'index.php',
@@ -255,6 +257,7 @@ if ($selectedClassId > 0 && $selectedSemesterId > 0) {
 // معالجة التصدير
 // ============================================================
 if (isset($_GET['export']) && $_GET['export'] === 'excel' && !empty($semesterResults)) {
+    ob_end_clean(); // مسح المخرجات المخزنة
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename=semester_results_' . date('Ymd') . '.csv');
     echo "\xEF\xBB\xBF";

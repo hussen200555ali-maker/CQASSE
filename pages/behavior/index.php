@@ -31,44 +31,44 @@ $filterStudent = $_GET['student_id'] ?? '';
 $filterSemester = $_GET['semester_id'] ?? '0';
 
 // بناء الاستعلام
-$sql = "SELECT be.*, s.full_name_ar as student_name, s.student_number,
+$sql = "SELECT e.*, s.full_name_ar as student_name, s.student_number,
         c.name_ar as class_name, u.full_name_ar as evaluator_name,
         sem.name_ar as semester_name
-        FROM behavior_scores be
-        JOIN students s ON be.student_id = s.id
-        JOIN classes c ON be.class_id = c.id
-        JOIN users u ON be.evaluator_id = u.id
-        JOIN semesters sem ON be.semester_id = sem.id
-        WHERE be.is_active = 1";
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        JOIN classes c ON e.class_id = c.id
+        JOIN users u ON e.student_id = u.id
+        JOIN semesters sem ON e.semester_id = sem.id
+        WHERE e.eval_type = 'behavior_score' AND e.is_active = 1";
 $params = [];
 
 // فلتر حسب المدرسة
 if ($schoolId && $userRole !== 'group_admin') {
-    $sql .= " AND be.class_id IN (SELECT id FROM classes WHERE school_id = ?)";
+    $sql .= " AND e.class_id IN (SELECT id FROM classes WHERE school_id = ?)";
     $params[] = $schoolId;
 }
 
 // فلتر حسب المعلم (يرى فقط تقييماته)
 if ($userRole === 'teacher') {
-    $sql .= " AND be.evaluator_id = ?";
+    $sql .= " AND e.student_id = ?";
     $params[] = $userId;
 }
 
 if ($filterClass) {
-    $sql .= " AND be.class_id = ?";
+    $sql .= " AND e.class_id = ?";
     $params[] = $filterClass;
 }
 if ($filterStudent) {
-    $sql .= " AND be.student_id = ?";
+    $sql .= " AND e.student_id = ?";
     $params[] = $filterStudent;
 }
 if ($filterSemester && $filterSemester !== '0') {
-    $sq = buildSemesterSubquery($filterSemester, 'be');
+    $sq = buildSemesterSubquery($filterSemester, 'e');
     $sql .= $sq['sql'];
     $params = array_merge($params, $sq['params']);
 }
 
-$sql .= " ORDER BY be.evaluation_date DESC, be.created_at DESC";
+$sql .= " ORDER BY e.created_at DESC";
 
 try {
     $stmt = $db->prepare($sql);

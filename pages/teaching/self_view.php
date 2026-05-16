@@ -52,8 +52,8 @@ try {
         SELECT ar.numeric_value AS score, ai.text_ar, ai.tool_type, ai.weight,
                ai.is_inverse, ai.max_value, ac.name_ar AS category_name
         FROM assessment_responses ar
-        JOIN assessment_items ai ON ar.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        JOIN assessment_structure ai ON ar.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id
         WHERE ar.form_id = ? AND ar.teacher_id = ? AND ar.responded_by = ?
           AND ar.response_date = ? AND ar.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order

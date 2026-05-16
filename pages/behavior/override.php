@@ -85,21 +85,21 @@ $failingStudents = [];
 if ($academicYearId && $semesterId) {
     try {
         $sql = "SELECT bs.student_id, bs.current_percentage, bs.is_passing,
-                       bs.starting_points, bs.earned_points, bs.deducted_points,
+                       e.starting_points, e.earned_points, e.deducted_points,
                        s.full_name_ar AS student_name, s.student_number,
                        c.name_ar AS class_name, c.id AS class_id,
                        po.id AS override_id, po.override_reason, po.approved_at,
                        u.full_name_ar AS approver_name
-                FROM behavior_scores bs
-                INNER JOIN students s ON s.id = bs.student_id
-                INNER JOIN classes c ON c.id = bs.class_id
-                LEFT JOIN promotion_overrides po ON po.student_id = bs.student_id 
-                    AND po.academic_year_id = bs.academic_year_id 
-                    AND po.semester_id = bs.semester_id 
+                FROM evaluations e
+                INNER JOIN students s ON s.id = e.student_id
+                INNER JOIN classes c ON c.id = e.class_id
+                LEFT JOIN promotion_overrides po ON po.student_id = e.student_id 
+                    AND po.academic_year_id = e.academic_year_id 
+                    AND po.semester_id = e.semester_id 
                     AND po.criterion = 'behavior' AND po.is_active = 1
                 LEFT JOIN users u ON u.id = po.approved_by
-                WHERE bs.is_passing = 0 AND bs.is_active = 1 AND s.is_active = 1
-                    AND bs.academic_year_id = ? AND bs.semester_id = ?";
+                WHERE e.eval_type = 'behavior_score' AND e.is_passing = 0 AND e.is_active = 1 AND s.is_active = 1
+                    AND e.academic_year_id = ? AND e.semester_id = ?";
         $params = [$academicYearId, $semesterId];
 
         if ($schoolId && $userRole !== 'group_admin') {
@@ -107,7 +107,7 @@ if ($academicYearId && $semesterId) {
             $params[] = $schoolId;
         }
 
-        $sql .= " ORDER BY bs.current_percentage ASC";
+        $sql .= " ORDER BY e.current_percentage ASC";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $failingStudents = $stmt->fetchAll();

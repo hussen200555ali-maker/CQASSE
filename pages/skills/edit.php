@@ -1,10 +1,11 @@
 <?php
 /**
- * ============================================================
- * تعديل تقييم المهارات - Edit Skills Evaluation
- * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
- * ============================================================
+ * تعديل تقييم المهارات
+ * ملاحظة: جدول skills_evaluations تم أرشفته في الترحيل v3.3.0
  */
+require_once __DIR__ . '/../../includes/header.php';
+setFlash('وحدة تعديل المهارات قيد التحديث.', 'warning');
+redirect(baseUrl('pages/assessment/index.php'));
 
 $pageTitle = 'تعديل تقييم المهارات';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة المهارات' => 'index.php', 'تعديل التقييم' => null];
@@ -85,8 +86,8 @@ try {
         SELECT si.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
         FROM skills_items si
-        JOIN assessment_items ai ON si.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        JOIN assessment_structure ai ON si.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id
         WHERE si.evaluation_id = ? AND si.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order
     ");

@@ -25,71 +25,26 @@ if (!hasPermission('school_admin')) {
 $schoolId = currentSchoolId();
 $academicYearId = currentAcademicYearId();
 
-// إنشاء جدول الاستبيانات إذا لم يكن موجوداً
-$db->exec("CREATE TABLE IF NOT EXISTS climate_surveys (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    school_id INT UNSIGNED NOT NULL,
-    academic_year_id INT UNSIGNED NOT NULL,
-    title VARCHAR(200) NOT NULL,
-    respondent_type ENUM('student','teacher','parent','staff') NOT NULL DEFAULT 'teacher',
-    status ENUM('draft','active','closed') DEFAULT 'draft',
-    total_respondents INT DEFAULT 0,
-    avg_score DECIMAL(5,2) DEFAULT NULL,
-    scheduled_date DATE DEFAULT NULL,
-    created_by INT UNSIGNED,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_active TINYINT(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+// ملاحظة: جدول climate_surveys تم دمجه في surveys عبر الترحيل v3.3.0
+// هذه الصفحة للعرض فقط - استخدم pages/climate/survey.php لإنشاء استبيانات جديدة
 
-// معالجة الحفظ
+// معالجة الحفظ - تحويل إلى صفحة الاستبيان الجديدة
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verifyCsrf()) {
-        setFlash('خطأ في التحقق.', 'danger');
-    } else {
-        $action = $_POST['action'] ?? '';
-
-        if ($action === 'create_survey') {
-            $title = trim($_POST['title'] ?? '');
-            $respondentType = $_POST['respondent_type'] ?? 'teacher';
-            $scheduledDate = $_POST['scheduled_date'] ?? null;
-
-            if (empty($title)) {
-                setFlash('يرجى إدخال عنوان الاستبيان.', 'warning');
-            } else {
-                $stmt = $db->prepare("INSERT INTO climate_surveys (school_id, academic_year_id, title, respondent_type, scheduled_date, created_by) VALUES (?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$schoolId, $academicYearId, $title, $respondentType, $scheduledDate ?: null, $_SESSION['user']['id']]);
-                logActivity($db, $_SESSION['user']['id'], 'climate_survey_create', "إنشاء استبيان مناخ: {$title}", 'climate_surveys', $db->lastInsertId());
-                setFlash('تم إنشاء الاستبيان بنجاح.', 'success');
-            }
-
-        } elseif ($action === 'activate_survey') {
-            $id = (int)$_POST['survey_id'];
-            $stmt = $db->prepare("UPDATE climate_surveys SET status = 'active' WHERE id = ? AND school_id = ?");
-            $stmt->execute([$id, $schoolId]);
-            setFlash('تم تفعيل الاستبيان.', 'success');
-
-        } elseif ($action === 'close_survey') {
-            $id = (int)$_POST['survey_id'];
-            $stmt = $db->prepare("UPDATE climate_surveys SET status = 'closed' WHERE id = ? AND school_id = ?");
-            $stmt->execute([$id, $schoolId]);
-            setFlash('تم إغلاق الاستبيان.', 'success');
-        }
-
-        redirect('climate_survey.php');
-    }
+    setFlash('يرجى استخدام صفحة استبيان المناخ الجديدة: pages/climate/survey.php', 'info');
+    redirect(baseUrl('pages/climate/survey.php'));
 }
 
 // جلب الاستبيانات
-$stmt = $db->prepare("SELECT * FROM climate_surveys WHERE school_id = ? AND is_active = 1 ORDER BY created_at DESC");
+$stmt = $db->prepare("SELECT * FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND is_active = 1 ORDER BY created_at DESC");
 $stmt->execute([$schoolId]);
 $surveys = $stmt->fetchAll();
 
 // النتائج حسب نوع المستجيب
 $resultsByType = ['student' => null, 'teacher' => null, 'parent' => null, 'staff' => null];
 $stmt = $db->prepare("
-    SELECT cs.respondent_type, AVG(cs.avg_score) as type_avg, SUM(cs.total_respondents) as total
-    FROM climate_surveys cs
-    WHERE cs.school_id = ? AND cs.is_active = 1 AND cs.status = 'closed' AND cs.avg_score IS NOT NULL
+    SELECT cs.respondent_type, AVG(cs.overall_score) as type_avg, COUNT(cs.id) as total
+    FROM surveys cs
+    WHERE cs.survey_type = 'climate' AND cs.school_id = ? AND cs.is_active = 1 AND cs.status = 'closed' AND cs.overall_score IS NOT NULL
     GROUP BY cs.respondent_type
 ");
 $stmt->execute([$schoolId]);
