@@ -7,10 +7,22 @@
 
 SET @dbname = DATABASE();
 
--- 1. إزالة UNIQUE constraint وإضافة INDEX عادي
-ALTER TABLE `assessment_forms`
-  DROP INDEX `uk_assessment_forms_key`,
-  ADD INDEX `idx_assessment_forms_key` (`form_key`);
+-- 1. إزالة UNIQUE constraint وإضافة INDEX عادي (قابل للتشغيل المتكرر)
+SET @has_unique = (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'assessment_forms' AND INDEX_NAME = 'uk_assessment_forms_key');
+SET @sql_unique = IF(@has_unique > 0,
+    'ALTER TABLE `assessment_forms` DROP INDEX `uk_assessment_forms_key`',
+    'SELECT ''UNIQUE uk_assessment_forms_key already removed'' AS status');
+PREPARE stmt_unique FROM @sql_unique;
+EXECUTE stmt_unique;
+DROP PREPARE stmt_unique;
+
+SET @has_index = (SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'assessment_forms' AND INDEX_NAME = 'idx_assessment_forms_key');
+SET @sql_index = IF(@has_index = 0,
+    'ALTER TABLE `assessment_forms` ADD INDEX `idx_assessment_forms_key` (`form_key`)',
+    'SELECT ''INDEX idx_assessment_forms_key already exists'' AS status');
+PREPARE stmt_index FROM @sql_index;
+EXECUTE stmt_index;
+DROP PREPARE stmt_index;
 
 -- 2. إضافة أعمدة is_default و version
 SET @exists_default = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'assessment_forms' AND COLUMN_NAME = 'is_default');
@@ -29,12 +41,11 @@ PREPARE stmt2 FROM @sql_version;
 EXECUTE stmt2;
 DROP PREPARE stmt2;
 
--- 3. تعيين أول استمارة من كل نوع كافتراضية
+-- 3. تعيين أول استمارة من كل نوع كافتراضية (وتصفير البقية)
 UPDATE `assessment_forms` af
-SET `is_default` = 1
-WHERE `id` = (
-    SELECT `id` FROM (
-        SELECT MIN(`id`) as `id` FROM `assessment_forms` af2
-        WHERE af2.`form_key` = af.`form_key`
-    ) AS `tmp`
-);
+JOIN (
+    SELECT `form_key`, MIN(`id`) AS `mid`
+    FROM `assessment_forms`
+    GROUP BY `form_key`
+) t ON t.`form_key` = af.`form_key`
+SET af.`is_default` = (af.`id` = t.`mid`);
