@@ -12,6 +12,7 @@ $pageTitle = 'تسجيل الحضور اليومي';
 $breadcrumb = ['الحضور والانضباط' => 'index.php', 'تسجيل الحضور اليومي' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 // التحقق من الصلاحيات
 if (!hasPermission('teacher')) {
@@ -64,6 +65,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance'])) {
         } elseif (empty($classId) || empty($students)) {
             setFlash('يرجى اختيار الفصل وتسجيل الحضور', 'warning');
         } else {
+            // التحقق الأمني: المعلم يملك صلاحية لهذا الفصل
+            if ($userRole === 'teacher') {
+                $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+                if (!in_array($classId, $allowedIds)) {
+                    setFlash('ليس لديك صلاحية لتسجيل حضور في هذا الفصل', 'danger');
+                    redirect('daily.php');
+                }
+            }
             try {
                 $db->beginTransaction();
 
@@ -146,18 +155,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_attendance'])) {
 $filterClass = $_GET['class_id'] ?? $_POST['class_id'] ?? '';
 $filterDate  = $_GET['date'] ?? $_POST['attendance_date'] ?? date('Y-m-d');
 
-// جلب الفصول
+// جلب الفصول — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT id, name_ar, grade_level_id FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $sql = "SELECT DISTINCT c.id, c.name_ar, c.grade_level_id
+                FROM classes c
+                JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+                WHERE c.is_active = 1 AND c.school_id = ?
+                UNION
+                SELECT DISTINCT c.id, c.name_ar, c.grade_level_id
+                FROM classes c
+                WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+                ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$userId, $schoolId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $sql = "SELECT id, name_ar, grade_level_id FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
     }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
     $classes = $stmt->fetchAll();
 } catch (Exception $e) {
     $classes = [];
@@ -169,34 +193,42 @@ $existingAttendance = [];
 
 if ($filterClass) {
     try {
+        $roleFilterStudents = buildRoleFilter($db, $userRole, $userId, $schoolId, 'se.class_id');
+
         // جلب الطلاب المسجلين في الفصل
         $stmt = $db->prepare("
             SELECT s.id, s.student_number, s.full_name_ar, s.guardian_name, s.guardian_phone
             FROM students s
             INNER JOIN student_enrollments se ON se.student_id = s.id AND se.class_id = ? AND se.is_active = 1 AND se.status = 'enrolled'
             WHERE s.is_active = 1
+            {$roleFilterStudents['sql']}
             ORDER BY s.full_name_ar
         ");
-        $stmt->execute([$filterClass]);
+        $stmt->execute(array_merge([$filterClass], $roleFilterStudents['params']));
         $students = $stmt->fetchAll();
 
         // جلب سجلات الحضور الموجودة لليوم المحدد
+        $roleFilterAtt = buildRoleFilter($db, $userRole, $userId, $schoolId, 'ad.class_id');
         $stmt = $db->prepare("
-            SELECT student_id, status, notes
-            FROM attendance_daily
-            WHERE class_id = ? AND date = ? AND is_active = 1
+            SELECT ad.student_id, ad.status, ad.notes
+            FROM attendance_daily ad
+            INNER JOIN students s ON s.id = ad.student_id
+            WHERE ad.class_id = ? AND ad.date = ? AND ad.is_active = 1
+            {$roleFilterAtt['sql']}
         ");
-        $stmt->execute([$filterClass, $filterDate]);
+        $stmt->execute(array_merge([$filterClass, $filterDate], $roleFilterAtt['params']));
         $existingAttendance = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // تحويل مصفوفة الحضور إلى شكل student_id => status
         $tempAttendance = [];
         $stmt = $db->prepare("
-            SELECT student_id, status, notes
-            FROM attendance_daily
-            WHERE class_id = ? AND date = ? AND is_active = 1
+            SELECT ad.student_id, ad.status, ad.notes
+            FROM attendance_daily ad
+            INNER JOIN students s ON s.id = ad.student_id
+            WHERE ad.class_id = ? AND ad.date = ? AND ad.is_active = 1
+            {$roleFilterAtt['sql']}
         ");
-        $stmt->execute([$filterClass, $filterDate]);
+        $stmt->execute(array_merge([$filterClass, $filterDate], $roleFilterAtt['params']));
         while ($row = $stmt->fetch()) {
             $tempAttendance[$row['student_id']] = ['status' => $row['status'], 'notes' => $row['notes']];
         }
@@ -364,12 +396,14 @@ function checkConsecutiveAbsence($db, $studentId, $classId, $currentDate, $thres
     }
 }
 
-// ترجمة حالة الحضور
-function getStatusAr($status) {
-    $labels = ['present' => 'حاضر', 'absent' => 'غائب', 'late' => 'متأخر', 'excused' => 'معذور'];
-    return $labels[$status] ?? $status;
-}
+// ترجمة حالة الحضور في includes/helpers.php
 ?>
+<!-- CSS للتحسينات -->
+<style>
+input.attendance-radio { width:24px; height:24px; cursor:pointer; }
+input.attendance-radio:focus { outline:2px solid #c8a951; outline-offset:2px; }
+.btn-loading { opacity:0.7; pointer-events:none; }
+</style>
 
 <!-- ============================================================
      تنبيه نسبة الحضور المنخفضة
@@ -463,7 +497,7 @@ function getStatusAr($status) {
                             <tr data-student-id="<?= $student['id'] ?>">
                                 <td><?= $i + 1 ?></td>
                                 <td>
-                                    <div style="font-weight:600;"><?= e($student['full_name_ar']) ?></div>
+                                    <a href="../students/view.php?id=<?= $student['id'] ?>" style="font-weight:600; color:inherit; text-decoration:none;"><?= e($student['full_name_ar']) ?></a>
                                     <div style="font-size:11px; color:var(--text-muted);"><?= e($student['student_number']) ?></div>
                                 </td>
                                 <td style="text-align:center;">
@@ -540,7 +574,7 @@ $pageJs = <<<'JS'
 // تحديد الكل بحالة معينة
 function markAllAs(status) {
     const radios = document.querySelectorAll(`input[type="radio"][value="${status}"]`);
-    radios.forEach(radio => radio.checked = true);
+    radios.forEach(radio => { radio.checked = true; radio.dispatchEvent(new Event('change')); });
     updateCounters();
 }
 
@@ -554,32 +588,46 @@ function updateCounters() {
     });
 }
 
-// الاستماع لتغيير أزرار الراديو
+// الاستماع لتغيير أزرار الراديو + تلوين الصف
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('attendance-radio')) {
         updateCounters();
-        // تلوين الصف حسب الحالة
         const row = e.target.closest('tr');
         const status = e.target.value;
         row.style.background = '';
-        if (status === 'absent') {
-            row.style.background = 'rgba(220,53,69,0.08)';
-        } else if (status === 'late') {
-            row.style.background = 'rgba(255,193,7,0.08)';
-        } else if (status === 'excused') {
-            row.style.background = 'rgba(13,202,240,0.08)';
-        }
+        if (status === 'absent') row.style.background = 'rgba(220,53,69,0.08)';
+        else if (status === 'late') row.style.background = 'rgba(255,193,7,0.08)';
+        else if (status === 'excused') row.style.background = 'rgba(13,202,240,0.08)';
     }
 });
 
-// تأكيد مغادرة الصفحة بدون حفظ
+// تأكيد مغادرة الصفحة بدون حفظ + إعادة التعيين بعد الحفظ
 let formChanged = false;
-document.getElementById('attendance-form')?.addEventListener('change', () => formChanged = true);
+const form = document.getElementById('attendance-form');
+form?.addEventListener('change', () => formChanged = true);
+form?.addEventListener('submit', () => { formChanged = false; });
 window.addEventListener('beforeunload', function(e) {
-    if (formChanged) {
-        e.preventDefault();
-        e.returnValue = 'لديك تغييرات غير محفوظة. هل تريد المغادرة؟';
+    if (formChanged) { e.preventDefault(); e.returnValue = 'لديك تغييرات غير محفوظة. هل تريد المغادرة؟'; }
+});
+
+// اختصارات لوحة المفاتيح
+document.addEventListener('keydown', function(e) {
+    // 1-4 = تحديد الكل بحالة معينة (إذا لم نكن داخل حقل إدخال)
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    var keyMap = { '1': 'present', '2': 'absent', '3': 'late', '4': 'excused' };
+    var status = keyMap[e.key];
+    if (status) { e.preventDefault(); markAllAs(status); return; }
+    // Enter في حقل الملاحظات ← الانتقال للصف التالي
+    if (e.key === 'Enter' && e.target.name && e.target.name.indexOf('[notes]') !== -1) {
+        var nextRow = e.target.closest('tr')?.nextElementSibling;
+        if (nextRow) { e.preventDefault(); var r = nextRow.querySelector('input[type="radio"]'); if (r) r.focus(); }
     }
+});
+
+// حالة التحميل لزر الحفظ
+form?.addEventListener('submit', function() {
+    var btns = this.querySelectorAll('button[type="submit"]');
+    btns.forEach(function(b) { b.disabled = true; b.classList.add('btn-loading'); b.innerHTML = '⏳ جاري الحفظ...'; });
 });
 JS;
 ?>

@@ -303,7 +303,7 @@ $avgEQI = $avgEQIResult['overall_eqi'] ?? 0;
 
 // 2b. التعديل السياقي
 $adjuster = new ContextualAdjustmentService($db);
-$adjResult = $adjuster->calculateAdjustedSQIWithDetails($schoolId, $selectedAcademicYearId, $avgEQI);
+$adjResult = $adjuster->calculateAdjustedSQIWithDetails($schoolId, $avgEQI);
 $adjustedEQI = $adjResult['adjusted_sqi'];
 $challengeIndex = $adjResult['challenge_index'];
 $hasContext = $adjResult['has_context'];

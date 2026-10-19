@@ -86,9 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT DISTINCT sub.id AS subject_id
                     FROM subject_teachers st
                     INNER JOIN subjects sub ON sub.id = st.subject_id
-                     WHERE st.classroom_id = ? AND st.academic_year_id = ?
+                     WHERE st.classroom_id = ?
                 ");
-                $stmt->execute([$classId, $academicYearId]);
+$stmt->execute([$classId]);
                 $subjects = $stmt->fetchAll();
 
                 $totalPercentage = 0;

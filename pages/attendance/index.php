@@ -21,22 +21,45 @@ if (!hasPermission('teacher')) {
 $userRole = $_SESSION['user']['role'];
 $userId   = $_SESSION['user']['id'];
 $schoolId = $_SESSION['user']['school_id'] ?? null;
-
-// الحصول على العام الدراسي والفصل الحالي
 $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
-$semesterId = null;
 
-try {
-    // جلب الفصل الدراسي الحالي
-    $stmt = $db->prepare("SELECT id FROM semesters WHERE is_current = 1 AND is_active = 1 LIMIT 1");
-    $stmt->execute();
-    $currentSem = $stmt->fetch();
-    if ($currentSem) {
-        $semesterId = $currentSem['id'];
+// بناء شرط الطلاب للمعلم (يُستخدم في جميع الاستعلامات)
+$teacherStudentWhere = '';
+$teacherStudentParams = [];
+if ($userRole === 'teacher' && $schoolId) {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!empty($allowedIds)) {
+        $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+        $teacherStudentWhere = " AND s.id IN (SELECT se.student_id FROM student_enrollments se WHERE se.class_id IN ($ph) AND se.status = 'enrolled')";
+        $teacherStudentParams = $allowedIds;
     }
-} catch (Exception $e) {
-    $semesterId = null;
 }
+
+// ============================================================
+// الفلترة الموحّدة (عام دراسي + فصل)
+// ============================================================
+require_once __DIR__ . '/../../includes/filter_helpers.php';
+require_once __DIR__ . '/../../includes/filters.php';
+
+$filterYear  = isset($_GET['academic_year_id']) ? (int)$_GET['academic_year_id'] : 0;
+$filterSem   = isset($_GET['semester_id']) ? (int)$_GET['semester_id'] : 0;
+
+// إذا لم يحدد المستخدم فلاتر → استخدم الفصل الحالي (السلوك الافتراضي)
+if ($filterYear === 0 && $filterSem === 0) {
+    $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+    $semesterId = null;
+    try {
+        $stmt = $db->prepare("SELECT id FROM semesters WHERE is_current = 1 AND is_active = 1 LIMIT 1");
+        $stmt->execute();
+        $currentSem = $stmt->fetch();
+        if ($currentSem) { $semesterId = $currentSem['id']; }
+    } catch (Exception $e) { $semesterId = null; }
+} else {
+    $academicYearId = $filterYear > 0 ? $filterYear : null;
+    $semesterId = $filterSem > 0 ? $filterSem : null;
+}
+
+list($filterYear, $filterSem, $allYears, $allSemesters, $filterLabel) = processAcademicFilters($db, $filterYear, $filterSem);
 
 // ============================================================
 // إحصائيات سريعة
@@ -52,13 +75,14 @@ $stats = [
 try {
     $today = date('Y-m-d');
 
-    // إجمالي الطلاب النشطين في المدرسة
+    // إجمالي الطلاب النشطين
     $sql = "SELECT COUNT(DISTINCT s.id) FROM students s WHERE s.is_active = 1";
     $params = [];
     if ($schoolId && $userRole !== 'group_admin') {
         $sql .= " AND s.school_id = ?";
         $params[] = $schoolId;
     }
+    if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $stats['total_students'] = (int)$stmt->fetchColumn();
@@ -73,6 +97,7 @@ try {
         $sql .= " AND s.school_id = ?";
         $params[] = $schoolId;
     }
+    if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $stats['absent_today'] = (int)$stmt->fetchColumn();
@@ -87,6 +112,7 @@ try {
         $sql .= " AND s.school_id = ?";
         $params[] = $schoolId;
     }
+    if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $stats['late_today'] = (int)$stmt->fetchColumn();
@@ -102,6 +128,7 @@ try {
             $sql .= " AND s.school_id = ?";
             $params[] = $schoolId;
         }
+        if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $avgRate = $stmt->fetchColumn();
@@ -120,6 +147,7 @@ try {
             $sql .= " AND s.school_id = ?";
             $params[] = $schoolId;
         }
+        if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $stats['below_threshold'] = (int)$stmt->fetchColumn();
@@ -127,6 +155,31 @@ try {
 } catch (Exception $e) {
     // استخدام القيم الافتراضية
 }
+
+// ============================================================
+// اتجاه الحضور لآخر 7 أيام
+// ============================================================
+$trendData = ['labels' => [], 'rates' => []];
+try {
+    $roleFilter = buildRoleFilter($db, $userRole, $userId, $schoolId, 'ad.class_id');
+    $stmt = $db->prepare("
+        SELECT ad.date,
+               COUNT(*) AS total,
+               SUM(CASE WHEN ad.status = 'present' THEN 1 ELSE 0 END) AS present
+        FROM attendance_daily ad
+        INNER JOIN students s ON s.id = ad.student_id
+        WHERE ad.date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+          AND ad.is_active = 1 AND ad.period_number IS NULL
+          AND s.is_active = 1
+          {$roleFilter['sql']}
+        GROUP BY ad.date ORDER BY ad.date ASC
+    ");
+    $stmt->execute($roleFilter['params']);
+    while ($row = $stmt->fetch()) {
+        $trendData['labels'][] = formatDateAr($row['date'], 'short');
+        $trendData['rates'][] = $row['total'] > 0 ? round($row['present'] / $row['total'] * 100, 1) : 0;
+    }
+} catch (Exception $e) {}
 
 // ============================================================
 // إعدادات الحضور للمدرسة
@@ -160,6 +213,7 @@ try {
         $sql .= " AND s.school_id = ?";
         $params[] = $schoolId;
     }
+    if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
     $sql .= " ORDER BY ad.date DESC, ad.created_at DESC LIMIT 10";
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
@@ -186,6 +240,7 @@ if ($academicYearId && $semesterId) {
             $sql .= " AND s.school_id = ?";
             $params[] = $schoolId;
         }
+        if ($userRole === 'teacher') { $sql .= $teacherStudentWhere; $params = array_merge($params, $teacherStudentParams); }
         $sql .= " ORDER BY v.attendance_rate ASC LIMIT 15";
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -195,49 +250,65 @@ if ($academicYearId && $semesterId) {
     }
 }
 
-// جلب الفصول للفلتر
+// جلب الفصول للفلتر — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $sql = "SELECT c.id, c.name_ar FROM classes c WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY c.name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll();
     }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $classes = $stmt->fetchAll();
 } catch (Exception $e) {
     $classes = [];
 }
 
-/**
- * ترجمة حالة الحضور
- */
-function getAttendanceStatusAr($status) {
-    $labels = [
-        'present' => 'حاضر',
-        'absent'  => 'غائب',
-        'late'    => 'متأخر',
-        'excused' => 'معذور'
-    ];
-    return $labels[$status] ?? $status;
-}
-
-/**
- * لون حالة الحضور
- */
-function getAttendanceStatusColor($status) {
-    $colors = [
-        'present' => 'success',
-        'absent'  => 'danger',
-        'late'    => 'warning',
-        'excused' => 'info'
-    ];
-    return $colors[$status] ?? 'secondary';
-}
+// الدوال المساعدة موجودة في includes/helpers.php
 ?>
+
+<!-- ============================================================
+     فلتر الفترة
+     ============================================================ -->
+<div class="section" style="margin-bottom:0;">
+    <form method="GET" class="filter-form" style="display:flex; flex-wrap:wrap; gap:10px; align-items:end;">
+        <div style="flex:1; min-width:160px;">
+            <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:4px;">العام الدراسي</label>
+            <select name="academic_year_id" class="form-control" style="width:100%;">
+                <?php foreach ($allYears as $ay): ?>
+                <option value="<?= $ay['id'] ?>" <?= $filterYear == $ay['id'] ? 'selected' : '' ?>><?= e($ay['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div style="flex:1; min-width:160px;">
+            <label style="display:block; font-size:13px; color:var(--text-muted); margin-bottom:4px;">الفصل الدراسي</label>
+            <select name="semester_id" class="form-control" style="width:100%;">
+                <?php foreach ($allSemesters as $sem): ?>
+                <option value="<?= $sem['id'] ?>" <?= $filterSem == $sem['id'] ? 'selected' : '' ?>><?= e($sem['name']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="height:38px;">عرض</button>
+        <?php if ($filterYear > 0 || $filterSem > 0): ?>
+        <a href="index.php" class="btn btn-light" style="height:38px;">إلغاء الفلتر</a>
+        <?php endif; ?>
+    </form>
+</div>
 
 <!-- ============================================================
      إحصائيات سريعة
@@ -282,6 +353,22 @@ function getAttendanceStatusColor($status) {
         </div>
     </div>
 </div>
+
+<!-- ============================================================
+     رسم بياني لاتجاه الحضور (آخر 7 أيام)
+     ============================================================ -->
+<?php if (!empty($trendData['labels'])): ?>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📈 اتجاه الحضور (آخر 7 أيام)</h3>
+        </div>
+        <div class="card-body">
+            <canvas id="trendChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ============================================================
      روابط سريعة
@@ -350,7 +437,7 @@ function getAttendanceStatusColor($status) {
                         <tr>
                             <td><?= $i + 1 ?></td>
                             <td>
-                                <div style="font-weight:600;"><?= e($alert['student_name']) ?></div>
+                                <a href="../students/view.php?id=<?= $alert['student_id'] ?>" style="font-weight:600; color:inherit; text-decoration:none;"><?= e($alert['student_name']) ?></a>
                                 <div style="font-size:11px; color:var(--text-muted);"><?= e($alert['student_number']) ?></div>
                             </td>
                             <td><?= e($alert['class_name']) ?></td>
@@ -393,12 +480,12 @@ function getAttendanceStatusColor($status) {
                 <?php else: ?>
                     <div style="max-height:350px; overflow-y:auto;">
                         <?php foreach ($recentActivity as $activity):
-                            $statusColor = getAttendanceStatusColor($activity['status']);
-                            $statusAr = getAttendanceStatusAr($activity['status']);
+                            $statusColor = attendanceStatusColor($activity['status']);
+                            $statusAr = attendanceStatusAr($activity['status']);
                         ?>
                         <div style="padding:10px 16px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <div style="font-weight:600; font-size:14px;"><?= e($activity['student_name']) ?></div>
+                                <a href="../students/view.php?id=<?= $activity['student_id'] ?>" style="font-weight:600; font-size:14px; color:inherit; text-decoration:none;"><?= e($activity['student_name']) ?></a>
                                 <div style="font-size:12px; color:var(--text-muted);">
                                     <?= e($activity['class_name']) ?> • <?= formatDateAr($activity['date'], 'short') ?>
                                 </div>
@@ -464,4 +551,46 @@ function getAttendanceStatusColor($status) {
     </div>
 </div>
 
+<?php
+$pageJs = <<<'JS'
+if (typeof Chart !== 'undefined' && document.getElementById('trendChart')) {
+    var ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($trendData['labels']) ?>,
+            datasets: [{
+                label: 'نسبة الحضور %',
+                data: <?= json_encode($trendData['rates']) ?>,
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                fill: true,
+                tension: 0.3,
+                pointBackgroundColor: '#22c55e',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: { callback: function(v) { return v + '%'; } },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+JS;
+?>
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

@@ -44,7 +44,7 @@ try {
 $adminForm = null;
 $adminItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -81,6 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if (!$teacherId || !$academicYearId || !$semesterId) {
                 throw new Exception('يرجى ملء جميع الحقول المطلوبة');
+            }
+
+            // التحقق من أن المعلم ينتمي لنفس المدرسة
+            if ($schoolId) {
+                $checkTeacher = $db->prepare("SELECT 1 FROM users WHERE id = ? AND school_id = ? AND is_active = 1");
+                $checkTeacher->execute([$teacherId, $schoolId]);
+                if (!$checkTeacher->fetch()) {
+                    throw new Exception('المعلم المحدد غير موجود في مدرستك');
+                }
             }
             
             $responses = [];

@@ -39,16 +39,35 @@ $academicYearId = getCurrentAcademicYearId($db);
 $schoolId = $_SESSION['user']['school_id'] ?? 0;
 
 // جلب بيانات الاختيارات
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
 $classes = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT c.id, c.name_ar, gl.name_ar AS grade_name, gl.id AS grade_level_id
-        FROM classes c
-        INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
-        WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
-        ORDER BY gl.level_number, c.name_ar
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    if ($userRole === 'teacher') {
+        $stmt = $db->prepare("
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name, gl.id AS grade_level_id
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            UNION
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name, gl.id AS grade_level_id
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+            ORDER BY grade_name, name_ar
+        ");
+        $stmt->execute([$userId, $schoolId, $academicYearId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT c.id, c.name_ar, gl.name_ar AS grade_name, gl.id AS grade_level_id
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            ORDER BY gl.level_number, c.name_ar
+        ");
+        $stmt->execute([$schoolId, $academicYearId]);
+    }
     $classes = $stmt->fetchAll();
 }
 
@@ -57,12 +76,44 @@ $stmt = $db->prepare("SELECT id, name_ar FROM semesters WHERE academic_year_id =
 $stmt->execute([$academicYearId]);
 $semesters = $stmt->fetchAll();
 
-$subjects = $db->query("SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+// المواد — للمعلم: فقط مواده
+if ($userRole === 'teacher') {
+    $selectedClassId = (int)($_GET['class_id'] ?? 0);
+    if ($selectedClassId > 0) {
+        $stmt = $db->prepare("
+            SELECT DISTINCT s.id, s.name_ar, s.code
+            FROM subjects s
+            JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.classroom_id = ? AND st.is_active = 1
+            WHERE s.is_active = 1 ORDER BY s.name_ar
+        ");
+        $stmt->execute([$userId, $selectedClassId]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT DISTINCT s.id, s.name_ar, s.code
+            FROM subjects s
+            JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE s.is_active = 1 ORDER BY s.name_ar
+        ");
+        $stmt->execute([$userId]);
+    }
+    $subjects = $stmt->fetchAll();
+} else {
+    $subjects = $db->query("SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+}
 
 // قيم الاختيار
 $selectedClassId = (int)($_GET['class_id'] ?? 0);
 $selectedSubjectId = (int)($_GET['subject_id'] ?? 0);
 $selectedSemesterId = (int)($_GET['semester_id'] ?? 0);
+
+// التحقق الأمني للمعلم: يملك صلاحية لهذا الفصل
+if ($userRole === 'teacher' && $selectedClassId > 0) {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array($selectedClassId, $allowedIds)) {
+        setFlash('ليس لديك صلاحية لعرض بيانات هذه المادة في هذا الفصل', 'danger');
+        redirect('summary.php');
+    }
+}
 
 // ============================================================
 // جلب البيانات

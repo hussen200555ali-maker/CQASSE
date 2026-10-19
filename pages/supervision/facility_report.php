@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $combinedScore = $totalItems > 0 ? round(($totalScore / ($totalItems * 5)) * 100, 1) : 0;
 
                 // حفظ في assessment_responses
-                $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'facility_checklist' AND is_active = 1 LIMIT 1");
+                $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'facility_checklist' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
                 $stmt->execute();
                 $form = $stmt->fetch();
 

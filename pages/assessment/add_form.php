@@ -34,20 +34,6 @@ if ($editId) {
     $pageTitle = 'تعديل نموذج تقييم';
 }
 
-// فحص النموذج المكرر عند الدخول عبر form_type
-if (!$editId) {
-    $formTypeParam = $_GET['form_type'] ?? $_GET['form_key'] ?? '';
-    if (!empty($formTypeParam)) {
-        $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = ? AND is_active = 1 LIMIT 1");
-        $stmt->execute([$formTypeParam]);
-        $existingFormRow = $stmt->fetch();
-        if ($existingFormRow) {
-            setFlash('نموذج "' . $formTypeParam . '" موجود مسبقاً - يتم تحويلك لصفحة التعديل', 'info');
-            redirect('add_form.php?edit=' . $existingFormRow['id']);
-        }
-    }
-}
-
 // معالجة الحفظ
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf()) {
@@ -60,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nameEn = trim($_POST['name_en'] ?? '');
             $formType = $_POST['form_key'] ?? '';  // [إصلاح 2026-05-11] form_type → form_key (تطابق اسم العمود)
             $description = trim($_POST['description'] ?? '');
+            $version = trim($_POST['version'] ?? '');
             
             if (empty($nameAr) || empty($formType)) {
                 throw new Exception('اسم النموذج ونوعه مطلوبان');
@@ -79,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 $category = $categoryMap[$formType] ?? 'climate';
                 $target = $targetMap[$formType] ?? 'school';
-                $stmt = $db->prepare("UPDATE assessment_forms SET name_ar = ?, name_en = ?, form_key = ?, category = ?, target = ?, description = ? WHERE id = ?");
-                $stmt->execute([$nameAr, $nameEn ?: null, $formType, $category, $target, $description ?: null, $editId]);
+                $stmt = $db->prepare("UPDATE assessment_forms SET name_ar = ?, name_en = ?, form_key = ?, category = ?, target = ?, description = ?, version = ? WHERE id = ?");
+                $stmt->execute([$nameAr, $nameEn ?: null, $formType, $category, $target, $description ?: null, $version ?: null, $editId]);
                 $formId = $editId;
             } else {
                 // إنشاء نموذج جديد - category و target يُشتقان تلقائياً من form_key
@@ -88,7 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'name_ar' => $nameAr,
                     'name_en' => $nameEn ?: null,
                     'form_key' => $formType,
-                    'description' => $description ?: null
+                    'description' => $description ?: null,
+                    'version' => $version ?: null
                 ]);
                 
                 if (!$formId) {
@@ -192,6 +180,14 @@ $formTypeOptions = $engine->getFormTypeOptions();
                         <label class="form-label">الوصف</label>
                         <textarea name="description" class="form-control" rows="2"
                                   placeholder="وصف مختصر للنموذج"><?php echo e($existingForm['description'] ?? ''); ?></textarea>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">الإصدار (اختياري)</label>
+                        <input type="text" name="version" class="form-control"
+                               value="<?php echo e($existingForm['version'] ?? ''); ?>"
+                               placeholder="مثال: v1.0, الصف الأول, الفصل الدراسي الأول" dir="ltr">
                     </div>
                 </div>
             </div>

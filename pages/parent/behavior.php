@@ -13,10 +13,10 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../includes/header.php';
+
 $pageTitle = 'سلوك الأبناء';
 $breadcrumb = ['لوحة ولي الأمر' => baseUrl('pages/dashboard/parent.php'), 'سلوك الأبناء' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
 
 // التحقق من الصلاحية
 if (!hasPermission('parent')) {

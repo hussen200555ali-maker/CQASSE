@@ -63,17 +63,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $updateStmt->execute([$value, $key]);
             } else {
                 // إدخال جديد
-                $insertStmt = $db->prepare("INSERT INTO system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)");
-                // نقدم وصفًا افتراضيًا basé على المفتاح
+                $insertStmt = $db->prepare("INSERT INTO system_settings (setting_key, setting_value, name_ar, description_ar, category) VALUES (?, ?, ?, ?, ?)");
+                $category = 'policy';
+                $nameAr = '';
                 $description = '';
                 if (strpos($key, 'color_') !== false) {
+                    $category = 'policy_colors';
+                    $nameAr = 'إعداد الترميز اللوني';
                     $description = 'إعداد الترميز اللوني للسياسات';
                 } elseif (strpos($key, 'pass_rate') !== false) {
+                    $category = 'policy_rates';
+                    $nameAr = 'نسبة النجاح';
                     $description = 'نسبة النجاح للسياسات';
                 } elseif (strpos($key, 'notification') !== false) {
+                    $category = 'policy_notifications';
+                    $nameAr = 'إعدادات الإشعارات';
                     $description = 'إعدادات الإشعارات العامة';
                 }
-                $insertStmt->execute([$key, $value, $description]);
+                $insertStmt->execute([$key, $value, $nameAr, $description, $category]);
             }
         }
 
@@ -200,6 +207,7 @@ while ($row = $stmt->fetch()) {
 
             <!-- نموذج السياسات -->
             <form method="POST" action="">
+                <?= csrfField() ?>
                 <div class="policy-header">
                     <h2 class="text-xl font-bold text-gray-900">
                         <i class="fas fa-shield-alt"></i>

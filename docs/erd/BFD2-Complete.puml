@@ -1,0 +1,196 @@
+@startuml BFD2
+skinparam linetype ortho
+hide circle
+
+entity "governorates" as governorates {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  code : VARCHAR(5) <<UNIQUE>>
+  is_active : TINYINT(1)
+}
+
+entity "schools" as schools {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(200)
+  name_en : VARCHAR(200)
+  reference_code : VARCHAR(5) <<UNIQUE>>
+  address : TEXT
+  governorate : VARCHAR(100)
+  district : VARCHAR(100)
+  school_type : ENUM(basic,secondary,combined)
+  principal_name : VARCHAR(200)
+  phone : VARCHAR(20)
+  email : VARCHAR(100)
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "academic_years" as academic_years {
+  id : INT UNSIGNED <<PK>>
+  name : VARCHAR(50)
+  start_date : DATE
+  end_date : DATE
+  is_current : TINYINT(1)
+  status : ENUM(planning,active,evaluation,closed)
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "semesters" as semesters {
+  id : INT UNSIGNED <<PK>>
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  name_ar : VARCHAR(50)
+  start_date : DATE
+  end_date : DATE
+  is_current : TINYINT(1)
+  lock_level : ENUM(none,soft,hard,admin_handled)
+  locked_at : DATETIME
+  locked_by : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "grade_levels" as grade_levels {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(50)
+  name_en : VARCHAR(50)
+  level_number : TINYINT(3) UNSIGNED <<UNIQUE>>
+  stage : ENUM(basic,secondary)
+  is_active : TINYINT(1)
+}
+
+entity "classes" as classes {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(100)
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  grade_level_id : INT UNSIGNED <<FK>> [to grade_levels.id] [BFD2]
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  teacher_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  capacity : INT UNSIGNED
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "subjects" as subjects {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  code : VARCHAR(20) <<UNIQUE>>
+  is_active : TINYINT(1)
+}
+
+entity "subject_grade_years" as subject_grade_years {
+  id : INT UNSIGNED <<PK>>
+  subject_id : INT UNSIGNED <<FK>> [to subjects.id] [BFD2]
+  grade_level_id : INT UNSIGNED <<FK>> [to grade_levels.id] [BFD2]
+  hours_per_week : TINYINT(3) UNSIGNED
+  passing_grade : DECIMAL(5,2)
+  weights_json : LONGTEXT
+  is_active : TINYINT(1)
+}
+
+entity "subject_teachers" as subject_teachers {
+  id : INT UNSIGNED <<PK>>
+  subject_id : INT UNSIGNED <<FK>> [to subjects.id] [BFD2]
+  teacher_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  classroom_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  is_active : TINYINT(1)
+  semester_id : INT UNSIGNED <<FK>> [to semesters.id] [BFD2]
+  created_at : TIMESTAMP
+}
+
+entity "subject_weight_distribution" as subject_weight_distribution {
+  id : INT UNSIGNED <<PK>>
+  subject_grade_year_id : INT UNSIGNED <<FK>> [to subject_grade_years.id] [BFD2]
+  assessment_type_id : INT UNSIGNED <<FK>> [to assessment_types.id] [BFD4]
+  weight : DECIMAL(5,2)
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  is_active : TINYINT(1)
+}
+
+entity "teacher_assignments" as teacher_assignments {
+  id : INT UNSIGNED <<PK>>
+  teacher_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  subject_id : INT UNSIGNED <<FK>> [to subjects.id] [BFD2]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "students" as students {
+  id : INT UNSIGNED <<PK>>
+  student_number : VARCHAR(20) <<UNIQUE>>
+  full_name_ar : VARCHAR(200)
+  full_name_en : VARCHAR(200)
+  guardian_name : VARCHAR(200)
+  guardian_phone : VARCHAR(20)
+  guardian_email : VARCHAR(100)
+  grade_level_id : INT UNSIGNED <<FK>> [to grade_levels.id] [BFD2]
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  enrollment_date : DATE
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "student_enrollments" as student_enrollments {
+  id : INT UNSIGNED <<PK>>
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  enrollment_date : DATE
+  status : ENUM(enrolled,transferred,dropped)
+  is_active : TINYINT(1)
+}
+
+entity "student_notes" as student_notes {
+  id : INT UNSIGNED <<PK>>
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  semester_id : INT UNSIGNED <<FK>> [to semesters.id] [BFD2]
+  note_type : ENUM(general,academic,behavioral,attendance)
+  title_ar : VARCHAR(200)
+  content_ar : TEXT
+  priority : ENUM(low,medium,high,urgent)
+  is_pinned : TINYINT(1)
+  is_draft : TINYINT(1)
+  attachment_id : INT UNSIGNED <<FK>> [to attachments.id] [BFD2]
+  created_by : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "attachments" as attachments {
+  id : INT UNSIGNED <<PK>>
+  file_name : VARCHAR(255)
+  file_type : VARCHAR(100)
+  file_path : VARCHAR(500)
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  file_size : INT UNSIGNED
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "parent_students" as parent_students {
+  id : INT UNSIGNED <<PK>>
+  parent_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  relationship : ENUM(father,mother,guardian,other)
+  ack_grade : TINYINT(1)
+  ack_behavior : TINYINT(1)
+  ack_attendance : TINYINT(1)
+  ack_promotion : TINYINT(1)
+  last_ack_at : DATETIME
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+@enduml

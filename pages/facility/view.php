@@ -26,14 +26,14 @@ if (!$checklistId) { setFlash('معرف الفحص غير صالح', 'danger'); 
 $checklist = null;
 try {
     $stmt = $db->prepare("
-        SELECT fc.*, s.name_ar as school_name, u.full_name_ar as evaluator_name,
+        SELECT s.*, s.survey_date as evaluation_date, sch.name_ar as school_name, u.full_name_ar as evaluator_name,
                sem.name_ar as semester_name, ay.name as year_name
-        FROM facility_checklists fc
-        JOIN schools s ON fc.school_id = s.id
-        JOIN users u ON fc.evaluator_id = u.id
-        JOIN semesters sem ON fc.semester_id = sem.id
-        JOIN academic_years ay ON fc.academic_year_id = ay.id
-        WHERE fc.id = ? AND fc.is_active = 1
+        FROM surveys s
+        JOIN schools sch ON s.school_id = sch.id
+        JOIN users u ON s.evaluator_id = u.id
+        JOIN semesters sem ON s.semester_id = sem.id
+        JOIN academic_years ay ON s.academic_year_id = ay.id
+        WHERE s.id = ? AND s.survey_type = 'facility' AND s.is_active = 1
     ");
     $stmt->execute([$checklistId]);
     $checklist = $stmt->fetch();
@@ -55,10 +55,10 @@ $repairPriorities = [
 
 try {
     $stmt = $db->prepare("
-        SELECT fi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM facility_items fi JOIN assessment_structure ai ON fi.item_id = ai.id
-        JOIN assessment_structure ac ON ai.parent_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
-        WHERE fi.checklist_id = ? AND fi.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
+        SELECT si.*, si.normalized_value as score, si.numeric_value as raw_score, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
+        FROM survey_items si JOIN assessment_structure ai ON si.item_id = ai.id
+        JOIN assessment_structure ac ON ai.parent_id = ac.id
+        WHERE si.survey_id = ? AND si.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$checklistId]);
     $items = $stmt->fetchAll();
@@ -149,11 +149,11 @@ $categoryIcons = [
 $historicalChecklists = [];
 try {
     $stmt = $db->prepare("
-        SELECT fc.id, fc.overall_score, fc.evaluation_date, sem.name_ar as semester_name
-        FROM facility_checklists fc
-        JOIN semesters sem ON fc.semester_id = sem.id
-        WHERE fc.school_id = ? AND fc.is_active = 1
-        ORDER BY fc.evaluation_date ASC
+        SELECT s.id, s.overall_score, s.survey_date as evaluation_date, sem.name_ar as semester_name
+        FROM surveys s
+        JOIN semesters sem ON s.semester_id = sem.id
+        WHERE s.school_id = ? AND s.survey_type = 'facility' AND s.is_active = 1
+        ORDER BY s.survey_date ASC
     ");
     $stmt->execute([$checklist['school_id']]);
     $historicalChecklists = $stmt->fetchAll();

@@ -3,10 +3,6 @@
  * عرض تقييم المهارات
  * ملاحظة: جدول skills_evaluations تم أرشفته في الترحيل v3.3.0
  */
-require_once __DIR__ . '/../../includes/header.php';
-setFlash('وحدة عرض المهارات قيد التحديث.', 'warning');
-redirect(baseUrl('pages/assessment/index.php'));
-
 $pageTitle = 'عرض تقييم المهارات';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة المهارات' => 'index.php', 'عرض التقييم' => null];
 
@@ -20,24 +16,28 @@ if (!hasPermission('teacher')) {
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
 
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId   = $_SESSION['user']['id'];
+$schoolId = $_SESSION['user']['school_id'] ?? null;
+
 $evalId = (int)($_GET['id'] ?? 0);
 if (!$evalId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('index.php'); }
 
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT se.*, s.full_name_ar as student_name, s.student_number,
+        SELECT e.*, s.full_name_ar as student_name, s.student_number,
                c.name_ar as class_name, gl.name_ar as grade_name,
                u.full_name_ar as evaluator_name,
                sem.name_ar as semester_name, ay.name as year_name
-        FROM skills_evaluations se
-        JOIN students s ON se.student_id = s.id
-        JOIN classes c ON se.class_id = c.id
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        JOIN classes c ON e.class_id = c.id
         JOIN grade_levels gl ON c.grade_level_id = gl.id
-        JOIN users u ON se.evaluator_id = u.id
-        JOIN semesters sem ON se.semester_id = sem.id
-        JOIN academic_years ay ON se.academic_year_id = ay.id
-        WHERE se.id = ? AND se.is_active = 1
+        JOIN users u ON e.evaluated_by = u.id
+        JOIN semesters sem ON e.semester_id = sem.id
+        JOIN academic_years ay ON e.academic_year_id = ay.id
+        WHERE e.id = ? AND e.eval_type = 'skills_checklist' AND e.is_active = 1
     ");
     $stmt->execute([$evalId]);
     $evaluation = $stmt->fetch();
@@ -45,14 +45,29 @@ try {
 
 if (!$evaluation) { setFlash('التقييم غير موجود', 'danger'); redirect('index.php'); }
 
+// التحقق من ملكية المدرسة — لا يمكن عرض تقييم من مدرسة أخرى
+if ($schoolId && $userRole !== 'group_admin' && $evaluation['school_id'] != $schoolId) {
+    setFlash('ليس لديك صلاحية لعرض هذا التقييم', 'danger');
+    redirect('index.php');
+}
+
+// التحقق من وصول المعلم — الفصل ضمن فصوله المسموحة
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array((int)$evaluation['class_id'], $allowedIds)) {
+        setFlash('ليس لديك صلاحية لعرض هذا التقييم', 'danger');
+        redirect('index.php');
+    }
+}
+
 $items = [];
 $categoryScores = [];
 try {
     $stmt = $db->prepare("
-        SELECT si.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
-        FROM skills_items si JOIN assessment_items ai ON si.item_id = ai.id
-        JOIN assessment_criteria ac ON ai.criteria_id = ac.id  // [إصلاح 2026-05-11] assessment_categories→assessment_criteria, category_id→criteria_id
-        WHERE si.evaluation_id = ? AND si.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
+        SELECT ar.numeric_value as score, ar.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value, ac.name_ar as category_name
+        FROM assessment_responses ar JOIN assessment_structure ai ON ar.item_id = ai.id
+        JOIN assessment_criteria ac ON ai.criteria_id = ac.id
+        WHERE ar.evaluation_id = ? AND ar.is_active = 1 ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$evalId]);
     $items = $stmt->fetchAll();
@@ -69,7 +84,7 @@ try {
     }
 } catch (Exception $e) {}
 
-$overallScore = $evaluation['overall_score'];
+$overallScore = $evaluation['combined_score'];
 $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null;
 
 // مستوى المهارة
@@ -93,11 +108,11 @@ if ($overallScore !== null) {
 $timeline = [];
 try {
     $stmt = $db->prepare("
-        SELECT se.id, se.overall_score, se.evaluation_date, sem.name_ar as semester_name
-        FROM skills_evaluations se
-        JOIN semesters sem ON se.semester_id = sem.id
-        WHERE se.student_id = ? AND se.is_active = 1
-        ORDER BY se.evaluation_date ASC
+        SELECT e.id, e.combined_score as overall_score, DATE(e.created_at) as evaluation_date, sem.name_ar as semester_name
+        FROM evaluations e
+        JOIN semesters sem ON e.semester_id = sem.id
+        WHERE e.student_id = ? AND e.eval_type = 'skills_checklist' AND e.is_active = 1
+        ORDER BY e.created_at ASC
     ");
     $stmt->execute([$evaluation['student_id']]);
     $timeline = $stmt->fetchAll();
@@ -107,11 +122,11 @@ try {
 $comparisonData = [];
 try {
     $stmt = $db->prepare("
-        SELECT se.id, se.overall_score, s.full_name_ar as student_name
-        FROM skills_evaluations se
-        JOIN students s ON se.student_id = s.id
-        WHERE se.class_id = ? AND se.semester_id = ? AND se.is_active = 1
-        ORDER BY se.overall_score DESC
+        SELECT e.id, e.combined_score as overall_score, s.full_name_ar as student_name
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        WHERE e.class_id = ? AND e.semester_id = ? AND e.eval_type = 'skills_checklist' AND e.is_active = 1
+        ORDER BY e.combined_score DESC
         LIMIT 10
     ");
     $stmt->execute([$evaluation['class_id'], $evaluation['semester_id']]);
@@ -140,7 +155,7 @@ try {
                 <div><span style="font-size:12px; color:var(--text-muted);">الطالب</span><div style="font-weight:600;"><?php echo e($evaluation['student_name']); ?></div></div>
                 <div><span style="font-size:12px; color:var(--text-muted);">المقيّم</span><div style="font-weight:600;"><?php echo e($evaluation['evaluator_name']); ?></div></div>
                 <div><span style="font-size:12px; color:var(--text-muted);">الفصل الدراسي</span><div style="font-weight:600;"><?php echo e($evaluation['semester_name']); ?></div></div>
-                <div><span style="font-size:12px; color:var(--text-muted);">التاريخ</span><div style="font-weight:600;"><?php echo formatDateAr($evaluation['evaluation_date'], 'medium'); ?></div></div>
+                <div><span style="font-size:12px; color:var(--text-muted);">التاريخ</span><div style="font-weight:600;"><?php echo formatDateAr($evaluation['created_at'] ?? $evaluation['evaluation_date'], 'medium'); ?></div></div>
             </div>
         </div>
     </div>

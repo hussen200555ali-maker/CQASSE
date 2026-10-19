@@ -20,7 +20,7 @@ $teacherId = (int)($_GET['teacher_id'] ?? 0);
 if (!$dateStr || !$teacherId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('peer_index.php'); }
 
 $formId = 0;
-$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
 $stmt->execute();
 $formId = (int)$stmt->fetchColumn();
 
@@ -46,6 +46,17 @@ try {
 } catch (Exception $e) {}
 
 if (!$evaluation) { setFlash('التقييم غير موجود', 'danger'); redirect('peer_index.php'); }
+
+// التحقق من أن المعلم المقيّم ينتمي لنفس المدرسة
+$schoolId = $_SESSION['user']['school_id'] ?? null;
+if ($schoolId) {
+    $checkTeacher = $db->prepare("SELECT 1 FROM users WHERE id = ? AND school_id = ? AND is_active = 1");
+    $checkTeacher->execute([$teacherId, $schoolId]);
+    if (!$checkTeacher->fetch()) {
+        setFlash('المعلم المحدد غير موجود في مدرستك', 'danger');
+        redirect('peer_index.php');
+    }
+}
 
 if (isSemesterLocked($db, $evaluation['semester_id'])) {
     if (!canEditSemester($db, $evaluation['semester_id'], $userRole)) {

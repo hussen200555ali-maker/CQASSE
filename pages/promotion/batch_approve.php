@@ -87,8 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                         UPDATE promotions
                         SET status = 'approved',
                             approved_by = ?,
-                            approved_at = NOW(),
-                            updated_at = NOW()
+                            approved_at = NOW()
                         WHERE id IN ($placeholders)
                         AND status = 'proposed'
                     ");
@@ -115,8 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                             SET status = 'rejected',
                                 rejection_reason = ?,
                                 approved_by = ?,
-                                approved_at = NOW(),
-                                updated_at = NOW()
+                                approved_at = NOW()
                             WHERE id IN ($placeholders)
                             AND status IN ('proposed', 'approved')
                         ");
@@ -137,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                     $whereParams = [];
 
                     if ($filterClass) {
-                        $whereParts[] = "pd.class_id = ?";
+                        $whereParts[] = "pd.student_id IN (SELECT student_id FROM student_enrollments WHERE class_id = ? AND is_active = 1)";
                         $whereParams[] = $filterClass;
                     }
                     if ($filterAcademicYear) {
@@ -157,8 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch_action'])) {
                         UPDATE promotions pd
                         SET pd.status = 'approved',
                             pd.approved_by = ?,
-                            pd.approved_at = NOW(),
-                            pd.updated_at = NOW()
+                            pd.approved_at = NOW()
                         WHERE $whereClause
                     ");
                     $params = array_merge([$_SESSION['user']['id']], $whereParams);
@@ -201,8 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['individual_action']))
                     SET status = 'approved',
                         approved_by = ?,
                         approved_at = NOW(),
-                        rejection_reason = NULL,
-                        updated_at = NOW()
+                        rejection_reason = NULL
                     WHERE id = ? AND status = 'proposed'
                 ");
                 $stmt->execute([$_SESSION['user']['id'], $decisionId]);
@@ -220,8 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['individual_action']))
                         SET status = 'rejected',
                             rejection_reason = ?,
                             approved_by = ?,
-                            approved_at = NOW(),
-                            updated_at = NOW()
+                            approved_at = NOW()
                         WHERE id = ? AND status IN ('proposed', 'approved')
                     ");
                     $stmt->execute([$notes, $_SESSION['user']['id'], $decisionId]);
@@ -248,7 +243,7 @@ $whereParts = ["pd.is_active = 1"];
 $whereParams = [];
 
 if ($filterClass) {
-    $whereParts[] = "pd.class_id = ?";
+    $whereParts[] = "pd.student_id IN (SELECT student_id FROM student_enrollments WHERE class_id = ? AND is_active = 1)";
     $whereParams[] = $filterClass;
 }
 if ($filterAcademicYear) {
@@ -273,7 +268,7 @@ if ($filterStatus) {
 
 $schoolFilter = '';
 if ($schoolId && $_SESSION['user']['role'] !== 'group_admin') {
-    $whereParts[] = "pd.school_id = ?";
+    $whereParts[] = "s.school_id = ?";
     $whereParams[] = $schoolId;
 }
 
@@ -288,9 +283,10 @@ $sql = "SELECT pd.*,
                u.full_name_ar as approver_name
 FROM promotions pd
         JOIN students s ON pd.student_id = s.id
-        JOIN grade_levels gl ON pd.grade_level_id = gl.id
-        LEFT JOIN classes c ON pd.class_id = c.id
-        LEFT JOIN schools sc ON pd.school_id = sc.id
+        LEFT JOIN student_enrollments se ON se.student_id = pd.student_id AND se.is_active = 1
+        LEFT JOIN classes c ON c.id = se.class_id AND c.is_active = 1
+        LEFT JOIN grade_levels gl ON gl.id = c.grade_level_id
+        LEFT JOIN schools sc ON sc.id = s.school_id
         LEFT JOIN users u ON pd.approved_by = u.id
         WHERE $whereClause
         ORDER BY pd.status ASC, s.full_name_ar ASC";
@@ -307,11 +303,15 @@ $statsParams = array_values(array_filter($whereParams, function($w, $k) use ($wh
     return strpos($whereParts[$k], 'pd.status') === false;
 }, ARRAY_FILTER_USE_BOTH));
 
-$stmtProposed = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'proposed' AND " . ($statsWhere ?: '1=1'));
+$stmtProposed = $db->prepare("SELECT COUNT(*) FROM promotions pd JOIN students s ON pd.student_id = s.id WHERE pd.status = 'proposed' AND " . ($statsWhere ?: '1=1'));
+$stmtProposed->execute($statsParams);
+$proposedCount = $stmtProposed->fetchColumn();
 
-$stmtApproved = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'approved' AND " . ($statsWhere ?: '1=1'));
+$stmtApproved = $db->prepare("SELECT COUNT(*) FROM promotions pd JOIN students s ON pd.student_id = s.id WHERE pd.status = 'approved' AND " . ($statsWhere ?: '1=1'));
+$stmtApproved->execute($statsParams);
+$approvedCount = $stmtApproved->fetchColumn();
 
-$stmtRejected = $db->prepare("SELECT COUNT(*) FROM promotions pd WHERE pd.status = 'rejected' AND " . ($statsWhere ?: '1=1'));
+$stmtRejected = $db->prepare("SELECT COUNT(*) FROM promotions pd JOIN students s ON pd.student_id = s.id WHERE pd.status = 'rejected' AND " . ($statsWhere ?: '1=1'));
 $stmtRejected->execute($statsParams);
 $rejectedCount = $stmtRejected->fetchColumn();
 ?>
@@ -599,9 +599,9 @@ $rejectedCount = $stmtRejected->fetchColumn();
 </form>
 
 <?php
-$pageJs = "
+$pageJs = <<<'JS'
 // تحديد/إلغاء تحديد الكل
-function toggleAll(el) {
+window.toggleAll = function(el) {
     document.querySelectorAll('.dec-checkbox').forEach(cb => cb.checked = el.checked);
     updateSelectedCount();
 }
@@ -619,7 +619,7 @@ function updateSelectedCount() {
 }
 
 // إرسال دفعي
-function submitBatch(action) {
+window.submitBatch = function(action) {
     if (action === 'approve_all_proposed') {
         if (!confirm('هل تريد اعتماد جميع القرارات المقترحة؟')) return;
     } else {
@@ -644,7 +644,7 @@ function submitBatch(action) {
 }
 
 // نافذة الرفض الدفعي
-function showRejectModal() {
+window.showRejectModal = function() {
     var count = document.querySelectorAll('.dec-checkbox:checked').length;
     if (count === 0) {
         alert('يرجى اختيار قرار واحد على الأقل.');
@@ -652,12 +652,12 @@ function showRejectModal() {
     }
     document.getElementById('reject-modal').style.display = 'block';
 }
-function closeRejectModal() {
+window.closeRejectModal = function() {
     document.getElementById('reject-modal').style.display = 'none';
 }
 
 // اعتماد فردي
-function individualAction(id, action) {
+window.individualAction = function(id, action) {
     if (action === 'approve_individual') {
         if (!confirm('هل تريد اعتماد هذا القرار؟')) return;
         document.getElementById('approve-decision-id').value = id;
@@ -666,13 +666,13 @@ function individualAction(id, action) {
 }
 
 // رفض فردي
-function showIndividualReject(id, name) {
+window.showIndividualReject = function(id, name) {
     document.getElementById('individual-decision-id').value = id;
     document.getElementById('individual-student-name').textContent = name;
     document.getElementById('individual-reject-modal').style.display = 'block';
 }
-function closeIndividualReject() {
+window.closeIndividualReject = function() {
     document.getElementById('individual-reject-modal').style.display = 'none';
 }
-";
+JS;
 require_once __DIR__ . '/../../includes/footer.php';

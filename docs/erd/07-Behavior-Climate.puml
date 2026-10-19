@@ -1,0 +1,75 @@
+@startuml 07-Behavior-Climate
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "behavior_categories" as behavior_categories {
+  id : int(10)
+  name_ar : varchar(100)
+  name_en : varchar(100)
+  type : enum('positive','negative')
+  points : decimal(5,2)
+  * school_id : int(10)
+  is_active : tinyint(1)
+}
+
+entity "behavior_incidents" as behavior_incidents {
+  id : int(10)
+  * student_id : int(10)
+  * category_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  incident_date : date
+  description : text
+  points : decimal(5,2)
+  reported_by : int(10)
+}
+
+entity "behavior_scores" as behavior_scores {
+  id : int(10)
+  * student_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  starting_points : decimal(5,2)
+  earned_points : decimal(5,2)
+  deducted_points : decimal(5,2)
+  current_percentage : decimal(5,2)
+  is_passing : tinyint(1)
+}
+
+entity "climate_items" as climate_items {
+  id : int(10)
+  * survey_id : int(10)
+  * item_id : int(10)
+  numeric_value : decimal(10,4)
+  normalized_value : decimal(5,2)
+  is_active : tinyint(1)
+}
+
+entity "surveys" as surveys {
+  id : int(10)
+  survey_type : enum('climate','facility')
+  * school_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  respondent_type : enum('teacher','student','parent','admin','evaluator')
+  * respondent_id : int(10)
+  * evaluator_id : int(10)
+  survey_date : date
+  overall_score : decimal(5,2)
+}
+
+entity "survey_items" as survey_items {
+  id : int(10)
+  * survey_id : int(10)
+  * item_id : int(10)
+  numeric_value : decimal(10,4)
+  normalized_value : decimal(5,2)
+  is_active : tinyint(1)
+}
+
+behavior_categories ||--o{ behavior_categories
+surveys ||--o{ surveys
+surveys ||--o{ surveys
+@enduml

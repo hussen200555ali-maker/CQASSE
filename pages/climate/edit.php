@@ -38,12 +38,11 @@ try {
                sem.name_ar as semester_name, ay.name as year_name,
                u.full_name_ar as respondent_name
         FROM surveys cs
-        WHERE cs.survey_type = 'climate'
         JOIN schools s ON cs.school_id = s.id
         JOIN semesters sem ON cs.semester_id = sem.id
         JOIN academic_years ay ON cs.academic_year_id = ay.id
         LEFT JOIN users u ON cs.respondent_id = u.id
-        WHERE cs.id = ? AND cs.is_active = 1
+        WHERE cs.survey_type = 'climate' AND cs.id = ? AND cs.is_active = 1
     ");
     $stmt->execute([$surveyId]);
     $survey = $stmt->fetch();
@@ -96,7 +95,7 @@ foreach ($existingItems as $ei) {
 $climateForm = null;
 $climateItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'climate_survey' AND is_active = 1 LIMIT 1");
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'climate_survey' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {

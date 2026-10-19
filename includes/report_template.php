@@ -18,7 +18,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 class EQAS_PDF extends TCPDF {
     protected $reportTitle = '';
-    protected $orgName = 'EQAS - نظام التقييم الشامل لجودة التعليم المدرسي';
+    protected $orgName = 'CQASSE - نظام التقييم الشامل لجودة التعليم المدرسي';
 
     public function setReportTitle($title) {
         $this->reportTitle = $title;
@@ -90,7 +90,7 @@ class ReportTemplate {
         $this->pdf->setReportTitle($title);
 
         // إعدادات المستند
-        $this->pdf->SetCreator('EQAS');
+        $this->pdf->SetCreator('CQASSE');
         $this->pdf->SetAuthor('نظام التقييم الشامل لجودة التعليم المدرسي');
         $this->pdf->SetTitle($title);
 
@@ -128,7 +128,12 @@ class ReportTemplate {
 
         // شعار — في حالة وجوده
         if ($logoPath && file_exists($logoPath)) {
-            $this->pdf->Image($logoPath, $this->pdf->getPageWidth() / 2 - 25, 35, 50, 0, '', '', '', false, 300, '', false, false, 0);
+            $ext = strtolower(pathinfo($logoPath, PATHINFO_EXTENSION));
+            if ($ext === 'svg') {
+                $this->pdf->ImageSVG($logoPath, $this->pdf->getPageWidth() / 2 - 25, 35, 50, 0);
+            } else {
+                $this->pdf->Image($logoPath, $this->pdf->getPageWidth() / 2 - 25, 35, 50, 0, '', '', '', false, 300, '', false, false, 0);
+            }
         }
 
         // تباعد
@@ -170,7 +175,7 @@ class ReportTemplate {
         $this->pdf->SetY($this->pdf->GetY() + 25);
         $this->pdf->SetFont('dejavusans', 'B', 10);
         $this->pdf->SetTextColor($this->primaryColor[0], $this->primaryColor[1], $this->primaryColor[2]);
-        $this->pdf->Cell(0, 8, 'Education Quality Assessment System', 0, 1, 'C', 0, '', 1);
+        $this->pdf->Cell(0, 8, 'Comprehensive Quality Assessment System for School Education', 0, 1, 'C', 0, '', 1);
         $this->pdf->Cell(0, 8, 'نظام التقييم الشامل لجودة التعليم المدرسي', 0, 1, 'C', 0, '', 1);
 
         // إخفاء الترويسة والتذييل في صفحة الغلاف
@@ -389,6 +394,13 @@ class ReportTemplate {
             $this->pdf->Ln(1);
         }
         $this->pdf->Ln(3);
+    }
+
+    /**
+     * إضافة فراغ عمودي (Line break)
+     */
+    public function Ln($h = '') {
+        $this->pdf->Ln($h);
     }
 
     /**

@@ -1,0 +1,58 @@
+@startuml 05-Subjects-Teaching
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "subjects" as subjects {
+  id : int(10)
+  name_ar : varchar(100)
+  name_en : varchar(100)
+  code : varchar(20)
+  is_active : tinyint(1)
+}
+
+entity "subject_teachers" as subject_teachers {
+  id : int(10)
+  * subject_id : int(10)
+  * teacher_id : int(10)
+  * classroom_id : int(10)
+  * academic_year_id : int(10)
+  * school_id : int(10)
+  is_active : tinyint(1)
+  * semester_id : int(10)
+  created_at : timestamp
+}
+
+entity "subject_grade_years" as subject_grade_years {
+  id : int(10)
+  * subject_id : int(10)
+  * grade_level_id : int(10)
+  hours_per_week : tinyint(3)
+  passing_grade : decimal(5,2)
+  weights_json : longtext
+  is_active : tinyint(1)
+}
+
+entity "subject_weight_distribution" as subject_weight_distribution {
+  id : int(10)
+  * subject_grade_year_id : int(10)
+  * assessment_type_id : int(10)
+  weight : decimal(5,2)
+  * academic_year_id : int(10)
+  is_active : tinyint(1)
+}
+
+entity "teacher_assignments" as teacher_assignments {
+  id : int(10)
+  * teacher_id : int(10)
+  * subject_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  is_active : tinyint(1)
+  created_at : datetime
+}
+
+subjects ||--o{ subjects
+subjects ||--o{ subjects
+subject_grade_years ||--o{ subject_grade_years
+subjects ||--o{ subjects
+@enduml

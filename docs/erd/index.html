@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EQAS Database ERD - مخططات قواعد البيانات</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arabic Typesetting', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #0f3460 0%, #e94560 100%);
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.1);
+            padding: 20px 40px;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat-box .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+        
+        .stat-box .label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .section-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            border-color: #e94560;
+        }
+        
+        .section-header {
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+        }
+        
+        .section-card:nth-child(1) .section-header { background: linear-gradient(135deg, #4472C4 0%, #2c4a8a 100%); }
+        .section-card:nth-child(2) .section-header { background: linear-gradient(135deg, #ED7D31 0%, #c46120 100%); }
+        .section-card:nth-child(3) .section-header { background: linear-gradient(135deg, #70AD47 0%, #4a7a2a 100%); }
+        .section-card:nth-child(4) .section-header { background: linear-gradient(135deg, #5B9BD5 0%, #3a6a9a 100%); }
+        .section-card:nth-child(5) .section-header { background: linear-gradient(135deg, #FFC000 0%, #c99500 100%); }
+        .section-card:nth-child(6) .section-header { background: linear-gradient(135deg, #7030A0 0%, #4a2070 100%); }
+        .section-card:nth-child(7) .section-header { background: linear-gradient(135deg, #C00000 0%, #800000 100%); }
+        .section-card:nth-child(8) .section-header { background: linear-gradient(135deg, #00B050 0%, #007030 100%); }
+        .section-card:nth-child(9) .section-header { background: linear-gradient(135deg, #44546A 0%, #2a3545 100%); }
+        
+        .section-header h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        .section-header .tables-count {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+        
+        .section-body {
+            padding: 20px;
+        }
+        
+        .table-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .table-tag {
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .download-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(90deg, #e94560 0%, #c73659 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: linear-gradient(90deg, #ff6b6b 0%, #e94560 100%);
+            transform: scale(1.02);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+        
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .instructions h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            margin-right: 20px;
+            line-height: 2;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8rem; }
+            .stats { gap: 20px; }
+            .stat-box { padding: 15px 25px; }
+            .stat-box .number { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗃️ مخططات ERD لقاعدة بيانات EQAS</h1>
+        <p>Entity-Relationship Diagrams for Educational Quality Assurance System</p>
+    </div>
+    
+    <div class="container">
+        <div class="stats">
+            <div class="stat-box">
+                <div class="number">53</div>
+                <div class="label">جدول</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">111</div>
+                <div class="label">علاقة</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">6</div>
+                <div class="label">مخطط BFD</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">48</div>
+                <div class="label">جدول أساسي</div>
+            </div>
+            <div class="stat-box">
+                <div class="number">5</div>
+                <div class="label">مشهد (VIEW)</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 طريقة العرض:</h3>
+            <ol>
+                <li>اضغط على زر "فتح في Draw.io" لأي مخطط</li>
+                <li>سيتم فتح المخطط في برنامج Draw.io على المتصفح</li>
+                <li>يمكنك تحرير المخطط وإضافة العلاقات بحرية</li>
+                <li>للحفظ: File → Export → PNG/PDF</li>
+            </ol>
+            <h3 style="color:#e94560;margin-top:15px;">📐 مخططات BFD (حسب وظائف النظام)</h3>
+            <ol start="5">
+                <li>ملفات <code>.puml</code> هي المصدر الرسمي — افتحها في أي محرر PlantUML</li>
+                <li>يمكنك استخدام <a href="https://www.plantuml.com/" target="_blank" style="color:#4fc3f7;">plantuml.com</a> لعرضها مباشرة</li>
+            </ol>
+        </div>
+
+        <h3 style="color:#4fc3f7;font-size:1.3rem;margin-bottom:20px;">🗂️ BFD 1–6: التجميع حسب وظائف النظام</h3>
+        <div class="sections-grid">
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #e74c3c;">
+                    <h3>BFD 1 — المستخدمين والصلاحيات</h3>
+                    <div class="tables-count">8 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">users</span>
+                        <span class="table-tag">roles</span>
+                        <span class="table-tag">permissions</span>
+                        <span class="table-tag">role_permissions</span>
+                        <span class="table-tag">activity_logs</span>
+                        <span class="table-tag">system_settings</span>
+                        <span class="table-tag">user_preferences</span>
+                        <span class="table-tag">export_history</span>
+                    </div>
+                    <a href="BFD1-Users-Permissions-System.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#e74c3c,#c0392b);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #3498db;">
+                    <h3>BFD 2 — البيانات الأساسية والتسجيل</h3>
+                    <div class="tables-count">15 جدولاً</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">governorates</span>
+                        <span class="table-tag">schools</span>
+                        <span class="table-tag">academic_years</span>
+                        <span class="table-tag">semesters</span>
+                        <span class="table-tag">grade_levels</span>
+                        <span class="table-tag">classes</span>
+                        <span class="table-tag">subjects</span>
+                        <span class="table-tag">subject_grade_years</span>
+                        <span class="table-tag">subject_weight_distribution</span>
+                        <span class="table-tag">subject_teachers</span>
+                        <span class="table-tag">teacher_assignments</span>
+                        <span class="table-tag">students</span>
+                        <span class="table-tag">student_enrollments</span>
+                        <span class="table-tag">student_notes</span>
+                        <span class="table-tag">attachments</span>
+                    </div>
+                    <a href="BFD2-Core-Data-Registration.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#3498db,#2980b9);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #2ecc71;">
+                    <h3>BFD 3 — الحضور والسلوك والمهارات</h3>
+                    <div class="tables-count">4 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">attendance_daily</span>
+                        <span class="table-tag">behavior_categories</span>
+                        <span class="table-tag">behavior_incidents</span>
+                        <span class="table-tag">behavior_scores</span>
+                    </div>
+                    <a href="BFD3-Attendance-Behavior-Skills.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#2ecc71,#27ae60);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #9b59b6;">
+                    <h3>BFD 4 — التقييم الشامل وجودة التعليم</h3>
+                    <div class="tables-count">17 جدولاً</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">assessment_types</span>
+                        <span class="table-tag">assessment_forms</span>
+                        <span class="table-tag">assessment_structure</span>
+                        <span class="table-tag">assessment_responses</span>
+                        <span class="table-tag">tests</span>
+                        <span class="table-tag">grades</span>
+                        <span class="table-tag">learning_outcomes</span>
+                        <span class="table-tag">evaluations</span>
+                        <span class="table-tag">surveys</span>
+                        <span class="table-tag">survey_items</span>
+                        <span class="table-tag">climate_items</span>
+                        <span class="table-tag">facility_items</span>
+                        <span class="table-tag">eqi_results</span>
+                        <span class="table-tag">improvement_plans</span>
+                        <span class="table-tag">school_improvement_plans</span>
+                        <span class="table-tag">promotions</span>
+                        <span class="table-tag">promotion_overrides</span>
+                    </div>
+                    <a href="BFD4-Assessment-Quality.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#9b59b6,#8e44ad);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #f39c12;">
+                    <h3>BFD 5 — التقارير والتحليلات (مشاهد)</h3>
+                    <div class="tables-count">5 مشاهد</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">v_student_current</span>
+                        <span class="table-tag">v_student_subject_summary</span>
+                        <span class="table-tag">student_subject_summary</span>
+                        <span class="table-tag">v_semester_scores</span>
+                        <span class="table-tag">v_attendance_summary</span>
+                    </div>
+                    <a href="BFD5-Reports-Analytics.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#f39c12,#e67e22);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header" style="border-left:4px solid #1abc9c;">
+                    <h3>BFD 6 — التواصل وبوابة المستفيدين</h3>
+                    <div class="tables-count">4 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">alerts</span>
+                        <span class="table-tag">notifications</span>
+                        <span class="table-tag">parent_students</span>
+                        <span class="table-tag">parent_acknowledgments</span>
+                    </div>
+                    <a href="BFD6-Communication-Portal.puml" target="_blank" class="download-btn" style="background:linear-gradient(90deg,#1abc9c,#16a085);">📄 عرض PlantUML</a>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color:#e94560;font-size:1.3rem;margin:30px 0 20px;">🗃️ المخططات السابقة (حسب الوحدات)</h3>
+        <div class="sections-grid">
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>01-Academic</h3>
+                    <div class="tables-count">4 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">academic_years</span>
+                        <span class="table-tag">semesters</span>
+                        <span class="table-tag">grades</span>
+                        <span class="table-tag">grade_levels</span>
+                    </div>
+                    <a href="01-Academic.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>02-Users-Permissions</h3>
+                    <div class="tables-count">4 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">users</span>
+                        <span class="table-tag">roles</span>
+                        <span class="table-tag">permissions</span>
+                        <span class="table-tag">role_permissions</span>
+                    </div>
+                    <a href="02-Users-Permissions.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>03-Schools</h3>
+                    <div class="tables-count">2 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">schools</span>
+                        <span class="table-tag">governorates</span>
+                    </div>
+                    <a href="03-Schools.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>04-Students-Parents</h3>
+                    <div class="tables-count">5 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">students</span>
+                        <span class="table-tag">student_enrollments</span>
+                        <span class="table-tag">student_notes</span>
+                        <span class="table-tag">parent_students</span>
+                        <span class="table-tag">parent_acknowledgments</span>
+                    </div>
+                    <a href="04-Students-Parents.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>05-Subjects-Teaching</h3>
+                    <div class="tables-count">6 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">subjects</span>
+                        <span class="table-tag">subject_teachers</span>
+                        <span class="table-tag">subject_grade_years</span>
+                        <span class="table-tag">subject_weight_distribution</span>
+                        <span class="table-tag">teacher_assignments</span>
+                        <span class="table-tag">classes</span>
+                    </div>
+                    <a href="05-Subjects-Teaching.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>06-Assessments</h3>
+                    <div class="tables-count">6 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">assessment_forms</span>
+                        <span class="table-tag">assessment_responses</span>
+                        <span class="table-tag">assessment_structure</span>
+                        <span class="table-tag">assessment_types</span>
+                        <span class="table-tag">tests</span>
+                        <span class="table-tag">evaluations</span>
+                    </div>
+                    <a href="06-Assessments.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>07-Behavior-Climate</h3>
+                    <div class="tables-count">6 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">behavior_categories</span>
+                        <span class="table-tag">behavior_incidents</span>
+                        <span class="table-tag">behavior_scores</span>
+                        <span class="table-tag">climate_items</span>
+                        <span class="table-tag">surveys</span>
+                        <span class="table-tag">survey_items</span>
+                    </div>
+                    <a href="07-Behavior-Climate.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>08-EQI-Improvement</h3>
+                    <div class="tables-count">3 جداول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">eqi_results</span>
+                        <span class="table-tag">improvement_plans</span>
+                        <span class="table-tag">school_improvement_plans</span>
+                    </div>
+                    <a href="08-EQI-Improvement.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>09-Operations</h3>
+                    <div class="tables-count">11 جدول</div>
+                </div>
+                <div class="section-body">
+                    <div class="table-list">
+                        <span class="table-tag">promotions</span>
+                        <span class="table-tag">promotion_overrides</span>
+                        <span class="table-tag">notifications</span>
+                        <span class="table-tag">alerts</span>
+                        <span class="table-tag">activity_logs</span>
+                        <span class="table-tag">attachments</span>
+                        <span class="table-tag">export_history</span>
+                        <span class="table-tag">system_settings</span>
+                    </div>
+                    <a href="09-Operations.drawio" target="_blank" class="download-btn">فتح في Draw.io</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>تم إنشاء هذه المخططات باستخدام Python Script - EQAS ERD Generator v1.0</p>
+        <p>تاريخ الإنشاء: 2026-05-18</p>
+    </div>
+</body>
+</html>

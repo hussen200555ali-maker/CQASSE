@@ -45,21 +45,29 @@ function createTestDB(): PDO {
     // إنشاء الجداول المطلوبة للاختبار
     $db->exec("CREATE TABLE IF NOT EXISTS assessment_forms (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name_ar TEXT, name_en TEXT, form_key TEXT, description TEXT,
+        form_key TEXT NOT NULL,
+        name_ar TEXT NOT NULL, name_en TEXT,
+        category TEXT NOT NULL DEFAULT 'behavior',
+        target TEXT NOT NULL DEFAULT 'student',
+        description TEXT,
+        is_system INTEGER DEFAULT 0,
+        is_default INTEGER DEFAULT 0, version TEXT,
         is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )");
 
-    $db->exec("CREATE TABLE IF NOT EXISTS assessment_criteria (
+    $db->exec("CREATE TABLE IF NOT EXISTS assessment_structure (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        form_id INTEGER, name_ar TEXT, name_en TEXT, sort_order INTEGER DEFAULT 0,
+        form_id INTEGER NOT NULL,
+        parent_id INTEGER DEFAULT NULL,
+        type TEXT NOT NULL DEFAULT 'criteria',
+        name_ar TEXT, name_en TEXT,
+        text_ar TEXT, text_en TEXT,
+        tool_type TEXT DEFAULT NULL,
+        weight REAL DEFAULT 1.0,
+        is_inverse INTEGER DEFAULT 0,
+        max_value REAL DEFAULT NULL,
+        sort_order INTEGER DEFAULT 0,
         is_active INTEGER DEFAULT 1
-    )");
-
-    $db->exec("CREATE TABLE IF NOT EXISTS assessment_items (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        criteria_id INTEGER, form_id INTEGER, text_ar TEXT, text_en TEXT,
-        tool_type TEXT, weight REAL DEFAULT 1.0, is_inverse INTEGER DEFAULT 0,
-        max_value REAL, sort_order INTEGER DEFAULT 0, is_active INTEGER DEFAULT 1
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS assessment_responses (
@@ -86,19 +94,21 @@ function createTestDB(): PDO {
 
     $db->exec("CREATE TABLE IF NOT EXISTS schools (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name_ar TEXT, name_en TEXT, code TEXT, school_type TEXT,
+        name_ar TEXT, name_en TEXT, code TEXT, reference_code TEXT, school_type TEXT,
         is_active INTEGER DEFAULT 1
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS school_context (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        school_id INTEGER, academic_year_id INTEGER,
+        school_id INTEGER UNIQUE,
+        academic_year_id INTEGER DEFAULT NULL,
         location_type TEXT, total_students INTEGER, student_teacher_ratio REAL,
         socioeconomic_index REAL, parent_education_level REAL,
         students_with_special_needs_pct REAL, infrastructure_score REAL,
         student_mobility_rate REAL, challenge_index REAL,
         is_active INTEGER DEFAULT 1,
-        UNIQUE(school_id, academic_year_id)
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS eqi_dimension_weights (
@@ -120,9 +130,16 @@ function createTestDB(): PDO {
 
     $db->exec("CREATE TABLE IF NOT EXISTS system_settings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        setting_key TEXT UNIQUE, name_ar TEXT, setting_value TEXT, value_type TEXT DEFAULT 'string',
-        category TEXT, description_ar TEXT, sort_order INTEGER DEFAULT 0,
-        is_active INTEGER DEFAULT 1
+        category TEXT NOT NULL DEFAULT '',
+        setting_key TEXT UNIQUE, setting_value TEXT,
+        value_type TEXT DEFAULT 'string',
+        name_ar TEXT NOT NULL DEFAULT '', description_ar TEXT,
+        is_system INTEGER DEFAULT 1,
+        school_id INTEGER DEFAULT NULL,
+        sort_order INTEGER DEFAULT 0,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS school_settings (
@@ -173,10 +190,41 @@ function createTestDB(): PDO {
         is_active INTEGER DEFAULT 1
     )");
 
+    // جدول التنبيهات للاختبارات
+    $db->exec("CREATE TABLE IF NOT EXISTS alerts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id INTEGER NOT NULL DEFAULT 1,
+        student_id INTEGER DEFAULT NULL,
+        user_id INTEGER DEFAULT NULL,
+        alert_type TEXT NOT NULL,
+        severity TEXT NOT NULL DEFAULT 'warning',
+        title_ar TEXT NOT NULL,
+        message_ar TEXT NOT NULL,
+        is_read INTEGER DEFAULT 0,
+        read_at TEXT DEFAULT NULL,
+        is_resolved INTEGER DEFAULT 0,
+        resolved_by INTEGER DEFAULT NULL,
+        resolved_at TEXT DEFAULT NULL,
+        notes TEXT DEFAULT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    // جدول تسجيل الطلاب في الفصول
+    $db->exec("CREATE TABLE IF NOT EXISTS student_enrollments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        class_id INTEGER NOT NULL,
+        academic_year_id INTEGER NOT NULL DEFAULT 1,
+        enrollment_date TEXT DEFAULT NULL,
+        status TEXT NOT NULL DEFAULT 'enrolled',
+        is_active INTEGER DEFAULT 1
+    )");
+
     // جداول تقييم التدريس
     $db->exec("CREATE TABLE IF NOT EXISTS subject_teachers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         teacher_id INTEGER, subject_id INTEGER, class_id INTEGER,
+        classroom_id INTEGER DEFAULT NULL,
         school_id INTEGER DEFAULT 1, academic_year_id INTEGER, is_active INTEGER DEFAULT 1
     )");
     // جدول ملخص تقييم التدريس
@@ -255,11 +303,15 @@ function createTestDB(): PDO {
     $db->exec("CREATE TABLE IF NOT EXISTS evaluations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         eval_type TEXT NOT NULL,
-        student_id INTEGER, teacher_id INTEGER, class_id INTEGER,
+        teacher_id INTEGER, student_id INTEGER, class_id INTEGER,
         school_id INTEGER DEFAULT 1, academic_year_id INTEGER, semester_id INTEGER,
-        score REAL, combined_score REAL, current_percentage REAL,
+        self_score REAL, peer_score REAL, admin_score REAL,
+        combined_score REAL, adjusted_score REAL,
+        score REAL, current_percentage REAL,
+        starting_points REAL, earned_points REAL, deducted_points REAL,
         is_passing INTEGER DEFAULT 1,
-        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )");
 
     $db->exec("CREATE TABLE IF NOT EXISTS surveys (
@@ -289,14 +341,15 @@ function createTestDB(): PDO {
         is_active INTEGER DEFAULT 1
     )");
 
-    // جداول الإقرارات
-    $db->exec("CREATE TABLE IF NOT EXISTS parent_acknowledgments (
+    // جداول الإقرارات (موحدة في parent_students)
+    $db->exec("CREATE TABLE IF NOT EXISTS parent_students (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        parent_id INTEGER, student_id INTEGER,
-        ack_type TEXT, entity_id INTEGER,
-        is_acknowledged INTEGER DEFAULT 0, acknowledged_at TEXT,
-        notes TEXT, is_active INTEGER DEFAULT 1,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        parent_id INTEGER NOT NULL, student_id INTEGER NOT NULL,
+        relationship TEXT DEFAULT 'father',
+        ack_grade INTEGER DEFAULT NULL, ack_behavior INTEGER DEFAULT NULL,
+        ack_attendance INTEGER DEFAULT NULL, ack_promotion INTEGER DEFAULT NULL,
+        last_ack_at TEXT DEFAULT NULL,
+        is_active INTEGER DEFAULT 1, created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )");
 
     // جداول التقييم الأكاديمي

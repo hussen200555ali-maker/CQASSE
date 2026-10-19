@@ -51,17 +51,17 @@ try {
     $myClasses = $stmt->fetchAll();
 } catch (Exception $e) { }
 
-// المواد التي أعلمها
+// المواد التي أعلمها (من subject_teachers — نظام مستمر)
 $mySubjects = [];
 try {
     $stmt = $db->prepare("
         SELECT DISTINCT s.id, s.name_ar, s.code
-        FROM teacher_assignments ta
-        JOIN subjects s ON ta.subject_id = s.id
-        WHERE ta.teacher_id = ? AND ta.is_active = 1 AND ta.academic_year_id = ?
+        FROM subject_teachers st
+        JOIN subjects s ON st.subject_id = s.id
+        WHERE st.teacher_id = ? AND st.school_id = ? AND st.is_active = 1
         ORDER BY s.name_ar
     ");
-    $stmt->execute([$userId, $academicYearId]);
+    $stmt->execute([$userId, $schoolId]);
     $mySubjects = $stmt->fetchAll();
 } catch (Exception $e) { }
 
@@ -348,7 +348,7 @@ try {
 $teacherName = $_SESSION['user']['full_name'] ?? 'معلم';
 ?>
 
-<div class="section">
+<div class="section" id="teacher-dashboard">
     <!-- ترحيب -->
     <div class="card mb-6">
         <div class="card-body" style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">
@@ -361,50 +361,129 @@ $teacherName = $_SESSION['user']['full_name'] ?? 'معلم';
         </div>
     </div>
 
+<style>
+.dashboard-stat {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    text-align: center;
+    border: 1px solid var(--border-light);
+    border-right: 4px solid var(--card-color, var(--primary));
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s ease;
+}
+.dashboard-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+.dashboard-stat .stat-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--card-color, var(--primary)) 14%, transparent);
+}
+.dashboard-stat .stat-value {
+    font-size: 28px; font-weight: 800;
+    color: var(--card-color, var(--primary));
+    line-height: 1.2; margin-bottom: 4px;
+}
+.dashboard-stat .stat-label {
+    font-size: 13px; color: var(--text-secondary); font-weight: 500;
+}
+@media (max-width: 768px) {
+    .dashboard-stat { padding: 1rem; }
+    .dashboard-stat .stat-icon { width: 40px; height: 40px; font-size: 18px; }
+    .dashboard-stat .stat-value { font-size: 22px; }
+    .dashboard-stat .stat-label { font-size: 12px; }
+}
+@media (max-width: 480px) {
+    .dashboard-stat { padding: 0.85rem; }
+    .dashboard-stat .stat-icon { width: 36px; height: 36px; font-size: 16px; margin-bottom: 8px; }
+    .dashboard-stat .stat-value { font-size: 20px; }
+    .dashboard-stat .stat-label { font-size: 11px; }
+}
+/* Teacher dashboard responsive overrides */
+@media (max-width: 991px) {
+    #teacher-dashboard [style*="height:300px"] {
+        height: 250px !important;
+    }
+}
+@media (max-width: 767px) {
+    #teacher-dashboard > .grid-2 {
+        grid-template-columns: 1fr !important;
+    }
+    #teacher-dashboard [style*="height:300px"] {
+        height: 220px !important;
+    }
+}
+@media (max-width: 575px) {
+    #teacher-dashboard > .grid-4 {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+    }
+    #teacher-dashboard .card-body[style*="justify-content"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px;
+    }
+    #teacher-dashboard [style*="height:300px"] {
+        height: 180px !important;
+    }
+    #teacher-dashboard div[style*="font-size:48px"] {
+        font-size: 32px !important;
+    }
+    #teacher-dashboard div[style*="gap:16px"] {
+        flex-direction: column !important;
+        text-align: center;
+    }
+}
+</style>
+
     <!-- بطاقات ملخصة -->
     <div class="grid grid-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
-        <div class="dashboard-stat" style="border-top:3px solid var(--primary);">
+        <div class="dashboard-stat" style="--card-color: var(--primary);">
             <div class="stat-icon">📚</div>
-            <div class="stat-value" style="color:var(--primary);"><?= count($myClasses) ?></div>
+            <div class="stat-value"><?= count($myClasses) ?></div>
             <div class="stat-label">فصولي</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--info);">
+        <div class="dashboard-stat" style="--card-color: var(--info);">
             <div class="stat-icon">📖</div>
-            <div class="stat-value" style="color:var(--info);"><?= count($mySubjects) ?></div>
+            <div class="stat-value"><?= count($mySubjects) ?></div>
             <div class="stat-label">موادي</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--warning);">
+        <div class="dashboard-stat" style="--card-color: var(--warning);">
             <div class="stat-icon">⏳</div>
-            <div class="stat-value" style="color:var(--warning);"><?= $gradeEntryStatus['pending'] + $gradeEntryStatus['partial'] ?></div>
+            <div class="stat-value"><?= $gradeEntryStatus['pending'] + $gradeEntryStatus['partial'] ?></div>
             <div class="stat-label">اختبارات معلقة</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--danger);">
+        <div class="dashboard-stat" style="--card-color: var(--danger);">
             <div class="stat-icon">🚨</div>
-            <div class="stat-value" style="color:var(--danger);"><?= count($studentAlerts) ?></div>
+            <div class="stat-value"><?= count($studentAlerts) ?></div>
             <div class="stat-label">تنبيهات طلابية</div>
         </div>
     </div>
 
     <!-- بطاقات ملخصة إضافية -->
     <div class="grid grid-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
-        <div class="dashboard-stat" style="border-top:3px solid var(--success);">
+        <div class="dashboard-stat" style="--card-color: var(--success);">
             <div class="stat-icon">📝</div>
-            <div class="stat-value" style="color:var(--success);"><?= $recentGradesCount ?></div>
+            <div class="stat-value"><?= $recentGradesCount ?></div>
             <div class="stat-label">درجات مُدخلة (7 أيام)</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--secondary);">
+        <div class="dashboard-stat" style="--card-color: var(--secondary);">
             <div class="stat-icon">🎯</div>
-            <div class="stat-value" style="color:var(--secondary);"><?= $skillsProgress['percent'] ?>%</div>
+            <div class="stat-value"><?= $skillsProgress['percent'] ?>%</div>
             <div class="stat-label">تقدم تقييم المهارات</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--info);">
+        <div class="dashboard-stat" style="--card-color: var(--info);">
             <div class="stat-icon">📋</div>
-            <div class="stat-value" style="color:var(--info);"><?= count($pendingEvals) ?></div>
+            <div class="stat-value"><?= count($pendingEvals) ?></div>
             <div class="stat-label">تقييمات معلقة</div>
         </div>
-        <div class="dashboard-stat" style="border-top:3px solid var(--warning);">
+        <div class="dashboard-stat" style="--card-color: var(--warning);">
             <div class="stat-icon">📅</div>
-            <div class="stat-value" style="color:var(--warning);"><?= count($upcomingTests) ?></div>
+            <div class="stat-value"><?= count($upcomingTests) ?></div>
             <div class="stat-label">اختبارات قادمة</div>
         </div>
     </div>
@@ -727,6 +806,18 @@ $teacherName = $_SESSION['user']['full_name'] ?? 'معلم';
     </div>
 
     <script>
+    function eqasBarChart(canvasId, title, labels, datasets, options) {
+        var ctx = document.getElementById(canvasId); if (!ctx) return null;
+        options = options || {}; var dc = ['#1a5632','#c8a951','#17a2b8','#dc3545','#ffc107'];
+        var cds = datasets.map(function(ds,i) { return { label: ds.label||'', data: ds.data, backgroundColor: ds.backgroundColor||dc[i%dc.length], borderColor: ds.borderColor||dc[i%dc.length], borderWidth: ds.borderWidth||1, borderRadius: ds.borderRadius||4, maxBarThickness: ds.maxBarThickness||60 }; });
+        return new Chart(ctx, { type:'bar', data:{ labels:labels, datasets:cds }, options:{ responsive:true, maintainAspectRatio:false, indexAxis:options.horizontal?'y':'x', plugins:{ legend:{ position:'top', rtl:true, labels:{ font:{ family:'Tajawal,Arial,sans-serif', size:12 }, usePointStyle:true } }, title:{ display:!!title, text:title, font:{ family:'Tajawal,Arial,sans-serif', size:16, weight:'bold' }, rtl:true } }, scales:{ x:{ ticks:{ font:{ family:'Tajawal,Arial,sans-serif', size:11 } }, grid:{ display:false } }, y:{ ticks:{ font:{ family:'Tajawal,Arial,sans-serif', size:11 } }, grid:{ color:'rgba(0,0,0,0.06)' }, beginAtZero:true } } } });
+    }
+    function eqasPieChart(canvasId, title, labels, data, colors, isDoughnut) {
+        var ctx = document.getElementById(canvasId); if (!ctx) return null;
+        isDoughnut = isDoughnut !== false;
+        return new Chart(ctx, { type: isDoughnut ? 'doughnut' : 'pie', data: { labels: labels, datasets: [{ data: data, backgroundColor: colors||['#1a5632','#c8a951','#17a2b8','#dc3545','#ffc107'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', rtl: true, labels: { font: { family: 'Tajawal,Arial,sans-serif', size: 12 }, usePointStyle: true, padding: 12 } }, title: { display: !!title, text: title, font: { family: 'Tajawal,Arial,sans-serif', size: 16, weight: 'bold' }, rtl: true } }, cutout: isDoughnut ? '50%' : '0%' } });
+    }
+
     // تقييم الأداء
     eqasBarChart('teachingScoreChart', '',
         ['ذاتي', 'أقران', 'إدارة', 'مُجمّع'],
@@ -801,10 +892,10 @@ $teacherName = $_SESSION['user']['full_name'] ?? 'معلم';
                 <a href="../notes/add.php" class="btn btn-light" style="text-align:center;padding:16px;">
                     <div style="font-size:24px;">📌</div><div style="font-size:13px;">إضافة ملاحظة</div>
                 </a>
-                <a href="../academic_assessment/create_test.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                <a href="../academic_assessment/tests.php" class="btn btn-light" style="text-align:center;padding:16px;">
                     <div style="font-size:24px;">📄</div><div style="font-size:13px;">إنشاء اختبار</div>
                 </a>
-                <a href="../reports/teacher_report.php" class="btn btn-light" style="text-align:center;padding:16px;">
+                <a href="../academic_assessment/summary.php" class="btn btn-light" style="text-align:center;padding:16px;">
                     <div style="font-size:24px;">📊</div><div style="font-size:13px;">تقرير الأداء</div>
                 </a>
             </div>

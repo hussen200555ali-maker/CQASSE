@@ -57,7 +57,9 @@ if ($editId) {
     $stmt = $db->prepare("SELECT * FROM surveys WHERE id = ? AND survey_type = 'climate' AND is_active = 1");
     $stmt->execute([$editId]);
     $existingSurvey = $stmt->fetch();
-    if (!$existingSurvey) { setFlash('الاستبيان غير موجود', 'danger'); redirect('index.php'); }
+    if (!$existingSurvey || ($schoolId && $userRole !== 'group_admin' && $existingSurvey['school_id'] != $schoolId)) {
+        setFlash('الاستبيان غير موجود أو ليس لديك صلاحية', 'danger'); redirect('index.php');
+    }
     
     // جلب العناصر المحفوظة
     $stmt = $db->prepare("SELECT item_id, normalized_value FROM climate_items WHERE survey_id = ? AND is_active = 1");
@@ -73,7 +75,7 @@ $climateForm = null;
 $climateItems = [];
 $categoryGroups = []; // تجميع الأبعاد
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'climate_survey' AND is_active = 1 LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'climate_survey' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -209,6 +211,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 $db->commit();
+                
+                // إرسال إشعار للمستجيبين إذا تم اختياره
+                $sendNotification = !empty($_POST['send_notification']);
+                if ($sendNotification && !$editId) {
+                    try {
+                        $notifTitle = '📋 استبيان المناخ المدرسي';
+                        $roleLookup = $respondentType;
+                        $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read, created_at) VALUES (?, 'climate', ?, ?, 'climate_survey', ?, 0, NOW())");
+                        foreach ($targetSchools as $school) {
+                            if ($roleLookup === 'teacher') {
+                                $uStmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'teacher')");
+                                $uStmt->execute([$school['id']]);
+                            } elseif ($roleLookup === 'parent') {
+                                $uStmt = $db->prepare("SELECT DISTINCT u.id FROM users u JOIN parent_students ps ON u.id = ps.parent_id JOIN students s ON ps.student_id = s.id WHERE s.school_id = ? AND u.is_active = 1 AND ps.is_active = 1 AND u.role_id IN (SELECT id FROM roles WHERE name = 'parent')");
+                                $uStmt->execute([$school['id']]);
+                            } elseif ($roleLookup === 'admin') {
+                                $uStmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'school_admin')");
+                                $uStmt->execute([$school['id']]);
+                            } else {
+                                $uStmt = null;
+                            }
+                            if ($uStmt) {
+                                $notifMessage = "تم فتح استبيان المناخ المدرسي لمدرسة {$school['name_ar']} - الفصل {$semName}. يرجى المشاركة بتعبئة الاستبيان.";
+                                while ($uRow = $uStmt->fetch()) {
+                                    $notifStmt->execute([$uRow['id'], $notifTitle, $notifMessage, 0]);
+                                }
+                            }
+                        }
+                    } catch (Exception $e) {
+                        error_log('survey.php - فشل إشعار الاستبيان: ' . $e->getMessage());
+                    }
+                }
                 
                 if ($createdCount > 1) {
                     logActivity($db, $userId, 'climate_survey_batch', 'استبيانات مناخ لـ ' . $createdCount . ' مدرسة - الدرجة: ' . number_format($overallScore, 1) . '%', 'climate_survey', null);
@@ -415,6 +449,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
         <?php endif; ?>
+
+        <div class="card mb-4" id="notification-card" style="<?= $editId ? 'display:none;' : '' ?>">
+            <div class="card-header"><h3 class="card-title">🔔 إشعار المستجيبين</h3></div>
+            <div class="card-body">
+                <label class="flex items-center gap-2" style="cursor:pointer;">
+                    <input type="checkbox" name="send_notification" value="1" checked id="notif-checkbox">
+                    <span>إرسال إشعار للمستجيبين بفتح الاستبيان</span>
+                </label>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:4px; margin-right:28px;">
+                    سيتم إرسال إشعار لجميع المستجيبين في المدرسة المحددة
+                </div>
+            </div>
+        </div>
 
         <div class="card mb-4">
             <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>

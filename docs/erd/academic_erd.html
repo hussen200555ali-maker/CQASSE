@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>ERD - المخطط الشامل لقاعدة البيانات</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .mermaid {
+            text-align: center;
+            background-color: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>المخطط الشامل لقاعدة البيانات - Comprehensive ERD</h1>
+    <div class="mermaid">
+erDiagram
+    %% المستخدمون والصلاحيات
+    users {
+        INT(10) id
+        VARCHAR(50) username
+        VARCHAR(255) password_hash
+        TINYINT(1) must_change_password
+        VARCHAR(200) full_name_ar
+        VARCHAR(200) full_name_en
+        VARCHAR(100) email
+        VARCHAR(20) phone
+        INT(10) role_id
+        INT(10) school_id
+        TINYINT(1) is_active
+        DATETIME last_login_at
+        TINYINT(3) login_attempts
+        DATETIME lockout_until
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    
+    schools {
+        INT(10) id
+        VARCHAR(200) name_ar
+        VARCHAR(200) name_en
+        VARCHAR(5) reference_code
+        TEXT address
+        VARCHAR(100) governorate
+        VARCHAR(100) district
+        ENUM('BASIC' school_type
+        VARCHAR(200) principal_name
+        VARCHAR(20) phone
+        VARCHAR(100) email
+        TINYINT(1) is_active
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    
+    %% الهيكل الأكاديمي
+    academic_years {
+        INT(10) id
+        VARCHAR(50) name
+        DATE start_date
+        DATE end_date
+        TINYINT(1) is_current
+        ENUM('PLANNING' status
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    semesters {
+        INT(10) id
+        INT(10) academic_year_id
+        VARCHAR(50) name_ar
+        DATE start_date
+        DATE end_date
+        TINYINT(1) is_current
+        ENUM('NONE' lock_level
+        DATETIME locked_at
+        INT(10) locked_by FK
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    grade_levels {
+        INT(10) id
+        VARCHAR(50) name_ar
+        VARCHAR(50) name_en
+        TINYINT(3) level_number
+        ENUM('BASIC' stage
+        TINYINT(1) is_active
+    }
+    
+    subjects {
+        INT(10) id
+        VARCHAR(100) name_ar
+        VARCHAR(100) name_en
+        VARCHAR(20) code
+        TINYINT(1) is_active
+    }
+    
+    %% الطلاب والتسجيل
+    students {
+        INT(10) id
+        VARCHAR(20) student_number
+        VARCHAR(200) full_name_ar
+        VARCHAR(200) full_name_en
+        VARCHAR(200) guardian_name
+        VARCHAR(20) guardian_phone
+        VARCHAR(100) guardian_email
+        INT(10) grade_level_id
+        INT(10) school_id
+        DATE enrollment_date
+        TINYINT(1) is_active
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    
+    student_enrollments {
+        INT(10) id
+        INT(10) student_id
+        INT(10) class_id
+        INT(10) academic_year_id
+        DATE enrollment_date
+        ENUM('ENROLLED' status
+        TINYINT(1) is_active
+    }
+    
+    %% التقييم الأكاديمي
+    tests {
+        INT(10) id
+        INT(10) subject_id
+        INT(10) class_id
+        INT(10) assessment_type_id
+        INT(10) academic_year_id
+        INT(10) semester_id
+        VARCHAR(200) title_ar
+        DECIMAL(5) max_grade
+        DATE test_date
+        ENUM('DRAFT' status
+        INT(10) created_by
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    grades {
+        INT(10) id
+        INT(10) student_id
+        INT(10) test_id FK
+        INT(10) academic_year_id
+        INT(10) semester_id
+        DECIMAL(7,2) grade_value
+        DECIMAL(7,2) max_value
+        DECIMAL(5,2) percentage
+        VARCHAR(3) letter_grade
+        TEXT notes
+        INT(10) graded_by FK
+        TINYINT(1) is_active
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    
+    subject_weight_distribution {
+        INT(10) id
+        INT(10) subject_grade_year_id
+        INT(10) assessment_type_id
+        DECIMAL(5,2) weight
+        INT(10) academic_year_id
+        TINYINT(1) is_active
+    }
+    
+    %% التقييم الشامل (الأبعاد الأخرى)
+    assessment_forms {
+        INT(10) id
+        ENUM('BEHAVIOR_EVAL','SKILLS_CHECKLIST','TEACHING_SELF','TEACHING_PEER','TEACHING_ADMIN','CLIMATE_SURVEY','FACILITY_CHECKLIST','TEACHER_SATISFACTION','PARENT_SATISFACTION' form_key
+        VARCHAR(200) name_ar
+        VARCHAR(200) name_en
+        ENUM('BEHAVIOR','SKILLS','TEACHING','CLIMATE' category
+        ENUM('STUDENT','TEACHER','SCHOOL' target
+        TEXT description
+        TINYINT(1) is_system
+        TINYINT(1) is_default
+        VARCHAR(50) version
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    assessment_responses {
+        INT(10) id
+        INT(10) evaluation_id
+        INT(10) form_id FK
+        INT(10) item_id
+        INT(10) student_id
+        INT(10) teacher_id FK
+        INT(10) school_id
+        INT(10) class_id FK
+        INT(10) academic_year_id FK
+        INT(10) semester_id FK
+        DECIMAL(10,4) numeric_value
+        TEXT text_value
+        INT(10) responded_by FK
+        DATETIME response_date
+        TINYINT(1) is_active
+    }
+    
+    behavior_incidents {
+        INT(10) id
+        INT(10) student_id
+        INT(10) category_id
+        INT(10) class_id
+        INT(10) academic_year_id
+        INT(10) semester_id
+        DATE incident_date
+        TEXT description
+        DECIMAL(5) points
+        INT(10) reported_by FK
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    attendance_daily {
+        INT(10) id
+        INT(10) student_id
+        INT(10) class_id
+        INT(10) academic_year_id
+        INT(10) semester_id
+        DATE date
+        TINYINT(1) status
+        INT(10) recorded_by FK
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    eqi_results {
+        INT(10) id
+        INT(10) school_id
+        INT(10) academic_year_id
+        INT(10) semester_id
+        DECIMAL(5,2) academic_score
+        DECIMAL(5,2) teaching_score
+        DECIMAL(5,2) climate_score
+        DECIMAL(5,2) behavior_score
+        DECIMAL(5,2) skills_score
+        DECIMAL(5,2) attendance_score
+        DECIMAL(5,2) overall_eqi
+        LONGTEXT weights_json
+        LONGTEXT context_json
+        DECIMAL(5,2) challenge_index
+        DECIMAL(5,2) adjusted_eqi
+        LONGTEXT missing_dimensions
+        INT(10) calculated_by FK
+        TINYINT(1) is_active
+        DATETIME created_at
+    }
+    
+    %% العلاقات
+    assessment_responses ||--o{ academic_years : "academic_year_id"
+    assessment_responses ||--o{ classes : "class_id"
+    assessment_responses ||--o{ assessment_forms : "form_id"
+    assessment_responses ||--o{ users : "responded_by"
+    assessment_responses ||--o{ semesters : "semester_id"
+    assessment_responses ||--o{ users : "teacher_id"
+    behavior_incidents ||--o{ users : "reported_by"
+    eqi_results ||--o{ users : "calculated_by"
+    grades ||--o{ users : "graded_by"
+    grades ||--o{ tests : "test_id"
+    semesters ||--o{ users : "locked_by"
+    </div>
+</div>
+
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose' });
+</script>
+</body>
+</html>

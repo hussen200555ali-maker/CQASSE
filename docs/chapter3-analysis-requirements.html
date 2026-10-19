@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الفصل الثالث: التحليل والمتطلبات — EQAS</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Cairo', 'Amiri', sans-serif; color: #1a1a2e; background: #f0f2f5; line-height: 1.9; font-size: 16px; }
+.page-content { max-width: 1100px; margin: 30px auto; padding: 50px 40px; background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.06); border-radius: 12px; }
+@media print { body { background: #fff; } .page-content { box-shadow: none; max-width: 100%; padding: 20px; margin: 0; border-radius: 0; } }
+h1, h2, h3, h4 { font-family: 'Amiri', serif; font-weight: 700; color: #1a2744; margin-top: 2em; margin-bottom: 0.7em; line-height: 1.4; page-break-after: avoid; }
+h1 { font-size: 34px; border-bottom: 3px solid #e94560; padding-bottom: 12px; }
+h2 { font-size: 28px; border-bottom: 2px solid #e8ecf1; padding-bottom: 10px; }
+h3 { font-size: 22px; color: #0d3b66; }
+h4 { font-size: 18px; }
+p { margin-bottom: 1.2em; text-align: justify; }
+strong, b { color: #0d3b66; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); page-break-inside: avoid; }
+table th, table td { border: 1px solid #e8ecf1; padding: 10px 12px; text-align: right; vertical-align: top; }
+table th { background: linear-gradient(135deg, #1a2744, #0d3b66); color: #fff; font-weight: 600; font-family: 'Cairo', sans-serif; }
+table tr:nth-child(even) { background: #f8f9fb; }
+table tr:hover { background: #eef2f7; }
+table tfoot td { font-weight: 700; background: #e8ecf1; }
+ul, ol { margin: 1em 0 1em 2em; }
+li { margin-bottom: 0.5em; }
+hr { border: none; border-top: 2px solid #e8ecf1; margin: 2.5em 0; }
+.result-box { padding: 16px 20px; border-radius: 8px; margin: 1.5em 0; border-right: 4px solid #1a8a4a; background: #f0faf0; }
+.result-box h4 { margin-top: 0; color: #1a8a4a; }
+.note-box { background: #f0f7ff; border: 1px solid #d0e3f7; border-radius: 8px; padding: 16px 20px; margin: 1em 0; }
+.note-box strong { color: #0d3b66; }
+.code-block { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; margin: 1em 0; font-family: 'Cascadia Code', 'Consolas', monospace; direction: ltr; text-align: left; font-size: 13px; overflow-x: auto; }
+.arch-diagram { background: #f8f9fb; border: 2px solid #e8ecf1; border-radius: 12px; padding: 24px; margin: 1.5em 0; text-align: center; }
+.arch-layer { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.arch-box { background: #fff; border: 2px solid #1a2744; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 600; min-width: 120px; text-align: center; }
+.arch-label { font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 700; text-transform: uppercase; }
+.arch-arrow { font-size: 20px; color: #e94560; margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+<h1>الفصل الثالث: التحليل والمتطلبات</h1>
+
+<h2>3.1 المقدمة</h2>
+<p>يُعدّ هذا الفصل العمود الفقري لوثيقة متطلبات النظام البرمجية (SRS)، حيث يُقدّم تحليلًا تفصيليًا وشاملًا للنظام المقترح من حيث منهجية التطوير المعتمدة، والمتطلبات البرمجية والمادية اللازمة لتشغيله، والمتطلبات الوظيفية وغير الوظيفية التي تحكم عمله. تم إعداد هذا الفصل بناءً على دراسة معمّقة للواقع التشغيلي للمجموعات المدرسية، وتحليل دقيق للأنظمة القائمة، ومقارنات مع الحلول التجارية المتاحة، بالإضافة إلى مراجعة شاملة للأدبيات الأكاديمية والدراسات السابقة في مجال تقييم جودة التعليم.</p>
+<p>يهدف هذا الفصل إلى تقديم صورة واضحة ودقيقة للنظام المقترح (EQAS — Educational Quality Assessment System) بحيث تكون جميع المتطلبات محددة وقابلة للقياس والتحقق، مما يضمن أن يكون النظام النهائي مطابقًا للتوقعات ومُلبيًا لاحتياجات جميع الأطراف المعنية: مديري المجموعات المدرسية، مديري المدارس، المعلمين، وأولياء الأمور.</p>
+
+<hr>
+
+<h2>3.2 منهجية التطوير</h2>
+<p>تم اعتماد منهجية التطوير الرشيق (Agile Development) بإطار عمل Scrum كأساس لتنفيذ مشروع EQAS. تم اختيار هذه المنهجية نظرًا لطبيعة المشروع المعقدة والمتعددة الأبعاد، والتي تتطلب مرونة عالية في التعامل مع المتطلبات المتغيرة وإمكانية التسليم التدريجي لوحدات النظام.</p>
+
+<h3>3.2.1 مراحل منهجية Scrum المطبقة</h3>
+<p>تم تطبيق Scrum على مدار 44 أسبوعًا (311 يومًا) موزعة على 22 دورة تطوير (Sprint) مدة كل منها أسبوعان، ضمن ثلاثة محاور رئيسية:</p>
+
+<table>
+<tr><th>المحور</th><th>عدد الدورات</th><th>الفترة</th><th>التركيز</th></tr>
+<tr><td><strong>المحور الأول: التخطيط والتصميم</strong></td><td>8 دورات (S1-P1 إلى S1-P8)</td><td>28 يونيو — 16 أكتوبر 2025م</td><td>الدراسة النظرية، تحليل المتطلبات، تصميم قاعدة البيانات، تصميم الواجهات</td></tr>
+<tr><td><strong>المحور الثاني: التنفيذ والاختبار</strong></td><td>8 دورات (S2-P1 إلى S2-P8)</td><td>15 نوفمبر — 5 مارس 2026م</td><td>تطوير الوحدات البرمجية، التكامل، الاختبار، النشر الأولي</td></tr>
+<tr><td><strong>المحور الثالث: التسليم النهائي</strong></td><td>3 دورات (F-P1 إلى F-P3)</td><td>5 مارس — 5 مايو 2026م</td><td>الاختبار النهائي، التوثيق، تحضير العرض، التسليم</td></tr>
+</table>
+
+<p>تم تطبيق الممارسات التالية في كل دورة:</p>
+
+<table>
+<tr><th>الممارسة</th><th>الوصف</th><th>التكرار</th></tr>
+<tr><td><strong>Sprint Planning</strong></td><td>تخطيط مهام الدورة القادمة مع تحديد الأهداف والمخرجات المتوقعة</td><td>بداية كل دورة (أسبوعين)</td></tr>
+<tr><td><strong>Daily Standup</strong></td><td>اجتماع قصير (15 دقيقة) لمراجعة: ما تم إنجازه، ما سيتم إنجازه، العوائق</td><td>يوميًا</td></tr>
+<tr><td><strong>Sprint Review</strong></td><td>عرض ما تم إنجازه خلال الدورة على المشرف الأكاديمي</td><td>نهاية كل دورة</td></tr>
+<tr><td><strong>Sprint Retrospective</strong></td><td>مراجعة أداء الفريق وتحديد مجالات التحسين للدورة القادمة</td><td>بعد كل مراجعة</td></tr>
+<tr><td><strong>Backlog Refinement</strong></td><td>تحديث قائمة المهام (Product Backlog) وإضافة متطلبات جديدة</td><td>أسبوعيًا</td></tr>
+</table>
+
+<h3>3.2.2 فوائد استخدام Scrum</h3>
+<p>قدّم استخدام منهجية Scrum الفوائد التالية لمشروع EQAS:</p>
+<ul>
+<li><strong>التسليم التدريجي:</strong> تم تسليم وحدات النظام بشكل تدريجي (إدارة المستخدمين ← الحضور ← السلوك ← التقييمات ← EQI ← التحليلات)، مما سمح بالاختبار المبكر والتغذية الراجعة المستمرة.</li>
+<li><strong>المرونة في التعامل مع التغييرات:</strong> تمكّن الفريق من إضافة متطلبات جديدة أثناء التنفيذ (مثل التعديل السياقي، التنبيهات الذكية، بوابة ولي الأمر) دون التأثير على الجدول الزمني العام.</li>
+<li><strong>الشفافية:</strong> الاجتماعات اليومية ومراجعات نهاية الدورة ضمت مشاركة المشرف الأكاديمي، مما ضمن بقاء المشروع على المسار الصحيح.</li>
+<li><strong>إدارة المخاطر:</strong> تم تحديد ومعالجة المخاطر بشكل استباقي في كل دورة (مثل تعقيد محرك EQI، مشاكل التكامل بين الوحدات).</li>
+<li><strong>تحسين الجودة:</strong> كل دورة تضمنت كتابة اختبارات آلية (PHPUnit + Playwright) قبل التسليم، مما ضمن استقرار النظام.</li>
+<li><strong>تحفيز الفريق:</strong> الإنجازات الصغيرة والمتكررة عزّزت معنويات الفريق وحافظت على زخم العمل طوال 44 أسبوعًا.</li>
+</ul>
+
+<hr>
+
+<h2>3.3 المتطلبات البرمجية والمادية</h2>
+
+<h3>3.3.1 المتطلبات البرمجية (Software Requirements)</h3>
+<p>يوضح الجدول التالي جميع البرمجيات والأدوات المطلوبة لتطوير وتشغيل نظام EQAS:</p>
+
+<table>
+<tr><th>م</th><th>البرنامج / الأداة</th><th>الإصدار</th><th>الغرض</th><th>الترخيص</th></tr>
+<tr><td>1</td><td>PHP</td><td>8.2+</td><td>لغة البرمجة الخلفية (Backend)</td><td>مفتوح المصدر (PHP License)</td></tr>
+<tr><td>2</td><td>MySQL</td><td>8.0+</td><td>قاعدة البيانات العلائقية (42 جدول + 4 عروض)</td><td>مفتوح المصدر (GPL)</td></tr>
+<tr><td>3</td><td>Apache HTTP Server</td><td>2.4+</td><td>خادم الويب (عبر XAMPP)</td><td>مفتوح المصدر (Apache 2.0)</td></tr>
+<tr><td>4</td><td>XAMPP</td><td>8.2+</td><td>بيئة التطوير المتكاملة المحلية</td><td>مفتوح المصدر (GPL)</td></tr>
+<tr><td>5</td><td>HTML5</td><td>—</td><td>هيكلة صفحات الويب</td><td>معيار W3C</td></tr>
+<tr><td>6</td><td>CSS3</td><td>—</td><td>تنسيق وتصميم الواجهات</td><td>معيار W3C</td></tr>
+<tr><td>7</td><td>Bootstrap</td><td>5.x</td><td>إطار عمل التصميم المتجاوب</td><td>مفتوح المصدر (MIT)</td></tr>
+<tr><td>8</td><td>JavaScript (ES6+)</td><td>—</td><td>البرمجة التفاعلية على جانب العميل</td><td>معيار ECMAScript</td></tr>
+<tr><td>9</td><td>Chart.js</td><td>4.4.1</td><td>الرسوم البيانية التفاعلية (خطية، شريطية، دائرية، رادار)</td><td>مفتوح المصدر (MIT)</td></tr>
+<tr><td>10</td><td>FontAwesome</td><td>6.x</td><td>مجموعة الأيقونات</td><td>مفتوح المصدر (CC BY 4.0)</td></tr>
+<tr><td>11</td><td>TCPDF</td><td>6.x</td><td>توليد التقارير بصيغة PDF مع دعم RTL</td><td>مفتوح المصدر (LGPL)</td></tr>
+<tr><td>12</td><td>Google Fonts (Tajawal)</td><td>—</td><td>الخط العربي للواجهات</td><td>مفتوح المصدر (OFL)</td></tr>
+<tr><td>13</td><td>Git</td><td>2.40+</td><td>التحكم في الإصدارات</td><td>مفتوح المصدر (GPL)</td></tr>
+<tr><td>14</td><td>GitHub</td><td>—</td><td>استضافة المستودع وإدارة المشروع</td><td>مجاني (للمشاريع مفتوحة المصدر)</td></tr>
+<tr><td>15</td><td>PHPUnit</td><td>10.x</td><td>الاختبارات الوحدوية والتكاملية</td><td>مفتوح المصدر (BSD)</td></tr>
+<tr><td>16</td><td>Playwright</td><td>1.40+</td><td>اختبارات المتصفح الشاملة (E2E)</td><td>مفتوح المصدر (Apache 2.0)</td></tr>
+<tr><td>17</td><td>VS Code</td><td>1.85+</td><td>محرر الأكواد</td><td>مجاني (Microsoft)</td></tr>
+<tr><td>18</td><td>phpMyAdmin</td><td>5.2+</td><td>إدارة قاعدة البيانات عبر الواجهة الرسومية</td><td>مفتوح المصدر (GPL)</td></tr>
+</table>
+
+<h3>3.3.2 المتطلبات المادية (Hardware Requirements)</h3>
+
+<h4>أولاً: متطلبات بيئة التطوير</h4>
+<table>
+<tr><th>م</th><th>المكوّن</th><th>الحد الأدنى</th><th>الموصى به</th></tr>
+<tr><td>1</td><td>المعالج (CPU)</td><td>Intel Core i3 / AMD Ryzen 3</td><td>Intel Core i5 / AMD Ryzen 5</td></tr>
+<tr><td>2</td><td>الذاكرة العشوائية (RAM)</td><td>8 جيجابايت</td><td>16 جيجابايت</td></tr>
+<tr><td>3</td><td>مساحة التخزين</td><td>50 جيجابايت (SSD)</td><td>256 جيجابايت (SSD)</td></tr>
+<tr><td>4</td><td>نظام التشغيل</td><td>Windows 10 / macOS 12 / Ubuntu 22.04</td><td>Windows 11 / macOS 14 / Ubuntu 24.04</td></tr>
+<tr><td>5</td><td>اتصال الإنترنت</td><td>5 ميجابت/ثانية</td><td>20 ميجابت/ثانية</td></tr>
+</table>
+
+<h4>ثانياً: متطلبات بيئة التشغيل (الإنتاجية)</h4>
+<table>
+<tr><th>م</th><th>المكوّن</th><th>الحد الأدنى</th><th>الموصى به</th></tr>
+<tr><td>1</td><td>الخادم (Server)</td><td>خادم مشترك (Shared Hosting)</td><td>خادم سحابي VPS (2 vCPU, 4GB RAM)</td></tr>
+<tr><td>2</td><td>مساحة التخزين</td><td>5 جيجابايت</td><td>20 جيجابايت (SSD)</td></tr>
+<tr><td>3</td><td>قاعدة البيانات</td><td>MySQL 8.0 (1 جيجابايت مساحة)</td><td>MySQL 8.0 (5 جيجابايت مساحة)</td></tr>
+<tr><td>4</td><td>عرض النطاق (Bandwidth)</td><td>10 جيجابايت/شهر</td><td>100 جيجابايت/شهر</td></tr>
+<tr><td>5</td><td>شهادة SSL</td><td>Let's Encrypt (مجاني)</td><td>Let's Encrypt أو شهادة مدفوعة</td></tr>
+<tr><td>6</td><td>النطاق (Domain)</td><td>نطاق فرعي مجاني</td><td>نطاق مخصص (example.com)</td></tr>
+</table>
+
+<h4>ثالثاً: متطلبات المستخدم النهائي</h4>
+<table>
+<tr><th>م</th><th>المكوّن</th><th>الحد الأدنى</th><th>الموصى به</th></tr>
+<tr><td>1</td><td>المتصفح</td><td>Chrome 90+ / Firefox 88+ / Safari 14+ / Edge 90+</td><td>أحدث إصدار من Chrome أو Edge</td></tr>
+<tr><td>2</td><td>دقة الشاشة</td><td>1024×768</td><td>1366×768 أو أعلى</td></tr>
+<tr><td>3</td><td>اتصال الإنترنت</td><td>2 ميجابت/ثانية</td><td>10 ميجابت/ثانية</td></tr>
+<tr><td>4</td><td>JavaScript</td><td>مُفعّل</td><td>مُفعّل</td></tr>
+</table>
+
+<hr>
+
+<h2>3.4 متطلبات النظام</h2>
+
+<h3>3.4.1 المتطلبات الوظيفية (Functional Requirements)</h3>
+<p>تم تحديد 38 متطلبًا وظيفيًا رئيسيًا موزعة على 19 مجالًا وظيفيًا، استنادًا إلى تحليل شامل لوحدة النظام الفعلية:</p>
+
+<table>
+<tr><th>المعرف</th><th>المجال الوظيفي</th><th>المتطلب</th><th>الأولوية</th></tr>
+<tr><td>FR-01</td><td>إدارة المستخدمين</td><td>يجب أن يدعم النظام إنشاء وتعديل وحذف المستخدمين مع تعيين أدوار (مدير مجموعة، مدير مدرسة، معلم، ولي أمر) وتوليد كلمات مرور عشوائية مع إجبار التغيير عند أول دخول</td><td>عالية</td></tr>
+<tr><td>FR-02</td><td>إدارة المدارس</td><td>يجب أن يتيح النظام إضافة وتعديل وأرشفة بيانات المدارس مع إحصائيات شاملة لكل مدرسة</td><td>عالية</td></tr>
+<tr><td>FR-03</td><td>الأعوام والفصول الدراسية</td><td>يجب أن يدعم النظام إنشاء الأعوام الأكاديمية وإدارة الفصول الدراسية مع تحديد الفصل الحالي (is_current) ومستويات القفل الإداري (lock_level: none/soft/hard/admin_handled)</td><td>عالية</td></tr>
+<tr><td>FR-04</td><td>إدارة الشعب</td><td>يجب أن يتيح النظام إنشاء الشعب وربطها بالصفوف والمعلمين والمواد مع تحديد السعة القصوى</td><td>عالية</td></tr>
+<tr><td>FR-05</td><td>بيانات الطلاب</td><td>يجب أن يدعم النظام تسجيل الطلاب وتعديل بياناتهم واستيرادهم دفعة واحدة عبر CSV/Excel مع بحث AJAX</td><td>عالية</td></tr>
+<tr><td>FR-06</td><td>التسجيل في الشعب</td><td>يجب أن يتيح النظام تسجيل الطلاب في الشعب الدراسية مع التحقق من حالة العام الدراسي</td><td>عالية</td></tr>
+<tr><td>FR-07</td><td>إدارة الاختبارات</td><td>يجب أن يدعم النظام إنشاء الاختبارات بأنواعها المختلفة مع تحديد الوزن والدرجة العظمى وحالة النشر (draft/published/locked)</td><td>عالية</td></tr>
+<tr><td>FR-08</td><td>إدخال الدرجات</td><td>يجب أن يتيح النظام إدخال وتعديل درجات الطلاب لكل اختبار مع حساب النسبة المئوية والتقدير الأبجدي</td><td>عالية</td></tr>
+<tr><td>FR-09</td><td>حساب المعدلات</td><td>يجب أن يحسب النظام المعدل التراكمي (GPA) بمقياس 4.00 مع التقديرات الأبجدية (A+ إلى F) ونظام الترحيل (carry-over)</td><td>عالية</td></tr>
+<tr><td>FR-10</td><td>الحضور اليومي</td><td>يجب أن يدعم النظام تسجيل الحضور والغياب يوميًا لكل طالب مع تحديد الحالة (حاضر/غائب/متأخر/بعذر)</td><td>عالية</td></tr>
+<tr><td>FR-11</td><td>الحضور حسب الحصة</td><td>يجب أن يتيح النظام تسجيل الحضور على مستوى كل حصة دراسية</td><td>متوسطة</td></tr>
+<tr><td>FR-12</td><td>تعديل الحضور</td><td>يجب أن يدعم النظام تعديل سجلات الحضور مع تسجيل سجل التعديل (amendment_log JSON)</td><td>متوسطة</td></tr>
+<tr><td>FR-13</td><td>الحوادث السلوكية</td><td>يجب أن يتيح النظام تسجيل الحوادث السلوكية الإيجابية والسلبية مع تصنيفها حسب النوع والشدة والنقاط</td><td>عالية</td></tr>
+<tr><td>FR-14</td><td>الدرجات السلوكية</td><td>يجب أن يحسب النظام الدرجة السلوكية لكل طالب من 100 نقطة بناءً على الحوادث المسجلة</td><td>عالية</td></tr>
+<tr><td>FR-15</td><td>تقييم المهارات</td><td>يجب أن يدعم النظام تقييم مهارات الطلاب عبر استمارات مخصصة</td><td>متوسطة</td></tr>
+<tr><td>FR-16</td><td>نماذج التقييم</td><td>يجب أن يتيح النظام إنشاء نماذج تقييم متعددة من نفس النوع مع تحديد النموذج الافتراضي (is_default) والإصدار (version)</td><td>عالية</td></tr>
+<tr><td>FR-17</td><td>التقييم الذاتي</td><td>يجب أن يدعم النظام قيام المعلمين بتقييم أدائهم ذاتيًا عبر استمارات مخصصة</td><td>عالية</td></tr>
+<tr><td>FR-18</td><td>تقييم الأقران</td><td>يجب أن يتيح النظام قيام المعلمين بتقييم زملائهم</td><td>عالية</td></tr>
+<tr><td>FR-19</td><td>التقييم الإداري</td><td>يجب أن يدعم النظام قيام الإدارة بتقييم أداء المعلمين</td><td>عالية</td></tr>
+<tr><td>FR-20</td><td>استبيانات المناخ</td><td>يجب أن يتيح النظام إنشاء وتوزيع استبيانات المناخ على المعلمين والطلاب وأولياء الأمور بثلاثة أبعاد (البيئة، العلاقات، السلامة)</td><td>عالية</td></tr>
+<tr><td>FR-21</td><td>تقييم المرافق</td><td>يجب أن يدعم النظام تقييم مرافق المدرسة عبر قوائم مراجعة (checklists)</td><td>متوسطة</td></tr>
+<tr><td>FR-22</td><td>محرك EQI</td><td>يجب أن يحسب النظام مؤشر EQI الشامل من ستة أبعاد مرجّحة: الأكاديمي 35%، التدريس 25%، المناخ 15%، السلوك 10%، المهارات 10%، الحضور 5%</td><td>عالية جدًا</td></tr>
+<tr><td>FR-23</td><td>التعديل السياقي</td><td>يجب أن يطبق النظام تعديلًا تلقائيًا على EQI بناءً على 7 عوامل سياقية مع حساب مؤشر التحدي (0-100)</td><td>عالية</td></tr>
+<tr><td>FR-24</td><td>مقارنة المدارس</td><td>يجب أن يتيح النظام مقارنة أداء مدرستين أو أكثر في EQI الخام والمعدّل سياقيًا</td><td>عالية</td></tr>
+<tr><td>FR-25</td><td>محرك التنبيهات</td><td>يجب أن يكتشف النظام المشكلات تلقائيًا عند تجاوز العتبات المحددة مع تصنيف الشدة (info/warning/danger/critical)</td><td>عالية</td></tr>
+<tr><td>FR-26</td><td>محرك الترقية</td><td>يجب أن يحدد النظام ترقية الطلاب بناءً على ثلاثة معايير: أكاديمي 50%، سلوكي 60%، حضور 75% مع قرارات (ترقية/إعادة/مشروطة/قيد المراجعة)</td><td>عالية</td></tr>
+<tr><td>FR-27</td><td>خطط التحسين</td><td>يجب أن يدعم النظام إنشاء خطط تحسين فردية ومؤسسية مع تتبع التقدم</td><td>عالية</td></tr>
+<tr><td>FR-28</td><td>لوحة القيادة</td><td>يجب أن يعرض النظام لوحة قيادة لمدير المجموعة تتضمن KPIs ورسوم بيانية واتجاهات EQI وتصنيف المدارس والمدارس في خطر</td><td>عالية</td></tr>
+<tr><td>FR-29</td><td>لوحات التحليلات</td><td>يجب أن يوفر النظام 6 أدوات تحليلية: تحليل مدرسة، شعبة، مادة، اتجاهات زمنية، مقارنة مدارس، وتحليل شامل</td><td>عالية</td></tr>
+<tr><td>FR-30</td><td>التقارير PDF</td><td>يجب أن يولّد النظام تقارير سنوية احترافية بصيغة PDF تتضمن غلافًا وملخصًا تنفيذيًا وبطاقات KPI واتجاهات وتوصيات</td><td>عالية</td></tr>
+<tr><td>FR-31</td><td>تصدير البيانات</td><td>يجب أن يدعم النظام تصدير البيانات بصيغ XLSX وCSV مع تتبع سجل التصدير</td><td>متوسطة</td></tr>
+<tr><td>FR-32</td><td>نظام الإشعارات</td><td>يجب أن يرسل النظام إشعارات داخلية للمستخدمين مع تفضيلات قابلة للتخصيص</td><td>متوسطة</td></tr>
+<tr><td>FR-33</td><td>إدارة الصلاحيات</td><td>يجب أن يتيح النظام لمدير المجموعة إدارة مصفوفة الصلاحيات التفاعلية (checkbox) لربط الأدوار بالصلاحيات</td><td>عالية</td></tr>
+<tr><td>FR-34</td><td>سياسات المجموعة</td><td>يجب أن يدعم النظام تحديد سياسات المجموعة بما في ذلك الترميز اللوني لـ EQI ونسب النجاح وإعدادات الإشعارات</td><td>متوسطة</td></tr>
+<tr><td>FR-35</td><td>بوابة ولي الأمر</td><td>يجب أن تتيح بوابة ولي الأمر عرض درجات الأبناء وسلوكهم وحضورهم ومهاراتهم وحالة ترقيتهم مع إمكانية الإقرار</td><td>عالية</td></tr>
+<tr><td>FR-36</td><td>النسخ الاحتياطي</td><td>يجب أن يدعم النظام إنشاء واستعادة النسخ الاحتياطية لقاعدة البيانات بصيغة gzip</td><td>متوسطة</td></tr>
+<tr><td>FR-37</td><td>سجل النشاط</td><td>يجب أن يسجل النظام جميع الأنشطة (إضافة/تعديل/حذف) مع تفاصيل المستخدم والوقت وعنوان IP</td><td>عالية</td></tr>
+<tr><td>FR-38</td><td>إعدادات النظام</td><td>يجب أن يتيح النظام إعدادات عامة وفردية لكل مدرسة مع تصنيفات (عام/أكاديمي/سلوكي/إشعارات)</td><td>متوسطة</td></tr>
+</table>
+
+<h3>3.4.2 المتطلبات غير الوظيفية (Non-Functional Requirements)</h3>
+<p>تم تحديد 30 متطلبًا غير وظيفي موزعة على 7 فئات:</p>
+
+<h4>أولاً: الأمان (Security) — 10 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-S01</td><td>تشفير كلمات المرور بخوارزمية bcrypt بعامل تكلفة 12</td><td>PASSWORD_BCRYPT مع cost=12 في auth.php</td></tr>
+<tr><td>NFR-S02</td><td>حماية من هجمات القوة الغاشمة (قفل بعد 5 محاولات فاشلة لمدة 15 دقيقة)</td><td>MAX_LOGIN_ATTEMPTS + LOCKOUT_DURATION في auth.php</td></tr>
+<tr><td>NFR-S03</td><td>حماية CSRF برموز عشوائية (32 بايت) مع مقارنة آمنة زمنيًا</td><td>bin2hex(random_bytes(32)) + hash_equals() في helpers.php</td></tr>
+<tr><td>NFR-S04</td><td>حماية XSS عبر ترميز جميع المخرجات</td><td>دالة e() باستخدام htmlspecialchars(ENT_QUOTES, 'UTF-8')</td></tr>
+<tr><td>NFR-S05</td><td>حماية SQL Injection عبر PDO Prepared Statements</td><td>PDO::ATTR_EMULATE_PREPARES = false في database.php</td></tr>
+<tr><td>NFR-S06</td><td>إدارة جلسات آمنة مع HttpOnly + SameSite=Lax + تجديد كل 30 دقيقة + بصمة الجلسة</td><td>session.php: 7 إعدادات أمان + fingerprint SHA-256</td></tr>
+<tr><td>NFR-S07</td><td>تطبيق 8 رؤوس أمان HTTP (CSP, HSTS, X-Frame-Options, إلخ)</td><td>security_headers.php: 8 رؤوس أمان</td></tr>
+<tr><td>NFR-S08</td><td>التحكم في الوصول القائم على الأدوار (RBAC) مع تسلسل هرمي وفحص ملكية المدرسة</td><td>permission_middleware.php: 5 مستويات + checkSchoolOwnership()</td></tr>
+<tr><td>NFR-S09</td><td>إجبار المستخدم على تغيير كلمة المرور عند أول تسجيل دخول</td><td>عمود must_change_password في جدول users</td></tr>
+<tr><td>NFR-S10</td><td>التحقق من وجود المستخدم ونشاطه في قاعدة البيانات مع كل طلب</td><td>auth.php: SELECT على كل طلب + password_hash_sig</td></tr>
+</table>
+
+<h4>ثانياً: الأداء (Performance) — 6 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-P01</td><td>وقت تحميل الصفحات لا يتجاوز 3 ثوانٍ تحت حمل عادي</td><td>تحسين الاستعلامات + فهرسة قاعدة البيانات</td></tr>
+<tr><td>NFR-P02</td><td>حد أقصى 200 تركيبة لعمليات حساب EQI الجماعية لكل طلب</td><td>صفحة calculate.php: فحص count() > 200</td></tr>
+<tr><td>NFR-P03</td><td>حد أقصى 5 ميجابايت للملفات المرفوعة</td><td>صفحة import.php: فحص $_FILES['size']</td></tr>
+<tr><td>NFR-P04</td><td>فهرسة جميع أعمدة المفاتيح الخارجية وأعمدة البحث الشائعة</td><td>42 جدولًا مع 80+ فهرس (KEY / INDEX)</td></tr>
+<tr><td>NFR-P05</td><td>ترقيم الصفحات في جميع صفحات القوائم</td><td>دالة renderPagination() في helpers.php</td></tr>
+<tr><td>NFR-P06</td><td>استخدام 4 عروض قاعدة بيانات (views) للتجميعات الشائعة</td><td>v_student_current, v_student_subject_summary, student_subject_summary, v_attendance_summary</td></tr>
+</table>
+
+<h4>ثالثاً: سهولة الاستخدام (Usability) — 8 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-U01</td><td>دعم كامل للغة العربية RTL مع تنسيق التواريخ والأرقام بالعربية</td><td>dir="rtl" + formatDateAr() + formatNumberAr() في helpers.php</td></tr>
+<tr><td>NFR-U02</td><td>تصميم متجاوب يتكيف مع جميع أحجام الشاشات</td><td>responsive.css + Bootstrap 5 + viewport meta</td></tr>
+<tr><td>NFR-U03</td><td>رسوم بيانية تفاعلية (خطية، شريطية، دائرية، رادار)</td><td>Chart.js 4.4.1 عبر CDN في header.php</td></tr>
+<tr><td>NFR-U04</td><td>رسائل تنبيه (نجاح/خطأ/تحذير/معلومات) بعد كل عملية</td><td>setFlash() + flash messages في header.php</td></tr>
+<tr><td>NFR-U05</td><td>قائمة جانبية ذكية حسب صلاحية المستخدم مع تمييز الصفحة النشطة</td><td>sidebar.php: 1073 سطر + $menuPermissions</td></tr>
+<tr><td>NFR-U06</td><td>مؤشرات اتجاه (▲/▼/→) مع النسبة المئوية</td><td>مطبّق في dashboard.php, eqi/dashboard.php, analytics/*.php</td></tr>
+<tr><td>NFR-U07</td><td>حالات فارغة واضحة عند عدم وجود بيانات</td><td>empty-state في analytics.css</td></tr>
+<tr><td>NFR-U08</td><td>أنماط CSS مخصصة للطباعة</td><td>print.css</td></tr>
+</table>
+
+<h4>رابعاً: الموثوقية (Reliability) — 5 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-R01</td><td>3 مستويات من النسخ الاحتياطي (كامل/قبل العملية/يدوي) بصيغة gzip</td><td>backup.php: BackupManager مع 3 مستويات</td></tr>
+<tr><td>NFR-R02</td><td>تسجيل جميع العمليات الحرجة مع تفاصيل المستخدم والوقت وعنوان IP</td><td>جدول activity_logs مع ip_address و user_agent</td></tr>
+<tr><td>NFR-R03</td><td>استخدام معاملات قاعدة البيانات (transactions) للعمليات الحرجة</td><td>database.php: beginTransaction(), commit(), rollback(), transaction()</td></tr>
+<tr><td>NFR-R04</td><td>التحقق من صحة جميع المدخلات على مستوى الخادم والعميل</td><td>sanitize() + JavaScript validation</td></tr>
+<tr><td>NFR-R05</td><td>4 مستويات قفل للفصول (none/soft/hard/admin_handled)</td><td>عمود lock_level في جدول semesters</td></tr>
+</table>
+
+<h4>خامساً: قابلية الصيانة (Maintainability) — 5 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-M01</td><td>هيكلة MVC-like مع فصل الطبقات (includes/, pages/, api/)</td><td>21 ملف في includes/ + 176 ملف في pages/ + 7 ملفات في api/</td></tr>
+<tr><td>NFR-M02</td><td>نمط Singleton للاتصال بقاعدة البيانات</td><td>Database::$instance في database.php</td></tr>
+<tr><td>NFR-M03</td><td>سكريبات ترحيل (migration scripts) قابلة للتشغيل المتكرر</td><td>13 سكريبت (migrate_v2.0.3.sql إلى migrate_v4.0.0.sql)</td></tr>
+<tr><td>NFR-M04</td><td>توثيق الدوال الرئيسية مع تعليقات توضيحية</td><td>PHPDoc في جميع ملفات includes/ (1354 سطر في helpers.php)</td></tr>
+<tr><td>NFR-M05</td><td>اختبارات آلية (PHPUnit + Playwright E2E)</td><td>9 ملفات وحدة + 7 ملفات تكامل + ملفات E2E</td></tr>
+</table>
+
+<h4>سادساً: قابلية التوسع (Scscalability) — 3 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-SC01</td><td>دعم عدد غير محدود من المدارس مع عزل البيانات حسب school_id</td><td>جميع الجداول الرئيسية تحتوي على school_id مع فلترة تلقائية</td></tr>
+<tr><td>NFR-SC02</td><td>تصميم قابل للتوسع الأفقي عند زيادة عدد المستخدمين</td><td>فهرسة شاملة + استعلامات محسّنة + نمط Singleton</td></tr>
+<tr><td>NFR-SC03</td><td>قابلية النقل من البيئة المحلية (XAMPP) إلى الاستضافة السحابية</td><td>config.php قابل للتخصيص + لا اعتماديات على نظام التشغيل</td></tr>
+</table>
+
+<h4>سابعاً: التوافقية (Compatibility) — 4 متطلبات</h4>
+<table>
+<tr><th>المعرف</th><th>المتطلب</th><th>التنفيذ الفعلي</th></tr>
+<tr><td>NFR-C01</td><td>العمل على المتصفحات الرئيسية (Chrome, Firefox, Safari, Edge)</td><td>اختبار على Chrome + Firefox + Edge</td></tr>
+<tr><td>NFR-C02</td><td>تصدير XLSX بدون مكتبات خارجية</td><td>EqasXlsxWriter (1229 سطر) بدون اعتماديات خارجية</td></tr>
+<tr><td>NFR-C03</td><td>التوافق مع PHP 8.2 أو أحدث</td><td>جميع الدوال متوافقة مع PHP 8.2</td></tr>
+<tr><td>NFR-C04</td><td>التوافق مع MySQL 8.0 أو أحدث</td><td>جميع الاستعلامات متوافقة مع MySQL 8.0</td></tr>
+</table>
+
+<div class="result-box">
+<h4>ملخص المتطلبات</h4>
+<p>يحتوي نظام EQAS على <strong>38 متطلبًا وظيفيًا</strong> موزعة على 19 مجالًا وظيفيًا، و<strong>30 متطلبًا غير وظيفي</strong> موزعة على 7 فئات (أمان: 10، أداء: 6، سهولة استخدام: 8، موثوقية: 5، قابلية صيانة: 5، قابلية توسع: 3، توافقية: 4). <strong>إجمالي المتطلبات: 68 متطلبًا</strong> جميعها قابلة للقياس والتحقق.</p>
+</div>
+
+</div>
+
+</body>
+</html>

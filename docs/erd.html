@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ERD — نظام التقييم الشامل EQAS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f5f7fb;font-family:'Segoe UI',Tahoma,Arial,sans-serif;overflow:hidden;height:100vh;}
+#app{display:flex;height:100vh;}
+#sidebar{width:248px;min-width:248px;background:#fff;border-left:1px solid #e0e4ec;padding:20px 18px;overflow-y:auto;z-index:10;box-shadow:2px 0 12px rgba(0,0,0,0.04);display:flex;flex-direction:column;}
+#sidebar h2{font-size:18px;color:#1a2332;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+#sidebar .sub{font-size:12px;color:#8a94a6;margin-bottom:18px;}
+#sidebar .lg-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;cursor:pointer;transition:.15s;font-size:13px;color:#333;margin-bottom:2px;}
+#sidebar .lg-item:hover{background:#f0f2f6;}
+#sidebar .lg-item.active{background:#e8ecf4;font-weight:600;}
+#sidebar .lg-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
+#sidebar .lg-count{font-size:11px;color:#8a94a6;margin-right:auto;}
+#sidebar .legend-divider{height:1px;background:#eef0f4;margin:12px 0;}
+#sidebar .legend-title{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8a94a6;margin-bottom:10px;font-weight:600;}
+#sidebar .hint{font-size:11px;color:#aab2c2;margin-top:auto;padding-top:14px;border-top:1px solid #eef0f4;line-height:1.7;}
+#main{flex:1;position:relative;overflow:hidden;background:#fff;}
+#main canvas{display:block;width:100%;height:100%;}
+#tooltip{position:fixed;pointer-events:none;z-index:1000;background:#1a2332;color:#eef2f8;padding:14px 20px;border-radius:12px;font-size:13px;line-height:1.7;direction:rtl;box-shadow:0 8px 32px rgba(0,0,0,0.3);opacity:0;transition:opacity .15s;max-width:340px;border:1px solid rgba(255,255,255,0.06);}
+#tooltip.show{opacity:1;}
+#tooltip .tt-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;}
+#tooltip .tt-detail{color:#c0c8d8;}
+#tooltip .tt-label{display:inline-block;font-size:11px;padding:1px 10px;border-radius:12px;margin-bottom:6px;}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="sidebar">
+<h2>📊 ERD</h2>
+<div class="sub">نظام التقييم الشامل · 33 جدولاً</div>
+<div class="legend-title">فئات الجداول</div>
+<div class="lg-item active" data-g="1"><div class="lg-dot" style="background:#e74c3c;"></div>المستخدمون والصلاحيات<span class="lg-count">5</span></div>
+<div class="lg-item active" data-g="2"><div class="lg-dot" style="background:#2980b9;"></div>الهيكل الأكاديمي<span class="lg-count">6</span></div>
+<div class="lg-item active" data-g="3"><div class="lg-dot" style="background:#27ae60;"></div>الطلاب والتسجيل<span class="lg-count">3</span></div>
+<div class="lg-item active" data-g="4"><div class="lg-dot" style="background:#f39c12;"></div>التقييم الأكاديمي<span class="lg-count">4</span></div>
+<div class="lg-item active" data-g="5"><div class="lg-dot" style="background:#8e44ad;"></div>التقييم الشامل<span class="lg-count">9</span></div>
+<div class="lg-item active" data-g="6"><div class="lg-dot" style="background:#e67e22;"></div>ارتباط وسيطة<span class="lg-count">2</span></div>
+<div class="lg-item active" data-g="7"><div class="lg-dot" style="background:#16a085;"></div>سياقية / داعمة<span class="lg-count">2</span></div>
+<div class="legend-divider"></div>
+<div class="legend-title">وسيلة الإيضاح</div>
+<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12px;color:#555;"><svg width="30"height="4"><line x1="0"y1="2"x2="30"y2="2"stroke="#555"stroke-width="2"marker-end="url(#arr)"/></svg> 1 ← N (FK)</div>
+<div style="display:flex;align-items:center;gap:10px;font-size:12px;color:#555;"><svg width="30"height="4"><line x1="0"y1="2"x2="30"y2="2"stroke="#8e44ad"stroke-width="2"stroke-dasharray="4,3"/></svg> Self-reference</div>
+<div class="hint">🖱 hover على الجدول لرؤية الأعمدة<br>👆 hover على الخط لرؤية العلاقة<br>◉ انقر فئة لإخفائها/إظهارها</div>
+</div>
+<div id="main"><canvas id="c"></canvas></div>
+</div>
+<div id="tooltip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// تعريف البيانات
+// ═══════════════════════════════════════════════════════════════════
+const GROUPS = [
+    { id:1, color:'#e74c3c', bg:'#fdf2f2', label:'المستخدمون والصلاحيات' },
+    { id:2, color:'#2980b9', bg:'#f0f6fc', label:'الهيكل الأكاديمي' },
+    { id:3, color:'#27ae60', bg:'#f0faf4', label:'الطلاب والتسجيل' },
+    { id:4, color:'#f39c12', bg:'#fffcf0', label:'التقييم الأكاديمي' },
+    { id:5, color:'#8e44ad', bg:'#f7f0fa', label:'التقييم الشامل' },
+    { id:6, color:'#e67e22', bg:'#fef6f0', label:'ارتباط وسيطة' },
+    { id:7, color:'#16a085', bg:'#f0f9f6', label:'سياقية / داعمة' },
+];
+
+const NODES = [
+    // 1. المستخدمون والصلاحيات
+    { id:'roles',             label:'roles\nالأدوار',                 g:1, cols:'id • name • display_name_ar • rank' },
+    { id:'users',             label:'users\nالمستخدمون',              g:1, cols:'id • username • role_id • school_id • is_active' },
+    { id:'schools',           label:'schools\nالمدارس',               g:1, cols:'id • name_ar • reference_code • governorate' },
+    { id:'permissions',       label:'permissions\nالصلاحيات',         g:1, cols:'id • name • name_ar • module' },
+    { id:'role_permissions',  label:'role_permissions\nصلاحيات الأدوار', g:1, cols:'id • role_id • permission_id' },
+    // 2. الهيكل الأكاديمي
+    { id:'academic_years',    label:'academic_years\nالسنوات الدراسية',   g:2, cols:'id • name • start_date • end_date • is_current • status' },
+    { id:'semesters',         label:'semesters\nالفصول الدراسية',        g:2, cols:'id • academic_year_id • name_ar • start_date • end_date • lock_level' },
+    { id:'grade_levels',      label:'grade_levels\nالصفوف الدراسية',     g:2, cols:'id • name_ar • level_number • stage' },
+    { id:'classes',           label:'classes\nالشعب',                    g:2, cols:'id • name_ar • academic_year_id • grade_level_id • school_id • teacher_id' },
+    { id:'subjects',          label:'subjects\nالمواد الدراسية',         g:2, cols:'id • name_ar • code' },
+    { id:'assessment_types',  label:'assessment_types\nأنواع التقييم',   g:2, cols:'id • name_ar • code • weight_default' },
+    // 3. الطلاب والتسجيل
+    { id:'students',           label:'students\nالطلاب',                    g:3, cols:'id • student_number • full_name_ar • grade_level_id • school_id' },
+    { id:'student_enrollments',label:'student_enrollments\nتسجيل الطلاب',   g:3, cols:'id • student_id • class_id • academic_year_id • status' },
+    { id:'grade_years',        label:'grade_years\nسجل الصفوف',            g:3, cols:'id • student_id • grade_level_id • school_id • academic_year_id' },
+    // 4. التقييم الأكاديمي
+    { id:'tests',                      label:'tests\nالاختبارات',                       g:4, cols:'id • subject_id • class_id • assessment_type_id • academic_year_id • semester_id • max_grade' },
+    { id:'grades',                     label:'grades\nالدرجات',                         g:4, cols:'id • student_id • test_id • grade_value • percentage • letter_grade' },
+    { id:'subject_weight_distribution',label:'subject_weight_dist\nتوزيع أوزان المواد',  g:4, cols:'id • subject_grade_year_id • assessment_type_id • weight' },
+    { id:'subject_grade_years',        label:'subject_grade_years\nالمواد في الصفوف',    g:4, cols:'id • subject_id • grade_level_id • hours_per_week • passing_grade' },
+    // 5. التقييم الشامل
+    { id:'assessment_forms',     label:'assessment_forms\nنماذج التقييم',          g:5, cols:'id • form_key • name_ar • category • is_default' },
+    { id:'assessment_structure', label:'assessment_structure\nبنية التقييم',       g:5, cols:'id • form_id • parent_id • type(criteria/item) • name_ar • tool_type • weight' },
+    { id:'assessment_responses', label:'assessment_responses\nاستجابات التقييم',   g:5, cols:'id • form_id • item_id • student_id • teacher_id • school_id • class_id • academic_year_id • semester_id • numeric_value' },
+    { id:'behavior_incidents',   label:'behavior_incidents\nحوادث السلوك',         g:5, cols:'id • student_id • category_id • class_id • academic_year_id • semester_id • points' },
+    { id:'behavior_categories',  label:'behavior_categories\nفئات السلوك',         g:5, cols:'id • name_ar • type(positive/negative) • points' },
+    { id:'behavior_scores',      label:'behavior_scores\nدرجات السلوك',            g:5, cols:'id • student_id • class_id • academic_year_id • semester_id • current_percentage' },
+    { id:'attendance_daily',     label:'attendance_daily\nالحضور اليومي',          g:5, cols:'id • student_id • class_id • academic_year_id • semester_id • date • status' },
+    { id:'evaluations',          label:'evaluations\nنتائج التقييمات',             g:5, cols:'id • eval_type • teacher_id • student_id • school_id • academic_year_id • semester_id • combined_score' },
+    { id:'eqi_results',          label:'eqi_results\nمؤشر جودة التعليم',           g:5, cols:'id • school_id • academic_year_id • semester_id • overall_eqi • adjusted_eqi • 6 أبعاد' },
+    // 6. ارتباط
+    { id:'subject_teachers', label:'subject_teachers\nتوزيع المعلمين', g:6, cols:'id • subject_id • teacher_id • classroom_id • academic_year_id • semester_id • school_id' },
+    // 7. سياقية
+    { id:'alerts',  label:'alerts\nالتنبيهات',  g:7, cols:'id • school_id • alert_type • severity • title_ar • is_read' },
+    { id:'surveys', label:'surveys\nالاستبيانات', g:7, cols:'id • survey_type • school_id • academic_year_id • semester_id • respondent_type • overall_score' },
+];
+
+const EDGES = [
+    // 1. صلاحيات
+    { f:'roles',               t:'users',              l:'1→N', d:'users.role_id ← roles.id' },
+    { f:'schools',             t:'users',              l:'1→N', d:'users.school_id ← schools.id' },
+    { f:'roles',               t:'role_permissions',   l:'1→N', d:'role_permissions.role_id ← roles.id' },
+    { f:'permissions',         t:'role_permissions',   l:'1→N', d:'role_permissions.permission_id ← permissions.id' },
+    // 2. أكاديمي
+    { f:'academic_years',      t:'semesters',          l:'1→N', d:'semesters.academic_year_id ← academic_years.id' },
+    { f:'academic_years',      t:'classes',            l:'1→N', d:'classes.academic_year_id ← academic_years.id' },
+    { f:'grade_levels',        t:'classes',            l:'1→N', d:'classes.grade_level_id ← grade_levels.id' },
+    { f:'schools',             t:'classes',            l:'1→N', d:'classes.school_id ← schools.id' },
+    { f:'users',               t:'classes',            l:'1→N', d:'classes.teacher_id ← users.id' },
+    { f:'subjects',            t:'subject_grade_years',l:'1→N', d:'subject_grade_years.subject_id ← subjects.id' },
+    { f:'grade_levels',        t:'subject_grade_years',l:'1→N', d:'subject_grade_years.grade_level_id ← grade_levels.id' },
+    { f:'subjects',            t:'subject_teachers',   l:'1→N', d:'subject_teachers.subject_id ← subjects.id' },
+    { f:'users',               t:'subject_teachers',   l:'1→N', d:'subject_teachers.teacher_id ← users.id' },
+    { f:'classes',             t:'subject_teachers',   l:'1→N', d:'subject_teachers.classroom_id ← classes.id' },
+    { f:'academic_years',      t:'subject_teachers',   l:'1→N', d:'subject_teachers.academic_year_id ← academic_years.id' },
+    { f:'semesters',           t:'subject_teachers',   l:'1→N', d:'subject_teachers.semester_id ← semesters.id' },
+    { f:'schools',             t:'subject_teachers',   l:'1→N', d:'subject_teachers.school_id ← schools.id' },
+    // 3. طلاب
+    { f:'students',            t:'student_enrollments',l:'1→N', d:'student_enrollments.student_id ← students.id' },
+    { f:'classes',             t:'student_enrollments',l:'1→N', d:'student_enrollments.class_id ← classes.id' },
+    { f:'academic_years',      t:'student_enrollments',l:'1→N', d:'student_enrollments.academic_year_id ← academic_years.id' },
+    { f:'students',            t:'grade_years',        l:'1→N', d:'grade_years.student_id ← students.id' },
+    { f:'grade_levels',        t:'grade_years',        l:'1→N', d:'grade_years.grade_level_id ← grade_levels.id' },
+    { f:'schools',             t:'grade_years',        l:'1→N', d:'grade_years.school_id ← schools.id' },
+    { f:'academic_years',      t:'grade_years',        l:'1→N', d:'grade_years.academic_year_id ← academic_years.id' },
+    { f:'grade_levels',        t:'students',           l:'1→N', d:'students.grade_level_id ← grade_levels.id' },
+    { f:'schools',             t:'students',           l:'1→N', d:'students.school_id ← schools.id' },
+    // 4. تقييم أكاديمي
+    { f:'subjects',            t:'tests',              l:'1→N', d:'tests.subject_id ← subjects.id' },
+    { f:'classes',             t:'tests',              l:'1→N', d:'tests.class_id ← classes.id' },
+    { f:'assessment_types',    t:'tests',              l:'1→N', d:'tests.assessment_type_id ← assessment_types.id' },
+    { f:'academic_years',      t:'tests',              l:'1→N', d:'tests.academic_year_id ← academic_years.id' },
+    { f:'semesters',           t:'tests',              l:'1→N', d:'tests.semester_id ← semesters.id' },
+    { f:'tests',               t:'grades',             l:'1→N', d:'grades.test_id ← tests.id' },
+    { f:'students',            t:'grades',             l:'1→N', d:'grades.student_id ← students.id' },
+    { f:'subject_grade_years', t:'subject_weight_distribution', l:'1→N', d:'swd.subject_grade_year_id ← subject_grade_years.id' },
+    { f:'assessment_types',    t:'subject_weight_distribution', l:'1→N', d:'swd.assessment_type_id ← assessment_types.id' },
+    // 5. تقييم شامل
+    { f:'assessment_forms',      t:'assessment_structure',  l:'1→N', d:'assessment_structure.form_id ← assessment_forms.id' },
+    { f:'assessment_structure',  t:'assessment_structure',  l:'self', d:'parent_id → id (تسلسل هرمي)', dash:true },
+    { f:'assessment_forms',      t:'assessment_responses',  l:'1→N', d:'assessment_responses.form_id ← assessment_forms.id' },
+    { f:'assessment_structure',  t:'assessment_responses',  l:'1→N', d:'assessment_responses.item_id ← assessment_structure.id' },
+    { f:'students',              t:'assessment_responses',  l:'1→N', d:'assessment_responses.student_id ← students.id' },
+    { f:'users',                 t:'assessment_responses',  l:'1→N', d:'assessment_responses.teacher_id/responded_by ← users.id' },
+    { f:'schools',               t:'assessment_responses',  l:'1→N', d:'assessment_responses.school_id ← schools.id' },
+    { f:'classes',               t:'assessment_responses',  l:'1→N', d:'assessment_responses.class_id ← classes.id' },
+    { f:'academic_years',        t:'assessment_responses',  l:'1→N', d:'assessment_responses.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'assessment_responses',  l:'1→N', d:'assessment_responses.semester_id ← semesters.id' },
+    { f:'students',              t:'behavior_incidents',    l:'1→N', d:'behavior_incidents.student_id ← students.id' },
+    { f:'behavior_categories',   t:'behavior_incidents',    l:'1→N', d:'behavior_incidents.category_id ← behavior_categories.id' },
+    { f:'classes',               t:'behavior_incidents',    l:'1→N', d:'behavior_incidents.class_id ← classes.id' },
+    { f:'academic_years',        t:'behavior_incidents',    l:'1→N', d:'behavior_incidents.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'behavior_incidents',    l:'1→N', d:'behavior_incidents.semester_id ← semesters.id' },
+    { f:'students',              t:'behavior_scores',       l:'1→N', d:'behavior_scores.student_id ← students.id' },
+    { f:'classes',               t:'behavior_scores',       l:'1→N', d:'behavior_scores.class_id ← classes.id' },
+    { f:'academic_years',        t:'behavior_scores',       l:'1→N', d:'behavior_scores.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'behavior_scores',       l:'1→N', d:'behavior_scores.semester_id ← semesters.id' },
+    { f:'students',              t:'attendance_daily',      l:'1→N', d:'attendance_daily.student_id ← students.id' },
+    { f:'classes',               t:'attendance_daily',      l:'1→N', d:'attendance_daily.class_id ← classes.id' },
+    { f:'academic_years',        t:'attendance_daily',      l:'1→N', d:'attendance_daily.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'attendance_daily',      l:'1→N', d:'attendance_daily.semester_id ← semesters.id' },
+    { f:'users',                 t:'evaluations',           l:'1→N', d:'evaluations.teacher_id ← users.id' },
+    { f:'students',              t:'evaluations',           l:'1→N', d:'evaluations.student_id ← students.id' },
+    { f:'schools',               t:'evaluations',           l:'1→N', d:'evaluations.school_id ← schools.id' },
+    { f:'academic_years',        t:'evaluations',           l:'1→N', d:'evaluations.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'evaluations',           l:'1→N', d:'evaluations.semester_id ← semesters.id' },
+    { f:'classes',               t:'evaluations',           l:'1→N', d:'evaluations.class_id ← classes.id' },
+    { f:'schools',               t:'eqi_results',           l:'1→N', d:'eqi_results.school_id ← schools.id' },
+    { f:'academic_years',        t:'eqi_results',           l:'1→N', d:'eqi_results.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'eqi_results',           l:'1→N', d:'eqi_results.semester_id ← semesters.id' },
+    // 7. سياقية
+    { f:'schools',               t:'alerts',                l:'1→N', d:'alerts.school_id ← schools.id' },
+    { f:'students',              t:'alerts',                l:'1→N', d:'alerts.student_id ← students.id' },
+    { f:'schools',               t:'surveys',               l:'1→N', d:'surveys.school_id ← schools.id' },
+    { f:'academic_years',        t:'surveys',               l:'1→N', d:'surveys.academic_year_id ← academic_years.id' },
+    { f:'semesters',             t:'surveys',               l:'1→N', d:'surveys.semester_id ← semesters.id' },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// محرك الرسم — force-directed + canvas
+// ═══════════════════════════════════════════════════════════════════
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const W = 1280, H = 1280;
+canvas.width = W; canvas.height = H;
+let scale = 1, offsetX = 0, offsetY = 0;
+let isPanning = false, panStart = {x:0,y:0};
+let hiddenGroups = new Set();
+let hoveredNode = null, hoveredEdge = null;
+let animId = null;
+
+// الرسم عالي الدقة على الشاشات عالية الكثافة
+function setupCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    scale = 1;
+    offsetX = 0;
+    offsetY = 0;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    return { w: rect.width, h: rect.height };
+}
+
+const { w:WW, h:HH } = setupCanvas();
+
+// تهيئة مواقع العقد
+const nodeMap = {};
+let idx = 0;
+NODES.forEach(n => {
+    const angle = (idx / NODES.length) * 2 * Math.PI;
+    const radius = 320 + Math.random() * 40;
+    n.x = WW/2 + Math.cos(angle) * radius;
+    n.y = HH/2 + Math.sin(angle) * radius;
+    n.vx = 0; n.vy = 0;
+    n.w = 190; n.h = 70;
+    n.mass = 2.5;
+    nodeMap[n.id] = n;
+    idx++;
+});
+
+// بناء قائمة الجيران
+const adj = {};
+NODES.forEach(n => adj[n.id] = []);
+EDGES.forEach(e => {
+    if (adj[e.f]) adj[e.f].push(e.t);
+    if (adj[e.t]) adj[e.t].push(e.f);
+});
+
+// Force-directed simulation
+function simulate(iterations, dt) {
+    const repulsion = 22000;
+    const attraction = 0.004;
+    const damping = 0.85;
+    const gravity = 0.004;
+    const minDist = 50;
+
+    for (let iter = 0; iter < iterations; iter++) {
+        const forces = {};
+        NODES.forEach(n => { forces[n.id] = { fx:0, fy:0 }; });
+
+        // Repulsion — جميع الأزواج
+        for (let i = 0; i < NODES.length; i++) {
+            for (let j = i+1; j < NODES.length; j++) {
+                const a = NODES[i], b = NODES[j];
+                let dx = a.x - b.x, dy = a.y - b.y;
+                let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                if (dist < minDist) { dist = minDist; dx = minDist; }
+                const force = repulsion / (dist * dist);
+                forces[a.id].fx += (dx/dist) * force;
+                forces[a.id].fy += (dy/dist) * force;
+                forces[b.id].fx -= (dx/dist) * force;
+                forces[b.id].fy -= (dy/dist) * force;
+            }
+        }
+
+        // Attraction — على طول الحواف
+        EDGES.forEach(e => {
+            const a = nodeMap[e.f], b = nodeMap[e.t];
+            if (!a || !b) return;
+            // إذا كان أحد الطرفين مخفياً، لا نطبق الجاذبية
+            if (hiddenGroups.has(a.g) || hiddenGroups.has(b.g)) return;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            const ideal = 240;
+            const force = attraction * (dist - ideal);
+            forces[a.id].fx += (dx/dist) * force;
+            forces[a.id].fy += (dy/dist) * force;
+            forces[b.id].fx -= (dx/dist) * force;
+            forces[b.id].fy -= (dy/dist) * force;
+        });
+
+        // Center gravity
+        NODES.forEach(n => {
+            if (hiddenGroups.has(n.g)) return;
+            const dx = WW/2 - n.x, dy = HH/2 - n.y;
+            forces[n.id].fx += dx * gravity * n.mass;
+            forces[n.id].fy += dy * gravity * n.mass;
+        });
+
+        // تحديث المواقع
+        NODES.forEach(n => {
+            if (hiddenGroups.has(n.g)) return;
+            n.vx = (n.vx + forces[n.id].fx) * damping;
+            n.vy = (n.vy + forces[n.id].fy) * damping;
+            const maxV = 8;
+            if (Math.abs(n.vx) > maxV) n.vx = Math.sign(n.vx) * maxV;
+            if (Math.abs(n.vy) > maxV) n.vy = Math.sign(n.vy) * maxV;
+            n.x += n.vx * dt;
+            n.y += n.vy * dt;
+            n.x = Math.max(80, Math.min(WW - 80, n.x));
+            n.y = Math.max(80, Math.min(HH - 80, n.y));
+        });
+
+        // إيقاف مبكر
+        let totalV = 0;
+        NODES.forEach(n => { totalV += Math.abs(n.vx) + Math.abs(n.vy); });
+        if (totalV < 1) break;
+    }
+}
+
+// ═══ الرسم ═══════════════════════════════════════════════════════
+
+function draw() {
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.scale(dpr, dpr);
+
+    // خلفية بيضاء
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,w,h);
+
+    // رسم الحواف
+    EDGES.forEach(e => {
+        const a = nodeMap[e.f], b = nodeMap[e.t];
+        if (!a || !b || hiddenGroups.has(a.g) || hiddenGroups.has(b.g)) return;
+        const isHover = (hoveredEdge === e);
+        const isSelf = e.dash;
+
+        ctx.beginPath();
+        if (isSelf) {
+            // قوس ذاتي
+            ctx.strokeStyle = isHover ? '#8e44ad' : '#b8c4d4';
+            ctx.lineWidth = isHover ? 3 : 1.8;
+            ctx.setLineDash([6,4]);
+            ctx.arc(a.x + 30, a.y - 30, 30, 0, Math.PI*1.8);
+        } else {
+            ctx.strokeStyle = isHover ? e.f === 'assessment_structure' ? '#8e44ad' : '#5a6a8a' : '#c8d0dc';
+            ctx.lineWidth = isHover ? 2.8 : 1.6;
+            ctx.setLineDash([]);
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            const offX = (dx/dist) * 95, offY = (dy/dist) * 95;
+            ctx.moveTo(a.x + offX, a.y + offY);
+            ctx.lineTo(b.x - offX, b.y - offY);
+        }
+        ctx.stroke();
+
+        // تسمية العلاقة
+        if (e.l && !isSelf) {
+            const mx = (a.x + b.x)/2, my = (a.y + b.y)/2;
+            ctx.font = isHover ? 'bold 13px "Segoe UI",Tahoma,sans-serif' : '11px "Segoe UI",Tahoma,sans-serif';
+            ctx.fillStyle = isHover ? '#3a4a6a' : '#8894a8';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText(e.l, mx, my - 4);
+
+            if (isHover && e.d) {
+                ctx.font = '12px "Segoe UI",Tahoma,sans-serif';
+                ctx.fillStyle = '#5a6a8a';
+                ctx.textBaseline = 'top';
+                ctx.fillText(e.d, mx, my + 4);
+            }
+        }
+    });
+
+    // رسم العقد
+    NODES.forEach(n => {
+        if (hiddenGroups.has(n.g)) return;
+        const grp = GROUPS.find(g => g.id === n.g);
+        const isHover = (hoveredNode === n);
+        const x = n.x, y = n.y, w = n.w, h = n.h;
+        const r = 10;
+
+        // ظل
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = isHover ? 16 : 8;
+        ctx.shadowOffsetY = isHover ? 3 : 2;
+
+        // خلفية
+        ctx.beginPath();
+        ctx.roundRect(x - w/2, y - h/2, w, h, r);
+        ctx.fillStyle = grp ? grp.bg : '#f8f9fb';
+        ctx.fill();
+
+        // حد
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = isHover ? (grp ? grp.color : '#666') : (grp ? grp.color+'66' : '#dde0e6');
+        ctx.lineWidth = isHover ? 3 : 2;
+        ctx.stroke();
+
+        // حد سفلي سميك بالفئة
+        ctx.beginPath();
+        ctx.roundRect(x - w/2, y - h/2, w, 4, {upperLeft:r, upperRight:r, lowerLeft:0, lowerRight:0});
+        ctx.fillStyle = grp ? grp.color : '#888';
+        ctx.fill();
+
+        // النص
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const lines = n.label.split('\n');
+        ctx.font = isHover ? 'bold 16px "Segoe UI",Tahoma,sans-serif' : '14px "Segoe UI",Tahoma,sans-serif';
+        ctx.fillStyle = '#1a2332';
+        ctx.fillText(lines[0], x, y - 8);
+
+        ctx.font = '14px "Segoe UI",Tahoma,sans-serif';
+        ctx.fillStyle = '#5a6a7a';
+        ctx.fillText(lines[1] || '', x, y + 18);
+    });
+
+    ctx.shadowBlur = 0;
+}
+
+// ═══ التفاعل ═════════════════════════════════════════════════════
+
+function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function findNode(mx, my) {
+    for (let i = NODES.length-1; i >= 0; i--) {
+        const n = NODES[i];
+        if (hiddenGroups.has(n.g)) continue;
+        if (mx >= n.x - n.w/2 && mx <= n.x + n.w/2 && my >= n.y - n.h/2 && my <= n.y + n.h/2) return n;
+    }
+    return null;
+}
+
+function findEdge(mx, my) {
+    for (const e of EDGES) {
+        const a = nodeMap[e.f], b = nodeMap[e.t];
+        if (!a || !b || hiddenGroups.has(a.g) || hiddenGroups.has(b.g)) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        const offX = (dx/dist) * 95, offY = (dy/dist) * 95;
+        const sx = a.x + offX, sy = a.y + offY;
+        const tx = b.x - offX, ty = b.y - offY;
+        // نقطة على الخط
+        const ex = tx - sx, ey = ty - sy;
+        const len = Math.sqrt(ex*ex + ey*ey) || 1;
+        const t = Math.max(0, Math.min(1, ((mx-sx)*ex + (my-sy)*ey) / (len*len)));
+        const px = sx + t*ex, py = sy + t*ey;
+        const dl = Math.sqrt((mx-px)**2 + (my-py)**2);
+        if (dl < 6) return e;
+    }
+    return null;
+}
+
+canvas.addEventListener('mousemove', e => {
+    const pos = getMousePos(e);
+    const n = findNode(pos.x, pos.y);
+    const edge = findEdge(pos.x, pos.y);
+
+    hoveredNode = n;
+    hoveredEdge = edge;
+    draw();
+
+    if (n) {
+        const grp = GROUPS.find(g => g.id === n.g);
+        tooltip.innerHTML = `<div class="tt-label" style="background:${grp?grp.color:'#888'};color:#fff;">${grp?grp.label:''}</div><div class="tt-title">${n.label.replace('\n',' · ')}</div><div class="tt-detail">${n.cols}</div>`;
+        tooltip.style.left = (e.clientX + 18) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+        tooltip.classList.add('show');
+        canvas.style.cursor = 'pointer';
+    } else if (edge) {
+        tooltip.innerHTML = `<div class="tt-title">${edge.f} → ${edge.t}</div><div class="tt-detail">${edge.d||edge.l}</div>`;
+        tooltip.style.left = (e.clientX + 18) + 'px';
+        tooltip.style.top = (e.clientY - 10) + 'px';
+        tooltip.classList.add('show');
+        canvas.style.cursor = 'pointer';
+    } else {
+        tooltip.classList.remove('show');
+        canvas.style.cursor = 'default';
+    }
+});
+
+canvas.addEventListener('mouseleave', () => {
+    hoveredNode = null;
+    hoveredEdge = null;
+    tooltip.classList.remove('show');
+    draw();
+});
+
+// ═══ فلترة حسب الفئة ════════════════════════════════════════════
+document.querySelectorAll('.lg-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const g = parseInt(this.dataset.g);
+        this.classList.toggle('active');
+        if (hiddenGroups.has(g)) {
+            hiddenGroups.delete(g);
+            // استمرار المحاكاة قليلاً لعودة العقد المخفية
+            simulate(80, 0.4);
+        } else {
+            hiddenGroups.add(g);
+        }
+        draw();
+    });
+});
+
+// ═══ التشغيل ═════════════════════════════════════════════════════
+// محاكاة أولية مع استقرار
+simulate(300, 0.4);
+simulate(200, 0.2);
+simulate(100, 0.1);
+
+draw();
+tooltip.classList.remove('show');
+
+// ═══ Polyfill roundRect ══════════════════════════════════════════
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+        const r = typeof radii === 'number' ? radii : (radii ? (radii.upperLeft||4) : 4);
+        this.moveTo(x+r, y);
+        this.lineTo(x+w-r, y);
+        this.quadraticCurveTo(x+w, y, x+w, y+r);
+        this.lineTo(x+w, y+h-r);
+        this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+        this.lineTo(x+r, y+h);
+        this.quadraticCurveTo(x, y+h, x, y+h-r);
+        this.lineTo(x, y+r);
+        this.quadraticCurveTo(x, y, x+r, y);
+        return this;
+    };
+}
+
+// ═══ إعادة الرسم عند تغيير الحجم ════════════════════════════════
+window.addEventListener('resize', () => {
+    const r = canvas.getBoundingClientRect();
+    setupCanvas();
+    draw();
+});
+
+console.log('✅ ERD loaded — ' + NODES.length + ' tables, ' + EDGES.length + ' relationships');
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+@startuml 06-Assessments
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "assessment_forms" as assessment_forms {
+  id : int(10)
+  form_key : enum('behavior_eval','skills_checklist','teaching_self','teaching_peer','teaching_admin','climate_survey','facility_checklist','teacher_satisfaction','parent_satisfaction')
+  name_ar : varchar(200)
+  name_en : varchar(200)
+  category : enum('behavior','skills','teaching','climate')
+  target : enum('student','teacher','school')
+  description : text
+  is_system : tinyint(1)
+  is_default : tinyint(1)
+  version : varchar(50)
+}
+
+entity "assessment_responses" as assessment_responses {
+  id : int(10)
+  * evaluation_id : int(10)
+  * form_id : int(10)
+  * item_id : int(10)
+  * student_id : int(10)
+  * teacher_id : int(10)
+  * school_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+}
+
+entity "assessment_structure" as assessment_structure {
+  id : int(10)
+  * form_id : int(10)
+  * parent_id : int(10)
+  type : enum('criteria','item')
+  name_ar : varchar(200)
+  name_en : varchar(200)
+  text_ar : text
+  text_en : text
+  tool_type : enum('likert_5','frequency_5','satisfaction_5','yes_no','severity_4','counter','numeric_100','numeric_custom','rubric_4','text')
+  weight : decimal(5,2)
+}
+
+entity "assessment_types" as assessment_types {
+  id : int(10)
+  name_ar : varchar(100)
+  name_en : varchar(100)
+  code : varchar(20)
+  weight_default : decimal(5,2)
+  sort_order : int(10)
+  is_active : tinyint(1)
+}
+
+entity "tests" as tests {
+  id : int(10)
+  * subject_id : int(10)
+  * class_id : int(10)
+  * assessment_type_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  title_ar : varchar(200)
+  max_grade : decimal(5,2)
+  test_date : date
+  status : enum('draft','published','locked')
+}
+
+entity "evaluations" as evaluations {
+  id : int(10)
+  eval_type : enum('teaching_summary','behavior_score','skills_checklist')
+  * teacher_id : int(10)
+  * student_id : int(10)
+  * class_id : int(10)
+  * school_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  evaluated_by : int(10)
+  self_score : decimal(5,2)
+}
+
+assessment_forms ||--o{ assessment_forms
+assessment_forms ||--o{ assessment_forms
+assessment_structure ||--o{ assessment_structure
+tests ||--o{ tests
+assessment_types ||--o{ assessment_types
+assessment_types ||--o{ assessment_types
+@enduml

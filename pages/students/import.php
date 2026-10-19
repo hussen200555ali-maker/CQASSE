@@ -28,9 +28,9 @@ $isGroupAdmin = ($userRole === 'group_admin');
 
 // جلب المدارس
 if ($isGroupAdmin) {
-    $schools = $db->query("SELECT id, name_ar, code FROM schools WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+    $schools = $db->query("SELECT id, name_ar, reference_code FROM schools WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
 } else {
-    $stmt = $db->prepare("SELECT id, name_ar, code FROM schools WHERE id = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT id, name_ar, reference_code FROM schools WHERE id = ? AND is_active = 1");
     $stmt->execute([$userSchoolId]);
     $schools = $stmt->fetchAll();
 }
@@ -45,8 +45,8 @@ foreach ($gradeLevels as $gl) {
 // بناء خريطة المدارس بالرمز
 $schoolCodeMap = [];
 foreach ($schools as $sc) {
-    if (!empty($sc['code'])) {
-        $schoolCodeMap[$sc['code']] = $sc['id'];
+    if (!empty($sc['reference_code'])) {
+        $schoolCodeMap[$sc['reference_code']] = $sc['id'];
     }
 }
 
@@ -183,6 +183,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_import'])) {
         redirect('import.php');
     }
 
+    $createdParents = [];
+    $linkedCount = 0;
+
     try {
         $db->beginTransaction();
 
@@ -221,12 +224,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_import'])) {
             ]);
 
             $totalImported++;
+
+            // ─── الربط التلقائي بولي الأمر ───
+            $studentId = $db->lastInsertId();
+            $guardianPhone = $row['guardian_phone'] ?? '';
+            $guardianEmail = $row['guardian_email'] ?? '';
+
+            if ($guardianPhone || $guardianEmail) {
+                $parentUserId = null;
+
+                // بحث بمطابقة رقم الجوال
+                if ($guardianPhone) {
+                    $pStmt = $db->prepare("SELECT id FROM users WHERE phone = ? AND role_id = 4 AND is_active = 1 LIMIT 1");
+                    $pStmt->execute([$guardianPhone]);
+                    $found = $pStmt->fetch();
+                    if ($found) $parentUserId = $found['id'];
+                }
+
+                // بحث بمطابقة البريد الإلكتروني
+                if (!$parentUserId && $guardianEmail) {
+                    $pStmt = $db->prepare("SELECT id FROM users WHERE email = ? AND role_id = 4 AND is_active = 1 LIMIT 1");
+                    $pStmt->execute([$guardianEmail]);
+                    $found = $pStmt->fetch();
+                    if ($found) $parentUserId = $found['id'];
+                }
+
+                if ($parentUserId) {
+                    // يوجد مستخدم — إنشاء رابط فقط
+                    $linkStmt = $db->prepare("INSERT IGNORE INTO parent_students (parent_id, student_id, relationship, is_active) VALUES (?, ?, 'father', 1)");
+                    $linkStmt->execute([$parentUserId, $studentId]);
+                    $linkedCount++;
+                } else {
+                    // لا يوجد — إنشاء مستخدم ولي أمر جديد
+                    $password = generatePassword(8);
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                    $username = 'parent_' . $row['student_number'];
+
+                    // التأكد من عدم تكرار اسم المستخدم
+                    $uStmt = $db->prepare("SELECT id FROM users WHERE username = ?");
+                    $uStmt->execute([$username]);
+                    $suffix = 1;
+                    while ($uStmt->fetch()) {
+                        $suffix++;
+                        $tryUsername = $username . $suffix;
+                        $uStmt->execute([$tryUsername]);
+                        if (!$uStmt->fetch()) {
+                            $username = $tryUsername;
+                            break;
+                        }
+                    }
+
+                    $fullName = $row['guardian_name'] ?: 'ولي أمر ' . $row['full_name_ar'];
+
+                    $cStmt = $db->prepare("INSERT INTO users (username, password_hash, full_name_ar, email, phone, role_id, school_id, must_change_password, is_active, created_at) VALUES (?, ?, ?, ?, ?, 4, ?, 1, 1, NOW())");
+                    $cStmt->execute([$username, $passwordHash, $fullName, $guardianEmail ?: null, $guardianPhone ?: null, $targetSchoolId]);
+                    $newParentId = $db->lastInsertId();
+
+                    // إنشاء رابط في parent_students
+                    $linkStmt = $db->prepare("INSERT IGNORE INTO parent_students (parent_id, student_id, relationship, is_active) VALUES (?, ?, 'father', 1)");
+                    $linkStmt->execute([$newParentId, $studentId]);
+
+                    $createdParents[] = [
+                        'username' => $username,
+                        'password' => $password,
+                        'name' => $fullName,
+                        'student' => $row['full_name_ar']
+                    ];
+                }
+            }
         }
 
         $db->commit();
 
         // تسجيل النشاط
-        logActivity($db, $_SESSION['user']['id'], 'import_students', "استيراد {$totalImported} طالب", 'student', null);
+        $logDesc = "استيراد {$totalImported} طالب";
+        if ($linkedCount > 0) $logDesc .= "، ربط {$linkedCount} ولي أمر موجود";
+        if (count($createdParents) > 0) $logDesc .= "، إنشاء " . count($createdParents) . " حساب ولي أمر";
+        logActivity($db, $_SESSION['user']['id'], 'import_students', $logDesc, 'student', null);
+
+        // إشعار مدير المدرسة
+        if ($linkedCount > 0 || count($createdParents) > 0) {
+            $adminStmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND role_id = 2 AND is_active = 1");
+            $adminStmt->execute([$targetSchoolId]);
+            $adminIds = $adminStmt->fetchAll(\PDO::FETCH_COLUMN);
+            $notifTitle = 'ربط أولياء أمور تلقائي';
+            $notifMsg = "تم ربط " . ($linkedCount + count($createdParents)) . " ولي أمر بالطلاب المستوردين.";
+            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read) VALUES (?, 'parent_link', ?, ?, NULL, NULL, 0)");
+            foreach ($adminIds as $adminId) {
+                $notifStmt->execute([$adminId, $notifTitle, $notifMsg]);
+            }
+        }
 
         $importSuccess = true;
     } catch (Exception $e) {
@@ -251,8 +338,46 @@ $gradeNumbers = array_keys($gradeMap);
                 <span>✅ تم استيراد <?= $totalImported ?> طالب بنجاح.
                 <?php if ($totalSkipped > 0): ?>تم تجاوز <?= $totalSkipped ?> سجل (أرقام طلاب مكررة).<?php endif; ?>
                 <?php if ($totalErrors > 0): ?>وفشل استيراد <?= $totalErrors ?> سجل.<?php endif; ?>
+                <?php if ($linkedCount > 0): ?><br>🔗 تم ربط <?= $linkedCount ?> ولي أمر موجود بالطلاب.<?php endif; ?>
                 </span>
             </div>
+            <?php if (!empty($createdParents)): ?>
+            <div class="card mb-4" style="background:#fefce8;border:1px solid #fde047;">
+                <div class="card-header" style="background:#fef9c3;">
+                    <h4 class="card-title" style="color:#854d0e;">🔑 حسابات أولياء الأمور الجديدة</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-sm mb-3" style="color:#713f12;">تم إنشاء حسابات لأولياء الأمور التاليين. يُرجى تسليمهم بيانات الدخول هذه:</p>
+                    <div class="table-wrapper">
+                        <table class="data-table" style="font-size:13px;">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>ولي الأمر</th>
+                                    <th>الطالب</th>
+                                    <th>اسم المستخدم</th>
+                                    <th>كلمة المرور</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $idx = 0; foreach ($createdParents as $cp): $idx++; ?>
+                                <tr>
+                                    <td><?= $idx ?></td>
+                                    <td><?= e($cp['name']) ?></td>
+                                    <td><?= e($cp['student']) ?></td>
+                                    <td style="direction:ltr;text-align:left;font-family:monospace;"><?= e($cp['username']) ?></td>
+                                    <td style="direction:ltr;text-align:left;font-family:monospace;color:#dc2626;font-weight:700;"><?= e($cp['password']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="flash-message flash-warning mt-3">
+                        <span>⚠️ كلمة المرور ستُطلب من ولي الأمر تغييرها عند أول تسجيل دخول. يُنصح بتسليم البيانات بشكل آمن.</span>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
             <a href="index.php" class="btn btn-primary">العودة لقائمة الطلاب</a>
         <?php elseif (!empty($preview)): ?>
             <!-- معاينة البيانات -->
@@ -335,6 +460,7 @@ $gradeNumbers = array_keys($gradeMap);
                         <p><strong>الأعمدة المطلوبة:</strong> student_number, full_name_ar, grade_level_id</p>
                         <p><strong>أعمدة اختيارية:</strong> full_name_en, guardian_name, guardian_phone, guardian_email</p>
                         <p><strong>أرقام المراحل المتاحة:</strong> <?= implode('، ', $gradeNumbers) ?> (حيث 1=الأول أساسي، 12=الثاني عشر ثانوي)</p>
+                        <p class="mt-2" style="color:#7c3aed;font-weight:600;">🔗 <strong>ربط تلقائي:</strong> عند توفير رقم جوال أو بريد إلكتروني لولي الأمر، سيتم إنشاء حساب ولي أمر وربطه بالطالب تلقائياً.</p>
                     </div>
 
                     <h6 class="mt-4 mb-2">مثال:</h6>

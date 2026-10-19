@@ -21,6 +21,9 @@ if (!hasPermission('group_admin') && !hasPermission('school_admin')) {
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
 
+$userRole = $_SESSION['user']['role'] ?? '';
+$schoolId = $_SESSION['user']['school_id'] ?? null;
+
 $surveyId = (int)($_GET['id'] ?? 0);
 if (!$surveyId) { setFlash('معرف الاستبيان غير صالح', 'danger'); redirect('index.php'); }
 
@@ -39,6 +42,12 @@ try {
 } catch (Exception $e) {}
 
 if (!$survey) { setFlash('الاستبيان غير موجود', 'danger'); redirect('index.php'); }
+
+// التحقق من ملكية المدرسة
+if ($schoolId && $userRole !== 'group_admin' && $survey['school_id'] != $schoolId) {
+    setFlash('ليس لديك صلاحية لعرض هذا الاستبيان', 'danger');
+    redirect('index.php');
+}
 
 $respondentTypes = ['teacher' => 'معلم', 'student' => 'طالب', 'parent' => 'ولي أمر', 'admin' => 'إداري'];
 $respondentIcons = ['teacher' => '👨‍🏫', 'student' => '👨‍🎓', 'parent' => '👨‍👧', 'admin' => '👨‍💼'];

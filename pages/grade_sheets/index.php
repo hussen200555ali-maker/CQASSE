@@ -12,7 +12,7 @@ $breadcrumb = ['كشوف الدرجات' => null];
 require_once __DIR__ . '/../../includes/header.php';
 
 // التحقق من الصلاحيات
-if (!hasPermission('school_admin')) {
+if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
 }
@@ -55,6 +55,21 @@ if ($filterYear) {
         $schoolFilter = " AND c.school_id = ? ";
         $params[] = $schoolId;
     }
+
+    // للمعلم: فلترة إضافية حسب فصوله المسندة
+    $currentRole = $_SESSION['user']['role'] ?? '';
+    if ($currentRole === 'teacher') {
+        $teacherId = $_SESSION['user']['id'] ?? 0;
+        $allowedIds = getTeacherAssignedClassIds($db, $teacherId, $schoolId, $filterYear);
+        if (!empty($allowedIds)) {
+            $placeholders = implode(',', array_fill(0, count($allowedIds), '?'));
+            $schoolFilter .= " AND c.id IN ($placeholders)";
+            $params = array_merge($params, $allowedIds);
+        } else {
+            $schoolFilter .= " AND 1=0";
+        }
+    }
+
     $stmt = $db->prepare("SELECT c.id, c.name_ar, gl.name_ar as grade_name, s.name_ar as school_name
                           FROM classes c
                           JOIN grade_levels gl ON c.grade_level_id = gl.id
@@ -70,13 +85,14 @@ $gradeSheets = [];
 if ($filterYear && $filterSemester) {
     $sql = "SELECT c.id as class_id, c.name_ar as class_name, gl.name_ar as grade_name, s.name_ar as school_name,
             COUNT(DISTINCT g.student_id) as student_count,
-            COUNT(DISTINCT g.subject_id) as subject_count,
+            COUNT(DISTINCT t.subject_id) as subject_count,
             COUNT(g.id) as grade_count,
             ROUND(AVG(g.grade_value), 2) as avg_grade
             FROM classes c
             JOIN grade_levels gl ON c.grade_level_id = gl.id
             JOIN schools s ON c.school_id = s.id
-            LEFT JOIN grades g ON g.class_id = c.id AND g.academic_year_id = ? AND g.semester_id = ? AND g.is_active = 1
+            LEFT JOIN tests t ON t.class_id = c.id AND t.academic_year_id = ? AND t.semester_id = ?
+            LEFT JOIN grades g ON g.test_id = t.id AND g.is_active = 1
             WHERE c.academic_year_id = ? AND c.is_active = 1";
 
     $params = [$filterYear, $filterSemester, $filterYear];
@@ -88,6 +104,20 @@ if ($filterYear && $filterSemester) {
         $schoolId = $_SESSION['user']['school_id'] ?? 0;
         $sql .= " AND c.school_id = ?";
         $params[] = $schoolId;
+    }
+
+    // للمعلم: فلترة إضافية حسب فصوله المسندة
+    $gsRole = $_SESSION['user']['role'] ?? '';
+    if ($gsRole === 'teacher') {
+        $gsTeacherId = $_SESSION['user']['id'] ?? 0;
+        $gsAllowedIds = getTeacherAssignedClassIds($db, $gsTeacherId, $schoolId, $filterYear);
+        if (!empty($gsAllowedIds)) {
+            $placeholders = implode(',', array_fill(0, count($gsAllowedIds), '?'));
+            $sql .= " AND c.id IN ($placeholders)";
+            $params = array_merge($params, $gsAllowedIds);
+        } else {
+            $sql .= " AND 1=0";
+        }
     }
 
     if ($filterClass) {

@@ -580,7 +580,7 @@ if ($selectedSemesterName) {
                             }
 
                             // التعديل السياقي (raw_eqi يحافظ على null إن لم توجد بيانات)
-                            $adj = $adjustService->calculateAdjustedSQIWithDetails((int)$s['id'], $selectedAcademicYearId, $s['raw_eqi']);
+                            $adj = $adjustService->calculateAdjustedSQIWithDetails((int)$s['id'], $s['raw_eqi']);
                             $adjValue = $adj['adjusted_sqi'] ?? null;
 
                             // لون الصف حسب الأداء

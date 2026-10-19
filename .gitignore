@@ -19,8 +19,26 @@ Thumbs.db
 # PHP dependencies
 vendor/
 
+# Node dependencies
+node_modules/
+
 # PHPUnit cache
 .phpunit.cache/
 
 # Composer lock (optional, commit if you want deterministic installs)
 composer.lock
+
+# PHPUnit debug output
+phpunit_*.txt
+
+# Test results artifacts
+test-results/
+
+# Local debug/temp scripts
+phpunit_debug*.txt
+
+# Database dumps (backups - too large for git)
+database/eqas_db.sql
+database/demo_data_large.sql
+docs/eqas_db*.sql
+eqas_db.sql

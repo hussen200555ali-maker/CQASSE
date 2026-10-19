@@ -12,9 +12,9 @@ $breadcrumb = ['الحضور والانضباط' => 'index.php', 'تعديل ا�
 
 require_once __DIR__ . '/../../includes/header.php';
 
-// التحقق من الصلاحيات - فقط مدير المدرسة ومدير النظام
-if (!hasPermission('school_admin')) {
-    setFlash('ليس لديك صلاحية لتعديل سجلات الحضور. فقط مدير المدرسة أو مدير النظام يمكنهم التعديل.', 'danger');
+// التحقق من الصلاحيات
+if (!hasPermission('teacher')) {
+    setFlash('ليس لديك صلاحية لتعديل سجلات الحضور.', 'danger');
     redirect('index.php');
 }
 
@@ -40,13 +40,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amend_attendance'])) 
             setFlash('حالة الحضور غير صالحة', 'danger');
         } else {
             try {
-                // جلب السجل الحالي
-                $stmt = $db->prepare("SELECT * FROM attendance_daily WHERE id = ? AND is_active = 1");
+                // جلب السجل الحالي مع التحقق من ملكية المدرسة
+                $stmt = $db->prepare("SELECT ad.*, c.school_id, s.full_name_ar AS student_name FROM attendance_daily ad JOIN classes c ON ad.class_id = c.id JOIN students s ON s.id = ad.student_id WHERE ad.id = ? AND ad.is_active = 1");
                 $stmt->execute([$attendanceId]);
                 $currentRecord = $stmt->fetch();
 
                 if (!$currentRecord) {
                     setFlash('سجل الحضور غير موجود', 'danger');
+                } elseif ($schoolId && $userRole !== 'group_admin' && $currentRecord['school_id'] != $schoolId) {
+                    setFlash('ليس لديك صلاحية لتعديل هذا السجل', 'danger');
+                } elseif ($userRole === 'teacher' && !in_array($currentRecord['class_id'], getTeacherAssignedClassIds($db, $userId, $schoolId))) {
+                    setFlash('ليس لديك صلاحية لتعديل هذا السجل', 'danger');
                 } else {
                     // التحقق من أن الفصل الدراسي ليس مقفلاً
                     $stmt = $db->prepare("SELECT lock_level FROM semesters WHERE id = ? AND is_active = 1");
@@ -59,29 +63,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['amend_attendance'])) 
                     } else {
                         $db->beginTransaction();
 
-                        // تسجيل التعديل في جدول التعديلات
-                        $stmt = $db->prepare("
-                            INSERT INTO attendance_amendments 
-                                (attendance_id, old_status, new_status, reason, amended_by, created_at)
-                            VALUES (?, ?, ?, ?, ?, NOW())
-                        ");
-                        $stmt->execute([
-                            $attendanceId,
-                            $currentRecord['status'],
-                            $newStatus,
-                            $reason,
-                            $userId
-                        ]);
+                        // قفل الصف وإضافة التعديل إلى amendment_log (JSON array)
+                        $stmt = $db->prepare("SELECT amendment_log FROM attendance_daily WHERE id = ? FOR UPDATE");
+                        $stmt->execute([$attendanceId]);
+                        $logRow = $stmt->fetch();
+                        if (!$logRow) throw new Exception('سجل الحضور غير موجود');
 
-                        // تحديث سجل الحضور
-                        $stmt = $db->prepare("UPDATE attendance_daily SET status = ? WHERE id = ?");
-                        $stmt->execute([$newStatus, $attendanceId]);
+                        $entry = json_encode([
+                            'old_status' => $currentRecord['status'],
+                            'new_status' => $newStatus,
+                            'reason' => $reason,
+                            'amended_by' => $userId,
+                            'created_at' => date('Y-m-d H:i:s')
+                        ], JSON_UNESCAPED_UNICODE);
+
+                        $existingLog = $logRow['amendment_log'];
+                        if (empty($existingLog)) {
+                            $newLog = '[' . $entry . ']';
+                        } else {
+                            $newLog = substr($existingLog, 0, -1) . ',' . $entry . ']';
+                        }
+
+                        // تحديث سجل الحضور مع التعديلات
+                        $stmt = $db->prepare("UPDATE attendance_daily SET amendment_log = ?, status = ? WHERE id = ?");
+                        $stmt->execute([$newLog, $newStatus, $attendanceId]);
 
                         // تحديث ملخص الحضور
                         updateAmendedSummary($db, $currentRecord['student_id'], $currentRecord['class_id'],
                             $currentRecord['academic_year_id'], $currentRecord['semester_id']);
 
                         $db->commit();
+
+                        // إشعار مدير المدرسة بتعديل الحضور
+                        try {
+                            $teacherName = $_SESSION['user']['full_name'] ?? 'المعلم';
+                            $studentName = $currentRecord['student_name'] ?? 'غير معروف';
+                            $oldStatusAr = attendanceStatusAr($currentRecord['status']);
+                            $newStatusAr = attendanceStatusAr($newStatus);
+                            $notifMessage = "قام المعلم {$teacherName} بتعديل حضور الطالب {$studentName} من ({$oldStatusAr}) إلى ({$newStatusAr}). السبب: {$reason}";
+
+                            $stmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'school_admin')");
+                            $stmt->execute([$currentRecord['school_id']]);
+                            $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read, created_at) VALUES (?, 'info', ?, ?, 'attendance_daily', ?, 0, NOW())");
+                            while ($row = $stmt->fetch()) {
+                                $notifStmt->execute([$row['id'], 'تعديل سجل حضور', $notifMessage, $currentRecord['id'] ?? 0]);
+                            }
+                        } catch (Exception $e) {
+                            error_log('amend.php - فشل إشعار التعديل: ' . $e->getMessage());
+                        }
 
                         // تسجيل النشاط
                         logActivity($db, $userId, 'attendance_amend',
@@ -167,6 +196,14 @@ if ($searchStudent || ($searchDate && $searchClass)) {
             $sql .= " AND s.school_id = ?";
             $params[] = $schoolId;
         }
+        if ($userRole === 'teacher') {
+            $teacherClassIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!empty($teacherClassIds)) {
+                $ph = implode(',', array_fill(0, count($teacherClassIds), '?'));
+                $sql .= " AND ad.class_id IN ($ph)";
+                $params = array_merge($params, $teacherClassIds);
+            }
+        }
         $sql .= " ORDER BY ad.date DESC LIMIT 50";
 
         $stmt = $db->prepare($sql);
@@ -177,23 +214,44 @@ if ($searchStudent || ($searchDate && $searchClass)) {
     }
 }
 
-// جلب تاريخ التعديلات
+// جلب تاريخ التعديلات من amendment_log
+$amendmentHistory = [];
 if (!empty($attendanceRecords)) {
     try {
-        $recordIds = array_column($attendanceRecords, 'id');
-        if (!empty($recordIds)) {
-            $placeholders = implode(',', array_fill(0, count($recordIds), '?'));
-            $stmt = $db->prepare("
-                SELECT aa.*, u.full_name_ar AS amender_name
-                FROM attendance_amendments aa
-                LEFT JOIN users u ON u.id = aa.amended_by
-                WHERE aa.attendance_id IN ($placeholders)
-                ORDER BY aa.created_at DESC
-            ");
-            $stmt->execute($recordIds);
-            $amendmentHistory = $stmt->fetchAll();
+        foreach ($attendanceRecords as $record) {
+            if (!empty($record['amendment_log'])) {
+                $entries = json_decode($record['amendment_log'], true);
+                if (is_array($entries)) {
+                    foreach ($entries as &$entry) {
+                        $entry['attendance_id'] = $record['id'];
+                    }
+                    unset($entry);
+                    $amendmentHistory = array_merge($amendmentHistory, $entries);
+                }
+            }
         }
-    } catch (Exception $e) {}
+        if (!empty($amendmentHistory)) {
+            usort($amendmentHistory, function($a, $b) {
+                return strtotime($b['created_at'] ?? 0) <=> strtotime($a['created_at'] ?? 0);
+            });
+            $amenderIds = array_unique(array_filter(array_column($amendmentHistory, 'amended_by')));
+            if (!empty($amenderIds)) {
+                $ph = implode(',', array_fill(0, count($amenderIds), '?'));
+                $stmt = $db->prepare("SELECT id, full_name_ar FROM users WHERE id IN ($ph)");
+                $stmt->execute(array_values($amenderIds));
+                $userNames = [];
+                while ($u = $stmt->fetch()) {
+                    $userNames[$u['id']] = $u['full_name_ar'];
+                }
+                foreach ($amendmentHistory as &$entry) {
+                    $entry['amender_name'] = $userNames[$entry['amended_by']] ?? 'غير معروف';
+                }
+                unset($entry);
+            }
+        }
+    } catch (Exception $e) {
+        error_log('amend.php - فشل قراءة سجل التعديلات: ' . $e->getMessage());
+    }
 }
 
 // جلب الفصول والطلاب للفلتر
@@ -203,8 +261,19 @@ try {
     $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
     $params = [];
     if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+        if ($userRole === 'teacher') {
+            $teacherClassIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!empty($teacherClassIds)) {
+                $placeholders = implode(',', array_fill(0, count($teacherClassIds), '?'));
+                $sql .= " AND id IN ($placeholders)";
+                $params = $teacherClassIds;
+            } else {
+                $sql .= " AND 1=0";
+            }
+        } else {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
     }
     $sql .= " ORDER BY name_ar";
     $stmt = $db->prepare($sql);
@@ -218,18 +287,23 @@ try {
         $sql .= " AND school_id = ?";
         $params[] = $schoolId;
     }
+    if ($userRole === 'teacher') {
+        $sql .= " AND id IN (
+            SELECT DISTINCT se.student_id FROM student_enrollments se
+            JOIN subject_teachers st ON st.classroom_id = se.class_id AND st.teacher_id = ? AND st.is_active = 1
+            UNION
+            SELECT DISTINCT se.student_id FROM student_enrollments se
+            JOIN classes c ON c.id = se.class_id AND c.teacher_id = ? AND c.academic_year_id = ?
+        )";
+        $params = array_merge($params, [$userId, $userId, $academicYearId]);
+    }
     $sql .= " ORDER BY full_name_ar LIMIT 100";
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     $studentsList = $stmt->fetchAll();
 } catch (Exception $e) {}
 
-function getStatusAr($s) {
-    return ['present' => 'حاضر', 'absent' => 'غائب', 'late' => 'متأخر', 'excused' => 'معذور'][$s] ?? $s;
-}
-function getStatusColor($s) {
-    return ['present' => 'success', 'absent' => 'danger', 'late' => 'warning', 'excused' => 'info'][$s] ?? 'secondary';
-}
+// الدوال المساعدة موجودة في includes/helpers.php
 ?>
 
 <div class="section">
@@ -296,14 +370,14 @@ function getStatusColor($s) {
                                 <input type="hidden" name="attendance_id" value="<?= $record['id'] ?>">
                                 <td><?= $i + 1 ?></td>
                                 <td>
-                                    <div style="font-weight:600;"><?= e($record['student_name']) ?></div>
+                                    <a href="../students/view.php?id=<?= $record['student_id'] ?>" style="font-weight:600; color:inherit; text-decoration:none;"><?= e($record['student_name']) ?></a>
                                     <div style="font-size:11px; color:var(--text-muted);"><?= e($record['student_number']) ?></div>
                                 </td>
                                 <td><?= e($record['class_name']) ?></td>
                                 <td><?= formatDateAr($record['date'], 'short') ?></td>
                                 <td>
-                                    <span class="badge badge-<?= getStatusColor($record['status']) ?>">
-                                        <?= getStatusAr($record['status']) ?>
+                                    <span class="badge badge-<?= attendanceStatusColor($record['status']) ?>">
+                                        <?= attendanceStatusAr($record['status']) ?>
                                     </span>
                                 </td>
                                 <td>
@@ -369,8 +443,8 @@ function getStatusColor($s) {
                         <?php foreach ($amendmentHistory as $amend): ?>
                         <tr>
                             <td><?= formatDateAr($amend['created_at'], 'medium') ?></td>
-                            <td><span class="badge badge-<?= getStatusColor($amend['old_status']) ?>"><?= getStatusAr($amend['old_status']) ?></span></td>
-                            <td><span class="badge badge-<?= getStatusColor($amend['new_status']) ?>"><?= getStatusAr($amend['new_status']) ?></span></td>
+                            <td><span class="badge badge-<?= attendanceStatusColor($amend['old_status']) ?>"><?= attendanceStatusAr($amend['old_status']) ?></span></td>
+                            <td><span class="badge badge-<?= attendanceStatusColor($amend['new_status']) ?>"><?= attendanceStatusAr($amend['new_status']) ?></span></td>
                             <td><?= e($amend['reason']) ?></td>
                             <td><?= e($amend['amender_name'] ?? 'غير معروف') ?></td>
                         </tr>

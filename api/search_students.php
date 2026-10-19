@@ -39,13 +39,9 @@ if (!hasPermission('school_admin')) {
 $query          = trim($_GET['q'] ?? '');
 $classId        = intval($_GET['class_id'] ?? 0);
 $academicYearId = intval($_GET['academic_year_id'] ?? 0);
+$mode           = $_GET['mode'] ?? 'enrollment'; // 'enrollment' or 'general'
 
 if (empty($query) || mb_strlen($query) < 2) {
-    echo json_encode(['students' => []], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if ($classId <= 0 || $academicYearId <= 0) {
     echo json_encode(['students' => []], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -55,22 +51,27 @@ $userRole = $_SESSION['user']['role'] ?? '';
 $schoolId = $_SESSION['user']['school_id'] ?? null;
 
 try {
-    // البحث عن الطلاب غير المسجلين في الفصل المحدد
     $sql = "SELECT s.id, s.student_number, s.full_name_ar, gl.name_ar AS grade_name
             FROM students s
             LEFT JOIN grade_levels gl ON gl.id = s.grade_level_id
             WHERE s.is_active = 1
-              AND (s.full_name_ar LIKE ? OR s.student_number LIKE ?)
-              AND NOT EXISTS (
-                  SELECT 1 FROM student_enrollments se
-                  WHERE se.student_id = s.id
-                    AND se.class_id = ?
-                    AND se.academic_year_id = ?
-                    AND se.status = 'enrolled'
-                    AND se.is_active = 1
-              )";
+              AND (s.full_name_ar LIKE ? OR s.student_number LIKE ?)";
 
-    $params = ["%{$query}%", "%{$query}%", $classId, $academicYearId];
+    $params = ["%{$query}%", "%{$query}%"];
+
+    if ($mode === 'enrollment' && $classId > 0 && $academicYearId > 0) {
+        // وضع التسجيل في الفصل: استبعاد الطلاب المسجلين بالفعل
+        $sql .= " AND NOT EXISTS (
+            SELECT 1 FROM student_enrollments se
+            WHERE se.student_id = s.id
+              AND se.class_id = ?
+              AND se.academic_year_id = ?
+              AND se.status = 'enrolled'
+              AND se.is_active = 1
+        )";
+        $params[] = $classId;
+        $params[] = $academicYearId;
+    }
 
     // نطاق المدرسة
     if ($schoolId && $userRole !== 'group_admin') {

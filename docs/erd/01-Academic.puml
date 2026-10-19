@@ -1,0 +1,80 @@
+@startuml 01-Academic
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "academic_years" as academic_years {
+  id : int(10)
+  name : varchar(50)
+  start_date : date
+  end_date : date
+  is_current : tinyint(1)
+  status : enum('planning','active','evaluation','closed')
+  is_active : tinyint(1)
+  created_at : datetime
+}
+
+entity "semesters" as semesters {
+  id : int(10)
+  * academic_year_id : int(10)
+  name_ar : varchar(50)
+  start_date : date
+  end_date : date
+  is_current : tinyint(1)
+  lock_level : enum('none','soft','hard','admin_handled')
+  locked_at : datetime
+  locked_by : int(10)
+  is_active : tinyint(1)
+}
+
+entity "grades" as grades {
+  id : int(10)
+  * student_id : int(10)
+  * test_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  grade_value : decimal(7,2)
+  max_value : decimal(7,2)
+  percentage : decimal(7,2)
+  letter_grade : varchar(3)
+  notes : text
+}
+
+entity "grade_levels" as grade_levels {
+  id : int(10)
+  name_ar : varchar(50)
+  name_en : varchar(50)
+  level_number : tinyint(3)
+  stage : enum('basic','secondary')
+  is_active : tinyint(1)
+}
+
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+grade_levels ||--o{ grade_levels
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+academic_years ||--o{ academic_years
+grade_levels ||--o{ grade_levels
+academic_years ||--o{ academic_years
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+grade_levels ||--o{ grade_levels
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+academic_years ||--o{ academic_years
+academic_years ||--o{ academic_years
+semesters ||--o{ semesters
+@enduml

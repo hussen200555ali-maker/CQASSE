@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مخطط مشروع EQAS — الخطة الزمنية 44 أسبوعًا</title>
+<style>
+:root {
+  --s1-from: #2563eb;
+  --s1-to: #06b6d4;
+  --s2-from: #059669;
+  --s2-to: #10b981;
+  --f-from: #d97706;
+  --f-to: #f59e0b;
+  --gap-color: #94a3b8;
+  --bg: #f1f5f9;
+  --card-bg: #fff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --milestone-color: #ef4444;
+  --divider-color: #cbd5e1;
+  --border-color: #e2e8f0;
+  --shadow: 0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,.1),0 4px 10px rgba(0,0,0,.06);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text-primary);
+  line-height:1.7;
+  padding:24px;
+  min-height:100vh
+}
+a{color:var(--s1-from);text-decoration:none}
+img{max-width:100%;height:auto}
+
+/* ─── Container ─── */
+.container{max-width:1380px;margin:0 auto}
+
+/* ─── Header ─── */
+.header{
+  background:linear-gradient(135deg,#1e293b 0%,#334155 100%);
+  color:#fff;
+  border-radius:var(--radius);
+  padding:36px 40px 32px;
+  margin-bottom:28px;
+  box-shadow:var(--shadow-lg);
+  position:relative;
+  overflow:hidden
+}
+.header::before{
+  content:'';
+  position:absolute;
+  top:-60%;right:-20%;
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(37,99,235,.12) 0%,transparent 70%);
+  pointer-events:none
+}
+.header::after{
+  content:'';
+  position:absolute;
+  bottom:-40%;left:-10%;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(16,185,129,.1) 0%,transparent 70%);
+  pointer-events:none
+}
+.header h1{font-size:28px;font-weight:700;margin-bottom:4px;position:relative;z-index:1}
+.header .subtitle{font-size:16px;color:#94a3b8;margin-bottom:14px;position:relative;z-index:1}
+.header-meta{display:flex;flex-wrap:wrap;gap:24px;font-size:14px;position:relative;z-index:1}
+.header-meta span{display:flex;align-items:center;gap:6px;color:#cbd5e1}
+.header-meta strong{color:#fff;font-weight:600}
+.header-meta .accent{color:#fbbf24}
+
+/* ─── Legend ─── */
+.legend{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  padding:16px 24px;
+  margin-bottom:24px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:20px
+}
+.legend-title{font-size:13px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;margin-left:8px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-primary)}
+.legend-swatch{
+  width:20px;height:12px;
+  border-radius:3px;
+  flex-shrink:0
+}
+.legend-swatch.s1{background:linear-gradient(90deg,var(--s1-from),var(--s1-to))}
+.legend-swatch.s2{background:linear-gradient(90deg,var(--s2-from),var(--s2-to))}
+.legend-swatch.f{background:linear-gradient(90deg,var(--f-from),var(--f-to))}
+.legend-swatch.gap{background:repeating-linear-gradient(45deg,var(--gap-color) 0,var(--gap-color) 4px,var(--bg) 4px,var(--bg) 8px)}
+.legend-swatch.milestone{width:12px;height:12px;background:var(--milestone-color);transform:rotate(45deg);border-radius:2px}
+
+/* ─── Gantt Chart ─── */
+.gantt-wrap{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  margin-bottom:28px
+}
+.gantt-scroll{overflow-x:auto;padding:20px 20px 12px}
+.gantt-scroll::-webkit-scrollbar{height:6px}
+.gantt-scroll::-webkit-scrollbar-track{background:var(--bg);border-radius:3px}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--divider-color);border-radius:3px}
+.gantt-chart{min-width:900px}
+
+/* ─── Timeline Axis ─── */
+.timeline-axis{
+  position:relative;
+  height:56px;
+  margin-bottom:8px;
+  margin-right:160px;
+  margin-left:100px
+}
+.timeline-months{
+  display:flex;
+  height:24px;
+  margin-bottom:4px
+}
+.month-label{
+  font-size:11px;
+  font-weight:600;
+  color:var(--text-secondary);
+  text-align:center;
+  letter-spacing:.3px;
+  border-right:1px solid var(--border-color);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding-bottom:2px
+}
+.month-label:first-child{border-right:none}
+.week-ticks{
+  display:flex;
+  height:20px;
+  position:relative
+}
+.week-tick{
+  font-size:11px;
+  color:#94a3b8;
+  text-align:center;
+  position:relative;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center
+}
+.week-tick::before{
+  content:'';
+  position:absolute;
+  top:0;
+  right:50%;
+  width:1px;
+  height:6px;
+  background:var(--divider-color)
+}
+.week-tick.major{font-weight:600;color:var(--text-secondary)}
+.week-tick.major::before{height:10px;background:#94a3b8}
+
+/* ─── Section Headers ─── */
+.section-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 16px;
+  margin-top:20px;
+  margin-bottom:4px;
+  border-radius:var(--radius-sm);
+  font-weight:700;
+  font-size:14px;
+  margin-right:160px;
+  margin-left:100px
+}
+.section-header:first-of-type{margin-top:0}
+.section-header{cursor:default}
+.section-header.s1{background:linear-gradient(90deg,var(--s1-from),var(--s1-to));color:#fff}
+.section-header.s2{background:linear-gradient(90deg,var(--s2-from),var(--s2-to));color:#fff}
+.section-header.sf{background:linear-gradient(90deg,var(--f-from),var(--f-to));color:#fff}
+.section-header.gap{background:var(--gap-color);color:#fff}
+.section-header .sec-period{font-weight:400;font-size:12px;opacity:.85}
+.section-header .sec-duration{font-weight:400;font-size:12px;opacity:.85}
+
+/* ─── Gantt Rows ─── */
+.gantt-row{
+  display:flex;
+  align-items:center;
+  padding:3px 0;
+  transition:background .2s;
+  position:relative;
+  border-radius:4px
+}
+.gantt-row:hover{background:#f8fafc}
+.gantt-row + .gantt-row{border-top:1px solid #f1f5f9}
+
+.row-label{
+  width:160px;
+  flex-shrink:0;
+  padding-right:4px;
+  font-size:12.5px;
+  font-weight:500;
+  color:var(--text-primary);
+  line-height:1.4
+}
+.row-label .phase-code{
+  font-size:10px;
+  font-weight:700;
+  color:var(--text-secondary);
+  display:block;
+  margin-bottom:1px
+}
+
+.row-track{
+  flex:1;
+  position:relative;
+  height:32px;
+  margin:0 4px
+}
+
+.row-duration{
+  width:100px;
+  flex-shrink:0;
+  text-align:left;
+  font-size:11px;
+  color:var(--text-secondary);
+  padding-left:4px
+}
+
+/* ─── Week Grid Lines ─── */
+.week-grid{
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  pointer-events:none;
+  display:flex
+}
+.week-grid-line{
+  flex:1;
+  border-right:1px solid #f1f5f9;
+  height:100%
+}
+.week-grid-line:first-child{border-right:none}
+
+/* ─── Bars ─── */
+.gantt-bar{
+  position:absolute;
+  top:4px;
+  height:24px;
+  border-radius:5px;
+  cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden
+}
+.gantt-bar:hover{
+  transform:scaleY(1.15);
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+  z-index:5
+}
+.gantt-bar.s1{background:linear-gradient(90deg,var(--s1-from),var(--s1-to))}
+.gantt-bar.s2{background:linear-gradient(90deg,var(--s2-from),var(--s2-to))}
+.gantt-bar.sf{background:linear-gradient(90deg,var(--f-from),var(--f-to))}
+.gantt-bar.gap{
+  background:repeating-linear-gradient(45deg,var(--gap-color) 0,var(--gap-color) 4px,#a8b4c4 4px,#a8b4c4 8px);
+  opacity:.7;
+  cursor:default
+}
+.gantt-bar.gap:hover{transform:none;box-shadow:none}
+.gantt-bar .bar-label{
+  font-size:11px;
+  font-weight:600;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.3);
+  letter-spacing:.3px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:0 6px;
+  max-width:100%
+}
+
+/* ─── Milestone Diamond ─── */
+.milestone{
+  position:absolute;
+  width:14px;
+  height:14px;
+  background:var(--milestone-color);
+  transform:translateY(-50%) rotate(45deg);
+  top:50%;
+  z-index:6;
+  cursor:pointer;
+  transition:transform .2s;
+  border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(239,68,68,.4)
+}
+.milestone::before{content:'';position:absolute;top:50%;right:50%;transform:translate(50%,-50%);width:32px;height:32px;z-index:-1;pointer-events:auto}
+.milestone:focus-visible{outline:2px solid var(--milestone-color);outline-offset:3px;border-radius:2px}
+.milestone:hover{transform:translateY(-50%) rotate(45deg) scale(1.25)}
+
+/* ─── Tooltip ─── */
+.tooltip{
+  position:fixed;
+  background:#1e293b;
+  color:#fff;
+  padding:12px 16px;
+  border-radius:var(--radius-sm);
+  font-size:13px;
+  line-height:1.6;
+  z-index:999;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .2s;
+  max-width:340px;
+  box-shadow:var(--shadow-lg);
+  direction:rtl;
+  text-align:right
+}
+.tooltip.visible{opacity:1}
+.tooltip .tt-title{font-weight:700;font-size:14px;margin-bottom:4px;color:#fbbf24}
+.tooltip .tt-code{font-size:11px;color:#94a3b8;display:block;margin-bottom:2px}
+.tooltip .tt-period{font-size:12px;color:#cbd5e1;margin-bottom:6px}
+.tooltip .tt-desc{font-size:12px;color:#e2e8f0;margin-bottom:6px}
+.tooltip .tt-deliverables{font-size:11px;color:#94a3b8}
+.tooltip .tt-deliverables strong{color:#cbd5e1}
+
+/* ─── Divider ─── */
+.gantt-divider{
+  height:3px;
+  background:linear-gradient(90deg,transparent,var(--divider-color),transparent);
+  margin:8px 160px 8px 100px;
+  border-radius:2px;
+  position:relative
+}
+.gantt-divider::before{
+  content:'●';
+  position:absolute;
+  right:-16px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:8px;
+  color:var(--divider-color)
+}
+.gantt-divider::after{
+  content:'●';
+  position:absolute;
+  left:-16px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:8px;
+  color:var(--divider-color)
+}
+
+/* ─── Phase Cards ─── */
+.cards-section{padding:20px 0}
+.cards-section h2{
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:6px;
+  color:var(--text-primary)
+}
+.cards-section .cards-desc{
+  font-size:14px;
+  color:var(--text-secondary);
+  margin-bottom:20px
+}
+.phase-cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(380px,1fr));
+  gap:16px
+}
+.phase-card{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+  transition:box-shadow .3s;
+  border:1px solid var(--border-color)
+}
+.phase-card:hover{box-shadow:var(--shadow-lg)}
+.phase-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  cursor:pointer;
+  user-select:none;
+  transition:background .2s
+}
+.phase-card-header:hover{background:#f8fafc}
+.phase-card-header:focus-visible{outline:2px solid var(--s1-from);outline-offset:2px;border-radius:var(--radius)}
+.phase-card-header .pc-code{
+  font-size:11px;
+  font-weight:700;
+  padding:2px 10px;
+  border-radius:20px;
+  color:#fff;
+  flex-shrink:0
+}
+.phase-card-header .pc-code.s1{background:linear-gradient(135deg,var(--s1-from),var(--s1-to))}
+.phase-card-header .pc-code.s2{background:linear-gradient(135deg,var(--s2-from),var(--s2-to))}
+.phase-card-header .pc-code.sf{background:linear-gradient(135deg,var(--f-from),var(--f-to))}
+.phase-card-header .pc-code.gap{background:var(--gap-color)}
+.phase-card-header .pc-name{
+  flex:1;
+  margin:0 12px;
+  font-size:14px;
+  font-weight:600;
+  color:var(--text-primary)
+}
+.phase-card-header .pc-toggle{
+  width:20px;height:20px;
+  border-radius:50%;
+  background:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  color:var(--text-secondary);
+  transition:transform .3s;
+  flex-shrink:0
+}
+.phase-card.open .pc-toggle{transform:rotate(180deg)}
+.phase-card-body{
+  padding:0 18px;
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s ease, padding .3s;
+  border-top:0 solid var(--border-color)
+}
+.phase-card.open .phase-card-body{
+  max-height:1200px;
+  padding:16px 18px 18px;
+  border-top-width:1px;
+  border-top-style:solid
+}
+.pc-period{font-size:13px;color:var(--text-secondary);margin-bottom:8px}
+.pc-period strong{color:var(--text-primary)}
+.pc-duration{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+.pc-section-label{font-size:11px;font-weight:700;color:var(--text-secondary);margin-bottom:4px;margin-top:10px;letter-spacing:.3px}
+.pc-desc{font-size:13px;color:var(--text-primary);margin-bottom:10px;line-height:1.7}
+.pc-tasks{list-style:none;margin-bottom:10px}
+.pc-tasks li{
+  font-size:13px;
+  padding:3px 16px 3px 0;
+  position:relative;
+  color:var(--text-primary)
+}
+.pc-tasks li::before{content:'▹';position:absolute;right:0;color:var(--s1-from)}
+.pc-deliverables{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:10px
+}
+.pc-deliverables span{
+  font-size:11px;
+  background:#f1f5f9;
+  padding:3px 10px;
+  border-radius:20px;
+  color:var(--text-primary);
+  border:1px solid var(--border-color)
+}
+.pc-doc-status{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  color:var(--text-secondary);
+  padding-top:8px;
+  border-top:1px dashed var(--border-color);
+  margin-top:8px
+}
+.pc-doc-status .check{color:#059669;font-weight:700}
+
+/* ─── Milestones Strip ─── */
+.milestones-section{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:28px 32px;
+  margin-bottom:28px
+}
+.milestones-section h2{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:20px;
+  color:var(--text-primary)
+}
+.milestones-strip{
+  display:flex;
+  justify-content:space-between;
+  position:relative;
+  padding:20px 0 12px
+}
+.milestones-strip::before{
+  content:'';
+  position:absolute;
+  top:26px;
+  right:20px;
+  left:20px;
+  height:3px;
+  background:linear-gradient(90deg,var(--s1-from),var(--s2-from),var(--f-from));
+  border-radius:2px
+}
+.ms-item{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  position:relative;
+  z-index:2;
+  text-align:center;
+  flex:1
+}
+.ms-diamond{
+  width:18px;height:18px;
+  background:var(--milestone-color);
+  transform:rotate(45deg);
+  border:2px solid #fff;
+  box-shadow:0 1px 4px rgba(239,68,68,.4);
+  margin-bottom:8px;
+  flex-shrink:0
+}
+.ms-date{
+  font-size:11px;
+  font-weight:700;
+  color:var(--text-primary);
+  white-space:nowrap
+}
+.ms-label{
+  font-size:11px;
+  color:var(--text-secondary);
+  margin-top:2px
+}
+
+/* ─── Summary Table ─── */
+.summary-section{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:24px 32px;
+  margin-bottom:28px
+}
+.summary-section h2{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:16px;
+  color:var(--text-primary)
+}
+.summary-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px
+}
+.summary-table th{
+  background:#f8fafc;
+  padding:10px 14px;
+  text-align:right;
+  font-weight:700;
+  color:var(--text-secondary);
+  font-size:13px;
+  border-bottom:2px solid var(--border-color)
+}
+.summary-table td{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border-color);
+  color:var(--text-primary)
+}
+.summary-table tr:last-child td{border-bottom:none}
+.summary-table tr.total td{
+  font-weight:700;
+  background:#f1f5f9;
+  border-top:2px solid var(--text-primary)
+}
+.summary-table .td-color{width:4px;padding:0}
+.summary-table .td-color div{width:4px;height:24px;border-radius:2px}
+
+/* ─── Notes Section ─── */
+.notes-section{
+  background:var(--card-bg);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:24px 32px;
+  margin-bottom:28px
+}
+.notes-section h2{
+  font-size:18px;
+  font-weight:700;
+  margin-bottom:14px;
+  color:var(--text-primary)
+}
+.notes-list{
+  list-style:none
+}
+.notes-list li{
+  padding:6px 20px 6px 0;
+  position:relative;
+  font-size:14px;
+  color:var(--text-primary);
+  line-height:1.7
+}
+.notes-list li::before{content:'•';position:absolute;right:0;color:var(--s1-from);font-weight:700}
+
+/* ─── Print ─── */
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+  body{background:#fff;padding:0;font-size:10px;line-height:1.4}
+  .header{
+    background:#1e293b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    padding:18px 24px;margin-bottom:14px;
+    border-radius:4px
+  }
+  .header h1{font-size:20px}
+  .header-meta{font-size:11px}
+  .gantt-wrap{box-shadow:none;border:1px solid #ddd;border-radius:4px;margin-bottom:16px}
+  .gantt-scroll{padding:12px}
+  .gantt-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .gantt-bar:hover{transform:none;box-shadow:none}
+  .section-header{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .milestone{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .legend{box-shadow:none;border:1px solid #ddd}
+  .legend-swatch{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .phase-card{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+  .phase-card-body{max-height:none!important;padding:12px 18px 14px!important;border-top:1px solid #ddd!important}
+  .phase-card-header{cursor:default}
+  .phase-card-header:hover{background:transparent}
+  .pc-toggle{display:none}
+  .milestones-section{box-shadow:none;border:1px solid #ddd;break-inside:avoid}
+  .milestones-strip::before{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ms-diamond{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .summary-section{box-shadow:none;border:1px solid #ddd}
+  .notes-section{box-shadow:none;border:1px solid #ddd}
+  .gantt-bar.gap{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .tooltip{display:none!important}
+  .cards-section .phase-cards-grid{grid-template-columns:1fr 1fr}
+  .gantt-divider{margin:4px 160px 4px 100px}
+}
+
+/* ─── Animation ─── */
+@keyframes barGrow{
+  from{width:0!important;opacity:0}
+  to{opacity:1}
+}
+.gantt-bar{animation:barGrow .6s ease-out both}
+.gantt-bar.gap{animation-duration:.3s}
+
+/* ─── Responsive ─── */
+@media(max-width:900px){
+  body{padding:12px}
+  .header{padding:24px 20px}
+  .header h1{font-size:22px}
+  .header-meta{gap:12px;flex-direction:column}
+  .legend{gap:12px;padding:12px 16px}
+  .row-label{width:120px;font-size:11px}
+  .row-duration{width:70px;font-size:10px}
+  .gantt-divider{margin-right:120px;margin-left:70px}
+  .section-header{margin-right:120px;margin-left:70px}
+  .timeline-axis{margin-right:120px;margin-left:70px}
+  .phase-cards-grid{grid-template-columns:1fr}
+  .milestones-section,.summary-section,.notes-section{padding:18px 16px}
+  .summary-table{font-size:12px}
+  .milestones-strip{overflow-x:auto;gap:8px}
+  .ms-item{min-width:80px}
+}
+</style>
+</head>
+<body>
+
+<div id="tooltip" class="tooltip"></div>
+
+<div class="container">
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <h1>نظام تقييم جودة التعليم (EQAS)</h1>
+  <div class="subtitle">مخطط مشروع التخرج — الخطة الزمنية</div>
+  <div class="header-meta">
+    <span>🗓️ <strong>المدة الإجمالية:</strong> <span class="accent">311 يومًا</span> (44 أسبوعًا)</span>
+    <span>📅 <strong>تاريخ البداية:</strong> 28 يونيو 2025م</span>
+    <span>🏁 <strong>تاريخ النهاية:</strong> 5 مايو 2026م</span>
+    <span>🚩 <strong>محطات رئيسية:</strong> عرض S1 ← التنفيذ ← التسليم النهائي</span>
+  </div>
+</header>
+
+<!-- ═══ LEGEND ═══ -->
+<nav class="legend" aria-label="دليل الألوان">
+  <span class="legend-title">دليل الألوان</span>
+  <span class="legend-item"><span class="legend-swatch s1"></span> S1 — الفصل الأول (تخطيط وتصميم)</span>
+  <span class="legend-item"><span class="legend-swatch s2"></span> S2 — الفصل الثاني (تنفيذ واختبار)</span>
+  <span class="legend-item"><span class="legend-swatch f"></span> F — التسليم النهائي</span>
+  <span class="legend-item"><span class="legend-swatch gap"></span> فجوة</span>
+  <span class="legend-item"><span class="legend-swatch milestone"></span> محطة رئيسية</span>
+</nav>
+
+<!-- ═══ GANTT CHART ═══ -->
+<main>
+<section class="gantt-wrap" aria-label="مخطط جانت">
+  <div class="gantt-scroll">
+    <div class="gantt-chart" id="ganttChart">
+
+      <!-- Timeline axis (rendered by JS) -->
+      <div class="timeline-axis" id="timelineAxis"></div>
+
+      <!-- Section headers and rows rendered by JS -->
+      <div id="ganttBody"></div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PHASE CARDS ═══ -->
+<section class="cards-section" aria-label="بطاقات المراحل التفصيلية">
+  <h2>📋 بطاقات المراحل التفصيلية</h2>
+  <div class="cards-desc">اضغط على أي بطاقة لعرض التفاصيل الكاملة — المهام، التسليمات، والتوثيق</div>
+  <div class="phase-cards-grid" id="phaseCardsGrid"></div>
+</section>
+
+<!-- ═══ MILESTONES ═══ -->
+<section class="milestones-section" aria-label="المحطات الرئيسية">
+  <h2>🚩 المحطات الرئيسية</h2>
+  <div class="milestones-strip">
+    <div class="ms-item">
+      <div class="ms-diamond"></div>
+      <div class="ms-date">16 أكتوبر 2025</div>
+      <div class="ms-label">نهاية الفصل الأول — عرض S1</div>
+    </div>
+    <div class="ms-item">
+      <div class="ms-diamond"></div>
+      <div class="ms-date">15 نوفمبر 2025</div>
+      <div class="ms-label">بداية الفصل الثاني</div>
+    </div>
+    <div class="ms-item">
+      <div class="ms-diamond"></div>
+      <div class="ms-date">5 مارس 2026</div>
+      <div class="ms-label">نهاية الفصل الثاني</div>
+    </div>
+    <div class="ms-item">
+      <div class="ms-diamond"></div>
+      <div class="ms-date">5 مايو 2026</div>
+      <div class="ms-label">🎯 التسليم النهائي</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SUMMARY TABLE ═══ -->
+<section class="summary-section" aria-label="جدول ملخص الفترات">
+  <h2>📊 ملخص الفترات</h2>
+  <table class="summary-table">
+    <thead>
+      <tr>
+        <th style="width:4px"></th>
+        <th>الفصل</th>
+        <th>الفترة</th>
+        <th>المدة</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="td-color"><div style="background:linear-gradient(var(--s1-from),var(--s1-to))"></div></td>
+        <td>الفصل الأول — التخطيط والتصميم</td>
+        <td>28 يونيو — 16 أكتوبر 2025</td>
+        <td>110 أيام (16 أسبوعًا)</td>
+      </tr>
+      <tr>
+        <td class="td-color"><div style="background:var(--gap-color)"></div></td>
+        <td>فجوة — التحضير للفصل الثاني</td>
+        <td>17 أكتوبر — 14 نوفمبر 2025</td>
+        <td>30 يومًا</td>
+      </tr>
+      <tr>
+        <td class="td-color"><div style="background:linear-gradient(var(--s2-from),var(--s2-to))"></div></td>
+        <td>الفصل الثاني — التنفيذ والاختبار</td>
+        <td>15 نوفمبر 2025 — 5 مارس 2026</td>
+        <td>111 يومًا (16 أسبوعًا)</td>
+      </tr>
+      <tr>
+        <td class="td-color"><div style="background:linear-gradient(var(--f-from),var(--f-to))"></div></td>
+        <td>فترة التسليم النهائي</td>
+        <td>5 مارس — 5 مايو 2026</td>
+        <td>61 يومًا (9 أسابيع)</td>
+      </tr>
+      <tr class="total">
+        <td></td>
+        <td>الإجمالي</td>
+        <td>28 يونيو 2025 — 5 مايو 2026</td>
+        <td>311 يومًا (44 أسبوعًا)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══ NOTES ═══ -->
+<section class="notes-section" aria-label="ملاحظات المشروع">
+  <h2>📌 ملاحظات</h2>
+  <ul class="notes-list">
+    <li>فجوة 30 يومًا بين الفصلين للتحضير والمراجعة</li>
+    <li>الفصل الأول نظري بالكامل — دراسة، تخطيط، تصميم، توثيق</li>
+    <li>الفصل الثاني عملي بالكامل — برمجة، بناء، اختبار، نشر</li>
+    <li>التسليم النهائي يشمل التوثيق الكامل والعرض التقديمي</li>
+    <li>مراجعات أسبوعية مقترحة مع المشرف طوال فترة المشروع</li>
+    <li>جميع مراحل التصميم توثّق في وثائق رسمية (SRS, SDD, إلخ)</li>
+    <li>محرك حساب الدرجات (EQI) هو المكون المحوري للنظام</li>
+    <li>النظام مبني على بنية MVC مع PHP و MySQL و Bootstrap</li>
+  </ul>
+</section>
+</main>
+
+</div><!-- /container -->
+
+<script>
+// ─── DATA ───
+const SECTIONS = [
+  {
+    id:'s1', label:'الفصل الدراسي الأول — الدراسة النظرية والتخطيط والتصميم',
+    period:'28 يونيو — 16 أكتوبر 2025', duration:'16 أسبوعًا (110 أيام)',
+    cssClass:'s1'
+  },
+  {
+    id:'gap', label:'فترة الفجوة — التحضير',
+    period:'17 أكتوبر — 14 نوفمبر 2025', duration:'30 يومًا',
+    cssClass:'gap'
+  },
+  {
+    id:'s2', label:'الفصل الدراسي الثاني — التنفيذ العملي والاختبار',
+    period:'15 نوفمبر 2025 — 5 مارس 2026', duration:'16 أسبوعًا (111 يومًا)',
+    cssClass:'s2'
+  },
+  {
+    id:'f', label:'فترة التسليم النهائي — التوثيق والعرض والتسليم',
+    period:'5 مارس — 5 مايو 2026', duration:'9 أسابيع (61 يومًا)',
+    cssClass:'sf'
+  }
+];
+
+const PHASES = [
+  // Section 1: S1
+  {code:'S1-P1', name:'الدراسة النظرية وجمع المتطلبات', period:'28 يونيو — 11 يوليو 2025', duration:'أسبوعان', wkS:1, wkE:2, sec:'s1',
+   desc:'دراسة الأدبيات والنظريات ذات العلاقة بجودة التعليم، وتحليل الأنظمة المماثلة، وجمع متطلبات النظام من الجهات المعنية.',
+   tasks:['مراجعة الأدبيات والدراسات السابقة في تقييم جودة التعليم','إجراء مقابلات مع أصحاب المصلحة (مشرفين، معلمين، إداريين)','تحديد متطلبات النظام الوظيفية وغير الوظيفية','توثيق متطلبات المستخدم النهائي'],
+   deliverables:['وثيقة دراسة الجدوى','تقرير المتطلبات الأولية','خريطة أصحاب المصلحة'],
+   doc:'📋 وثيقة دراسة الجدوى، تقرير المتطلبات الأولية'},
+  {code:'S1-P2', name:'تحليل الدراسات السابقة والفجوة', period:'12 يوليو — 25 يوليو 2025', duration:'أسبوعان', wkS:3, wkE:4, sec:'s1',
+   desc:'تحليل منهجي للدراسات السابقة وتحديد فجوة البحث التي يسدها النظام المقترح.',
+   tasks:['تصنيف الدراسات السابقة حسب المنهجية والنتائج','تحديد مؤشرات الجودة المستخدمة في الأنظمة المماثلة','مصفوفة المقارنة بين الأنظمة الحالية','تحديد الفجوة البحثية وموقع النظام منها'],
+   deliverables:['تقرير تحليل الدراسات السابقة','مصفوفة الفجوة','خريطة المؤشرات'],
+   doc:'📋 تقرير تحليل الدراسات السابقة، مصفوفة الفجوة'},
+  {code:'S1-P3', name:'تحليل النظام ووثيقة SRS', period:'26 يوليو — 8 أغسطس 2025', duration:'أسبوعان', wkS:5, wkE:6, sec:'s1',
+   desc:'إعداد وثيقة متطلبات النظام (Software Requirements Specification) بشكل رسمي.',
+   tasks:['تحليل المتطلبات الوظيفية بالتفصيل','نمذجة حالات الاستخدام (Use Cases)','توثيق المتطلبات غير الوظيفية','مراجعة وثيقة SRS'],
+   deliverables:['وثيقة SRS','مخططات Use Case','قائمة المتطلبات'],
+   doc:'📋 وثيقة SRS (متطلبات النظام)'},
+  {code:'S1-P4', name:'تصميم قاعدة البيانات والمعمارية', period:'9 أغسطس — 22 أغسطس 2025', duration:'أسبوعان', wkS:7, wkE:8, sec:'s1',
+   desc:'تصميم البنية التحتية للنظام: قاعدة البيانات، الطبقات المعمارية، وتخطيط المكونات.',
+   tasks:['تصميم ERD (مخطط العلاقات)','تصميم الطبقات المعمارية (MVC)','تحديد هيكل الجداول والعلاقات','توثيق قرارات التصميم'],
+   deliverables:['مخطط ERD','مخطط الطبقات','وثيقة قواعد البيانات'],
+   doc:'📋 مخطط ERD، وثيقة قواعد البيانات'},
+  {code:'S1-P5', name:'تصميم واجهات المستخدم', period:'23 أغسطس — 5 سبتمبر 2025', duration:'أسبوعان', wkS:9, wkE:10, sec:'s1',
+   desc:'تصميم واجهات المستخدم الرسومية (GUI) مع نماذج أولية تفاعلية.',
+   tasks:['تصميمWireframes للصفحات الرئيسية','إنشاء نموذج أولي (Prototype)','تصميم لوحة القيادة والتقارير','مراجعة تجربة المستخدم'],
+   deliverables:['نموذج أولي لواجهات المستخدم','مخطط تدفق الصفحات','دليل أسلوب الواجهات'],
+   doc:'📋 نموذج أولي لواجهات المستخدم'},
+  {code:'S1-P6', name:'وثيقة تصميم النظام (SDD)', period:'6 سبتمبر — 19 سبتمبر 2025', duration:'أسبوعان', wkS:11, wkE:12, sec:'s1',
+   desc:'إعداد وثيقة التصميم التفصيلية (System Design Document) لكل مكونات النظام.',
+   tasks:['توثيق التصميم المفصل لكل وحدة','مخططات التتابع (Sequence Diagrams)','توثيق واجهات API','مراجعة SDD'],
+   deliverables:['وثيقة SDD','مخططات UML','توثيق API'],
+   doc:'📋 وثيقة التصميم التفصيلية (SDD)'},
+  {code:'S1-P7', name:'مراجعة والمصادقة على التصميم', period:'20 سبتمبر — 3 أكتوبر 2025', duration:'أسبوعان', wkS:13, wkE:14, sec:'s1',
+   desc:'مراجعة شاملة للتصميم مع المشرف والمختصين والمصادقة على البدء في التنفيذ.',
+   tasks:['عرض التصميم على المشرف','تسجيل الملاحظات والتعديلات','تحديث وثائق التصميم','الحصول على المصادقة النهائية'],
+   deliverables:['محاضر اجتماعات المراجعة','قائمة الملاحظات','شهادة المصادقة'],
+   doc:'📋 محاضر المراجعة، قائمة الملاحظات'},
+  {code:'S1-P8', name:'التوثيق النهائي وعرض الفصل الأول', period:'4 أكتوبر — 16 أكتوبر 2025', duration:'أسبوعان', wkS:15, wkE:16, sec:'s1',
+   desc:'إعداد التقرير الختامي للفصل الأول وعرض تقديمي شامل يلخص مرحلة التخطيط والتصميم.',
+   tasks:['كتابة تقرير الفصل الأول','إعداد العرض التقديمي','تحضير الملصق العلمي','عرض المشروع أمام اللجنة'],
+   deliverables:['تقرير الفصل الأول','عرض تقديمي S1','ملصق المشروع'],
+   doc:'📋 تقرير الفصل الأول، عرض تقديمي S1'},
+
+  // Gap
+  {code:'فجوة', name:'فترة التحضير والمراجعة', period:'17 أكتوبر — 14 نوفمبر 2025', duration:'30 يومًا', wkS:17, wkE:20, sec:'gap',
+   desc:'فترة فاصلة للتحضير والمراجعة بين الفصلين الدراسيين.',
+   tasks:['مراجعة ملاحظات لجنة التحكيم','تحديث خطة العمل للفصل الثاني','تجهيز بيئة التطوير','توزيع مهام الفريق'],
+   deliverables:['خطة الفصل الثاني المحدّثة','بيئة التطوير جاهزة'],
+   doc:'📋 خطة محدثة'},
+
+  // Section 2: S2
+  {code:'S2-P1', name:'التأسيس: قاعدة البيانات والمصادقة', period:'15 نوفمبر — 28 نوفمبر 2025', duration:'أسبوعان', wkS:21, wkE:22, sec:'s2',
+   desc:'بناء البنية الأساسية للنظام: إنشاء قاعدة البيانات، نظام المصادقة، وإدارة الجلسات.',
+   tasks:['إنشاء قاعدة البيانات والجداول الرئيسية','تطوير نظام تسجيل الدخول والمصادقة','إدارة الجلسات والصلاحيات','اختبار الاتصال بقاعدة البيانات'],
+   deliverables:['قاعدة البيانات منشأة','نظام مصادقة عامل','نظام إدارة الجلسات'],
+   doc:'📋 قاعدة البيانات، نظام المصادقة'},
+  {code:'S2-P2', name:'إدارة المستخدمين وبيانات المدرسة', period:'29 نوفمبر — 12 ديسمبر 2025', duration:'أسبوعان', wkS:23, wkE:24, sec:'s2',
+   desc:'تطوير وحدات CRUD للمستخدمين (مدير مجموعة، مدير مدرسة، معلم) وإدارة بيانات المدارس.',
+   tasks:['CRUD المستخدمين والأدوار','إدارة بيانات المدارس','لوحة تحكم مدير المجموعة','إدارة الصلاحيات'],
+   deliverables:['وحدات CRUD للمستخدمين','وحدات إدارة المدارس','نظام الصلاحيات'],
+   doc:'📋 وحدات المستخدمين والمدارس'},
+  {code:'S2-P3', name:'وحدات الحضور والسلوك', period:'13 ديسمبر — 26 ديسمبر 2025', duration:'أسبوعان', wkS:25, wkE:26, sec:'s2',
+   desc:'تطوير نظام متكامل لتسجيل ومتابعة حضور الطلاب وسلوكهم اليومي.',
+   tasks:['تسجيل الحضور والغياب','تسجيل الحالات السلوكية','تقارير الحضور والسلوك','لوحة متابعة السلوك'],
+   deliverables:['وحدة الحضور مكتملة','وحدة السلوك مكتملة','تقارير سلوكية'],
+   doc:'📋 وحدات الحضور والسلوك'},
+  {code:'S2-P4', name:'الواجبات ونماذج التقييم الديناميكية', period:'27 ديسمبر — 9 يناير 2026', duration:'أسبوعان', wkS:27, wkE:28, sec:'s2',
+   desc:'بناء نظام نماذج تقييم ديناميكي يدعم أنواع متعددة من التقييمات (مهارات، معلمين، مناخ).',
+   tasks:['بناء محرك النماذج الديناميكية','أنواع التقييم (ذاتي، أقران، إداري)','إدارة نماذج التقييم','تخزين نتائج التقييم'],
+   deliverables:['نماذج التقييم الديناميكية','أنواع تقييم متعددة','محرك النماذج'],
+   doc:'📋 نماذج التقييم الديناميكية'},
+  {code:'S2-P5', name:'محرك حساب الدرجات (EQI)', period:'10 يناير — 23 يناير 2026', duration:'أسبوعان', wkS:29, wkE:30, sec:'s2',
+   desc:'تطوير محرك مؤشر جودة التعليم (EQI) الذي يحسب الدرجات المركبة من أبعاد متعددة.',
+   tasks:['خوارزمية حساب EQI','حساب الأبعاد الفرعية (تعليم، مناخ، مهارات)','التعديل السياقي','مقارنة المدارس'],
+   deliverables:['محرك EQI','خوارزميات الحساب','التعديل السياقي'],
+   doc:'📋 محرك EQI، خوارزميات الحساب'},
+  {code:'S2-P6', name:'جودة التدريس والمناخ المدرسي', period:'24 يناير — 6 فبراير 2026', duration:'أسبوعان', wkS:31, wkE:32, sec:'s2',
+   desc:'تطوير وحدات تقييم جودة التدريس (ذاتي، أقران، إداري) والمناخ المدرسي عبر الاستبيانات.',
+   tasks:['تقييم التدريس (3 أنواع)','استبيانات المناخ المدرسي','لوحة تحليل المناخ','توصيات تحسين التدريس'],
+   deliverables:['تقييمات التدريس','استبيانات المناخ','لوحة تحليل المناخ'],
+   doc:'📋 تقييمات التدريس، استبيانات المناخ'},
+  {code:'S2-P7', name:'التقارير ولوحات المعلومات', period:'7 فبراير — 20 فبراير 2026', duration:'أسبوعان', wkS:33, wkE:34, sec:'s2',
+   desc:'بناء نظام التقارير ولوحات المعلومات الاستراتيجية والتحليلات التفاعلية.',
+   tasks:['لوحة القيادة الإستراتيجية','التقارير السنوية (PDF)','التحليلات الاستكشافية','مخططات ورسوم بيانية'],
+   deliverables:['لوحة القيادة','تقارير PDF','تحليلات تفاعلية'],
+   doc:'📋 لوحات المعلومات، تقارير PDF'},
+  {code:'S2-P8', name:'الاختبار والنشر الأولي', period:'21 فبراير — 5 مارس 2026', duration:'أسبوعان', wkS:35, wkE:36, sec:'s2',
+   desc:'اختبار شامل للنظام، إصلاح الأخطاء، والنشر الأولي في بيئة اختبارية.',
+   tasks:['اختبار الوحدة (PHPUnit)','اختبار التكامل','اختبار E2E (Playwright)','إصلاح الأخطاء','النشر الأولي'],
+   deliverables:['تقرير اختبار','شهادة النشر','قائمة الإصلاحات'],
+   doc:'📋 تقرير الاختبار، شهادة النشر'},
+
+  // Section 3: F
+  {code:'F-P1', name:'الاختبار النهائي وتحسين النظام', period:'6 مارس — 20 مارس 2026', duration:'أسبوعان', wkS:37, wkE:38, sec:'f',
+   desc:'اختبار شامل للنظام بالكامل، تحسين الأداء، ومعالجة الثغرات.',
+   tasks:['اختبار قبول المستخدم (UAT)','اختبار الأداء والأمان','تحسين سرعة الاستجابة','معالجة ثغرات الحماية'],
+   deliverables:['تقرير الاختبار النهائي','تقرير الأمان','تحسينات الأداء'],
+   doc:'📋 تقرير الاختبار النهائي'},
+  {code:'F-P2', name:'إعداد التوثيق النهائي ودليل المستخدم', period:'21 مارس — 10 أبريل 2026', duration:'3 أسابيع', wkS:39, wkE:41, sec:'f',
+   desc:'إعداد التوثيق الكامل للنظام: دليل المستخدم، دليل المطور، وثائق الصيانة.',
+   tasks:['كتابة دليل المستخدم (عربي/إنجليزي)','كتابة دليل المطور','توثيق واجهات API','إعداد وثيقة الصيانة'],
+   deliverables:['دليل المستخدم','دليل المطور','وثيقة الصيانة'],
+   doc:'📋 دليل المستخدم، دليل المطور'},
+  {code:'F-P3', name:'المراجعة النهائية وتحضير العرض والتسليم', period:'11 أبريل — 5 مايو 2026', duration:'4 أسابيع', wkS:42, wkE:44, sec:'f',
+   desc:'المراجعة النهائية، تحضير العرض التقديمي للتسليم النهائي، وتجهيز جميع مواد المشروع.',
+   tasks:['مراجعة شاملة للنظام','إعداد العرض التقديمي النهائي','تصميم ملصق المشروع','تسليم النظام كاملاً'],
+   deliverables:['التقرير النهائي','عرض التسليم','ملصق المشروع','نظام EQAS كاملاً'],
+   doc:'📋 التقرير النهائي، عرض التسليم'}
+];
+
+const MONTHS_MAP = [
+  {label:'يونيو 2025', start:1, end:1},
+  {label:'يوليو', start:2, end:5},
+  {label:'أغسطس', start:6, end:9},
+  {label:'سبتمبر', start:10, end:13},
+  {label:'أكتوبر', start:14, end:17},
+  {label:'نوفمبر', start:18, end:22},
+  {label:'ديسمبر', start:23, end:26},
+  {label:'يناير 2026', start:27, end:30},
+  {label:'فبراير', start:31, end:35},
+  {label:'مارس', start:36, end:39},
+  {label:'أبريل', start:40, end:43},
+  {label:'مايو', start:44, end:44}
+];
+
+// ─── RENDER ───
+const TOTAL_WEEKS = 44;
+
+function pct(w) { return (w / TOTAL_WEEKS * 100) + '%'; }
+
+function renderTimelineAxis() {
+  const container = document.getElementById('timelineAxis');
+  // Months row
+  let html = '<div class="timeline-months">';
+  MONTHS_MAP.forEach(m => {
+    const span = m.end - m.start + 1;
+    html += `<div class="month-label" style="width:${(span/TOTAL_WEEKS*100)}%">${m.label}</div>`;
+  });
+  html += '</div><div class="week-ticks">';
+  for (let w = 1; w <= TOTAL_WEEKS; w++) {
+    const major = w % 4 === 1 || w === 1;
+    html += `<div class="week-tick${major?' major':''}" style="width:${(1/TOTAL_WEEKS*100)}%">${major ? w : ''}</div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderGanttBody() {
+  const container = document.getElementById('ganttBody');
+  let html = '';
+
+  // Track which sections we've processed
+  const sectionOrder = ['s1','gap','s2','f'];
+  let processedSections = new Set();
+
+  // Function to get section info by id
+  function getSectionInfo(secId) {
+    return SECTIONS.find(s => s.id === secId);
+  }
+
+  // Render section header and rows
+  sectionOrder.forEach((secId, si) => {
+    if (si > 0) {
+      html += '<div class="gantt-divider" aria-hidden="true"></div>';
+    }
+    const sec = getSectionInfo(secId);
+    html += `<div class="section-header ${sec.cssClass}">
+      <span>${sec.label}</span>
+      <span class="sec-period">${sec.period}</span>
+      <span class="sec-duration">${sec.duration}</span>
+    </div>`;
+
+    const phases = PHASES.filter(p => p.sec === secId);
+    phases.forEach(p => {
+      html += `<div class="gantt-row" data-phase="${p.code}">`;
+      html += `<div class="row-label"><span class="phase-code">${p.code}</span>${p.name}</div>`;
+      html += `<div class="row-track">`;
+      html += `<div class="week-grid">`;
+      for (let w = 1; w <= TOTAL_WEEKS; w++) {
+        if (w % 2 === 1) { html += `<div class="week-grid-line"></div>`; }
+        else { html += `<div class="week-grid-line" style="border-right-color:transparent"></div>`; }
+      }
+      html += `</div>`;
+
+      const span = p.wkE - p.wkS + 1;
+      const barClass = p.sec === 'gap' ? 'gap' : p.sec === 's1' ? 's1' : p.sec === 's2' ? 's2' : 'sf';
+      // In RTL, right:0 means rightmost (week 1). Bar starts at wkS.
+      html += `<div class="gantt-bar ${barClass}" style="right:${pct(p.wkS-1)};width:${pct(span)};animation-delay:${(p.wkS-1)*0.02}s" data-code="${p.code}">`;
+      html += `<span class="bar-label">${p.code}</span>`;
+      html += `</div>`;
+
+      // Milestones at phase boundaries
+      if (p.wkS > 1 && si > 0) {
+        // milestone at start of this phase (already handled by previous phase's end)
+      }
+
+      html += `</div>`; // end row-track
+      html += `<div class="row-duration">${p.duration}</div>`;
+      html += `</div>`;
+    });
+
+    // Add milestone at section boundaries on the timeline
+    processedSections.add(secId);
+  });
+
+  container.innerHTML = html;
+
+  // Add milestone diamonds on the chart (at section boundaries + phase boundaries)
+  // We inject them into the row-track of specific rows
+  const milestonePhases = ['S1-P8','S2-P1','S2-P8','F-P3'];
+  milestonePhases.forEach(code => {
+    const row = container.querySelector(`.gantt-row[data-phase="${code}"]`);
+    if (!row) return;
+    const track = row.querySelector('.row-track');
+    const p = PHASES.find(ph => ph.code === code);
+    if (!p) return;
+    // Place milestone at the end of this bar (or start)
+    let wkPos;
+    if (code === 'S1-P8') wkPos = p.wkE; // end of S1
+    else if (code === 'S2-P1') wkPos = p.wkS; // start of S2
+    else if (code === 'S2-P8') wkPos = p.wkE; // end of S2
+    else if (code === 'F-P3') wkPos = p.wkE; // end of F
+
+    if (wkPos) {
+      // Place at the very start or end - using the correct week position
+      const pos = (code === 'S2-P1') ? pct(p.wkS - 1) : pct(p.wkE);
+      const div = document.createElement('div');
+      div.className = 'milestone';
+      div.style.right = pos;
+      div.style.marginRight = '-7px';
+      div.setAttribute('data-tooltip', code);
+      div.setAttribute('tabindex', '0');
+      div.setAttribute('role', 'button');
+      div.title = milestoneLabels[code] || code;
+      track.appendChild(div);
+    }
+  });
+}
+
+const milestoneLabels = {
+  'S1-P8': 'نهاية الفصل الأول — 16 أكتوبر 2025',
+  'S2-P1': 'بداية الفصل الثاني — 15 نوفمبر 2025',
+  'S2-P8': 'نهاية الفصل الثاني — 5 مارس 2026',
+  'F-P3': 'التسليم النهائي — 5 مايو 2026'
+};
+
+// ─── PHASE CARDS ───
+function renderPhaseCards() {
+  const grid = document.getElementById('phaseCardsGrid');
+  let html = '';
+  PHASES.forEach(p => {
+    const barClass = p.sec === 'gap' ? 'gap' : p.sec === 's1' ? 's1' : p.sec === 's2' ? 's2' : 'sf';
+    html += `<div class="phase-card" data-code="${p.code}">
+      <div class="phase-card-header" role="button" tabindex="0" aria-expanded="false">
+        <span class="pc-code ${barClass}">${p.code}</span>
+        <span class="pc-name">${p.name}</span>
+        <span class="pc-toggle">▾</span>
+      </div>
+      <div class="phase-card-body">
+        <div class="pc-period"><strong>الفترة:</strong> ${p.period}</div>
+        <div class="pc-duration"><strong>المدة:</strong> ${p.duration}</div>
+        <div class="pc-section-label">الوصف</div>
+        <div class="pc-desc">${p.desc}</div>
+        <div class="pc-section-label">المهام</div>
+        <ul class="pc-tasks">`;
+    p.tasks.forEach(t => { html += `<li>${t}</li>`; });
+    html += `</ul>
+        <div class="pc-section-label">التسليمات</div>
+        <div class="pc-deliverables">`;
+    p.deliverables.forEach(d => { html += `<span>${d}</span>`; });
+    html += `</div>
+        <div class="pc-doc-status"><span class="check">✓</span> ${p.doc}</div>
+      </div>
+    </div>`;
+  });
+  grid.innerHTML = html;
+}
+
+// ─── TOOLTIP ───
+const tooltipEl = document.getElementById('tooltip');
+let tooltipTimeout = null;
+
+function getPhaseByCode(code) {
+  return PHASES.find(p => p.code === code);
+}
+
+function showTooltip(e, code) {
+  const p = getPhaseByCode(code);
+  if (!p) return;
+  tooltipEl.innerHTML = `
+    <span class="tt-code">${p.code}</span>
+    <div class="tt-title">${p.name}</div>
+    <div class="tt-period">${p.period} — ${p.duration}</div>
+    <div class="tt-desc">${p.desc}</div>
+    <div class="tt-deliverables"><strong>التسليمات:</strong> ${p.deliverables.join(' • ')}</div>
+  `;
+  positionTooltip(e);
+  tooltipEl.classList.add('visible');
+}
+
+function positionTooltip(e) {
+  let x = e.clientX + 16;
+  let y = e.clientY - 10;
+  const tw = tooltipEl.offsetWidth || 300;
+  const th = tooltipEl.offsetHeight || 120;
+  if (x + tw > window.innerWidth - 10) x = e.clientX - tw - 16;
+  if (y + th > window.innerHeight - 10) y = window.innerHeight - th - 10;
+  if (y < 10) y = 10;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top = y + 'px';
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove('visible');
+}
+
+function attachTooltipEvents() {
+  document.querySelectorAll('.gantt-bar:not(.gap)').forEach(bar => {
+    bar.addEventListener('mouseenter', function(e) {
+      const code = this.dataset.code;
+      showTooltip(e, code);
+    });
+    bar.addEventListener('mousemove', function(e) {
+      positionTooltip(e);
+    });
+    bar.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ─── CARD TOGGLE ───
+function attachCardToggle() {
+  document.querySelectorAll('.phase-card-header').forEach(header => {
+    header.addEventListener('click', function() {
+      const card = this.closest('.phase-card');
+      const body = card.querySelector('.phase-card-body');
+      const isOpen = card.classList.contains('open');
+      if (isOpen) {
+        card.classList.remove('open');
+        this.setAttribute('aria-expanded', 'false');
+      } else {
+        card.classList.add('open');
+        this.setAttribute('aria-expanded', 'true');
+      }
+    });
+    header.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.click();
+      }
+    });
+  });
+}
+
+// ─── MILESTONE STRIP TOOLTIPS ───
+function attachMilestoneTooltips() {
+  document.querySelectorAll('.milestone').forEach(m => {
+    const code = m.getAttribute('data-tooltip');
+    m.addEventListener('mouseenter', function(e) {
+      const label = milestoneLabels[code] || code;
+      tooltipEl.innerHTML = `<div class="tt-title" style="color:#ef4444">🚩 ${label}</div>`;
+      positionTooltip(e);
+      tooltipEl.classList.add('visible');
+    });
+    m.addEventListener('mousemove', function(e) { positionTooltip(e); });
+    m.addEventListener('mouseleave', hideTooltip);
+  });
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', function() {
+  renderTimelineAxis();
+  renderGanttBody();
+  renderPhaseCards();
+  attachTooltipEvents();
+  attachCardToggle();
+  attachMilestoneTooltips();
+});
+</script>
+
+</body>
+</html>

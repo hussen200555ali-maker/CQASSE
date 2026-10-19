@@ -488,7 +488,7 @@ function passwordStrength($password) {
  */
 function getCurrentAcademicYearId($db) {
     try {
-        $stmt = $db->query("SELECT id FROM academic_years WHERE is_active = 1 ORDER BY id DESC LIMIT 1");
+        $stmt = $db->query("SELECT id FROM academic_years WHERE is_current = 1 AND is_active = 1 LIMIT 1");
         return $stmt ? $stmt->fetchColumn() : null;
     } catch (Exception $e) {
         return null;
@@ -843,20 +843,20 @@ function fileHeader($title, $description, $author = 'EQAS Team', $version = '1.0
  * @return int|null معرف العام الدراسي أو null
  */
 function currentAcademicYearId() {
+    global $db;
+    try {
+        $currentId = $db->query("SELECT id FROM academic_years WHERE is_current = 1 AND is_active = 1 LIMIT 1")->fetchColumn();
+        if ($currentId) {
+            $_SESSION['academic_year_id'] = $currentId;
+            return (int)$currentId;
+        }
+    } catch (Exception $e) {
+        // ignore
+    }
     if (isset($_SESSION['academic_year_id'])) {
         return $_SESSION['academic_year_id'];
     }
-    global $db;
-    try {
-        $stmt = $db->query("SELECT id FROM academic_years WHERE is_active = 1 ORDER BY start_date DESC LIMIT 1");
-        $id = $stmt ? $stmt->fetchColumn() : null;
-        if ($id) {
-            $_SESSION['academic_year_id'] = $id;
-        }
-        return $id;
-    } catch (Exception $e) {
-        return null;
-    }
+    return null;
 }
 
 /**
@@ -1351,4 +1351,67 @@ function getSchoolQuickStats($db, $schoolId, $academicYearId = null) {
         $stats['subjects'] = (int)$stmt->fetchColumn();
     } catch (Exception $e) { }
     return $stats;
+}
+
+/**
+ * ترجع مصفوفة من معرفات الفصول (classes.id) التي يحق للمعلم الوصول إليها
+ * المصادر: subject_teachers (المواد التي يدرسها) + classes.teacher_id (الفصول المشرف عليها)
+ * ملاحظة: subject_teachers أصبح مستمراً (لا يعتمد على academic_year_id).
+ * classes ما زالت تعتمد على academic_year_id لأن الشعبة مرتبطة بعام محدد.
+ */
+function getTeacherAssignedClassIds($db, $teacherId, $schoolId, $academicYearId = null) {
+    if ($academicYearId === null) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? 0;
+    }
+
+    try {
+        $sql = "
+            SELECT DISTINCT st.classroom_id FROM subject_teachers st
+            WHERE st.teacher_id = ? AND st.school_id = ?
+              AND st.is_active = 1
+            UNION
+            SELECT c.id FROM classes c
+            WHERE c.teacher_id = ? AND c.school_id = ?
+              AND c.academic_year_id = ? AND c.is_active = 1
+        ";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$teacherId, $schoolId, $teacherId, $schoolId, $academicYearId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        error_log('getTeacherAssignedClassIds error: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * ترجمة حالة الحضور إلى العربية
+ *
+ * @param string $status حالة الحضور (present, absent, late, excused)
+ * @return string النص العربي
+ */
+function attendanceStatusAr($status) {
+    $labels = ['present' => 'حاضر', 'absent' => 'غائب', 'late' => 'متأخر', 'excused' => 'معذور'];
+    return $labels[$status] ?? $status;
+}
+
+/**
+ * لون حالة الحضور (كلاس Bootstrap)
+ *
+ * @param string $status حالة الحضور
+ * @return string كلاس اللون
+ */
+function attendanceStatusColor($status) {
+    $colors = ['present' => 'success', 'absent' => 'danger', 'late' => 'warning', 'excused' => 'info'];
+    return $colors[$status] ?? 'secondary';
+}
+
+/**
+ * ترجمة نوع إشعار الغياب إلى العربية
+ *
+ * @param string $type نوع الإشعار (consecutive, threshold, weekly)
+ * @return string النص العربي
+ */
+function attendanceNotifTypeAr($type) {
+    $labels = ['consecutive' => 'غياب متتالي', 'threshold' => 'نسبة دون الحد', 'weekly' => 'تقرير أسبوعي'];
+    return $labels[$type] ?? $type;
 }

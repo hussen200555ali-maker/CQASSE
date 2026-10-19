@@ -37,19 +37,31 @@ try {
 require_once __DIR__ . '/../../includes/behavior_calculator.php';
 $behaviorCalc = new BehaviorCalculator($db);
 
-// جلب الفصول
+// جلب الفصول — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $sql = "SELECT c.id, c.name_ar FROM classes c WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY c.name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll();
     }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 // ============================================================
@@ -57,6 +69,14 @@ try {
 // ============================================================
 $filterClass = $_GET['class_id'] ?? '';
 $sortBy = $_GET['sort'] ?? 'percentage';
+
+// فحص أمان: المعلم فقط لصفوفه المسندة
+if ($userRole === 'teacher' && $filterClass) {
+    $assignedClasses = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array($filterClass, $assignedClasses)) {
+        $filterClass = 0;
+    }
+}
 
 $scores = [];
 if ($filterClass && $academicYearId && $semesterId) {
@@ -294,7 +314,7 @@ if (ctx) {
     });
 }
 
-function exportToExcel() {
+window.exportToExcel = function() {
     const table = document.getElementById('scores-table');
     if (!table) return;
     let csv = '\\uFEFF';

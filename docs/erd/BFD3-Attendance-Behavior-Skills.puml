@@ -1,0 +1,90 @@
+@startuml BFD3 — إدارة الحضور والسلوك والمهارات
+skinparam linetype ortho
+skinparam rectangle { backgroundColor White }
+hide circle
+
+' ═══════════════════════════════════════════════════
+' BFD 3: إدارة الحضور والسلوك والمهارات
+' جداول: attendance_daily, behavior_categories,
+'         behavior_incidents, behavior_scores
+' ═══════════════════════════════════════════════════
+
+entity "attendance_daily" as attendance_daily {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * date : DATE
+  period_number : TINYINT(3)
+  * status : ENUM
+  notes : TEXT
+  amendment_log : JSON
+  recorded_by : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "behavior_categories" as behavior_categories {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  * type : ENUM
+  * points : DECIMAL(5,2)
+  school_id : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+}
+
+entity "behavior_incidents" as behavior_incidents {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * category_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * incident_date : DATE
+  description : TEXT
+  * points : DECIMAL(5,2)
+  reported_by : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "behavior_scores" as behavior_scores {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * starting_points : DECIMAL(5,2)
+  * earned_points : DECIMAL(5,2)
+  * deducted_points : DECIMAL(5,2)
+  * current_percentage : DECIMAL(5,2)
+  * is_passing : TINYINT(1)
+  is_active : TINYINT(1)
+  updated_at : DATETIME
+}
+
+' ═══ Relationships ═══
+students ||--o{ attendance_daily : attends
+students ||--o{ behavior_incidents : behaves
+students ||--o{ behavior_scores : scores
+
+classes ||--o{ attendance_daily : records
+classes ||--o{ behavior_incidents : occurs
+classes ||--o{ behavior_scores : computed
+
+academic_years ||--o{ attendance_daily
+academic_years ||--o{ behavior_incidents
+academic_years ||--o{ behavior_scores
+
+semesters ||--o{ attendance_daily
+semesters ||--o{ behavior_incidents
+semesters ||--o{ behavior_scores
+
+behavior_categories ||--o{ behavior_incidents : classifies
+users ||--o{ attendance_daily : recorded_by
+users ||--o{ behavior_incidents : reported_by
+schools ||--o{ behavior_categories : "defines"
+
+@enduml

@@ -38,6 +38,8 @@ $errors = [];
 $old = [];
 $generatedPassword = '';
 $showCredentials = false;
+$showParentLinking = false;
+$newParentUserId = 0;
 
 // معالجة إرسال النموذج
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -135,11 +137,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = $db->lastInsertId();
             logActivity($db, $_SESSION['user']['id'], 'create_user', "إضافة مستخدم جديد: {$old['username']}", 'user', $userId);
 
+            // التحقق مما إذا كان المستخدم الجديد ولي أمر
+            $newUserRoleName = '';
+            $newUserParentId = 0;
+            if (!$isSchoolAdmin) {
+                foreach ($roles as $r) {
+                    if ($r['id'] == $old['role_id']) { $newUserRoleName = $r['name']; break; }
+                }
+            }
+            if ($newUserRoleName === 'parent') {
+                $newUserParentId = $userId;
+            }
+
             if ($isSchoolAdmin) {
                 $showCredentials = true;
                 $generatedPassword = $password;
             } else {
-                setFlash('تم إضافة المستخدم بنجاح', 'success');
+                if ($newUserRoleName === 'parent') {
+                    $showParentLinking = true;
+                    $newParentUserId = $userId;
+                } else {
+                    setFlash('تم إضافة المستخدم بنجاح', 'success');
+                }
             }
         } catch (Exception $e) {
             error_log('User Add Error: ' . $e->getMessage());
@@ -172,6 +191,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <?php if (!empty($errors['general'])): ?>
             <div class="flash-message flash-danger mb-4"><span><?= e($errors['general']) ?></span></div>
+        <?php endif; ?>
+
+        <?php if ($showParentLinking && $newParentUserId > 0): ?>
+        <div class="card mb-4" style="border:2px solid var(--success);">
+            <div class="card-header">
+                <h4 class="card-title">✅ تم إنشاء الحساب بنجاح</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success mb-4">
+                    تم إنشاء حساب ولي الأمر <strong><?= e($old['full_name_ar'] ?? '') ?></strong> بنجاح.<br>
+                    <strong>اسم المستخدم:</strong> <code style="font-size:14px;"><?= e($old['username'] ?? '') ?></code>
+                    يمكنك الآن ربطه بأحد الطلاب:
+                </div>
+                <input type="hidden" id="newParentUserId" value="<?= $newParentUserId ?>">
+                <input type="hidden" id="newParentUserId" value="<?= $newParentUserId ?>">
+                <div class="grid grid-2 gap-3" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group" style="position:relative;">
+                        <label class="form-label">ابحث عن طالب</label>
+                        <input type="text" id="addStudentSearch" class="form-control"
+                               placeholder="اسم الطالب أو رقمه..." autocomplete="off"
+                               oninput="addSearchStudents(this.value)">
+                        <div id="addStudentResults" style="position:absolute;top:100%;right:0;left:0;z-index:60;background:#fff;border:1px solid #cbd5e1;border-radius:6px;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;"></div>
+                    </div>
+                    <div class="form-group" style="display:flex;align-items:flex-end;">
+                        <button class="btn btn-primary" id="addLinkBtn" onclick="addLinkParent()" disabled style="width:100%;">
+                            🔗 ربط بالطالب
+                        </button>
+                    </div>
+                </div>
+                <div id="addLinkMessage" class="mt-3" style="display:none;"></div>
+                <div style="margin-top:12px;">
+                    <a href="index.php" class="btn btn-light">↩ الذهاب للقائمة</a>
+                </div>
+            </div>
+        </div>
         <?php endif; ?>
 
         <?php if (!$showCredentials): ?>
@@ -376,6 +430,89 @@ $pageJs = <<<JS
         roleSelect.addEventListener('change', toggleSchoolField);
         toggleSchoolField();
     }
+
+    // ========== ربط ولي الأمر الجديد بطالب ==========
+    let addSelectedStudentId = null;
+    let addStudentTimer = null;
+
+    function addSearchStudents(q) {
+        clearTimeout(addStudentTimer);
+        if (q.length < 2) { document.getElementById('addStudentResults').style.display = 'none'; return; }
+        addStudentTimer = setTimeout(() => {
+            fetch('../../api/search_students.php?mode=general&q=' + encodeURIComponent(q), {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(r => r.json())
+                .then(data => {
+                    const box = document.getElementById('addStudentResults');
+                    const students = data.students || [];
+                    if (students.length === 0) { box.style.display = 'none'; return; }
+                    box.innerHTML = students.map(s =>
+                        '<div style="cursor:pointer;padding:8px 12px;border-bottom:1px solid #e2e8f0;transition:background .15s;" onclick="addSelectStudent(' + s.id + ',\'' + s.full_name_ar.replace(/'/g,"\\'") + '\',\'' + (s.student_number || '') + '\')">' +
+                        '<strong>' + s.full_name_ar + '</strong>' +
+                        (s.student_number ? ' <span style="color:#64748b;font-size:12px;">(' + s.student_number + ')</span>' : '') +
+                        (s.grade_name ? ' <span style="color:#94a3b8;font-size:11px;">' + s.grade_name + '</span>' : '') +
+                        '</div>'
+                    ).join('');
+                    box.style.display = 'block';
+                });
+        }, 300);
+    }
+
+    function addSelectStudent(id, name, number) {
+        addSelectedStudentId = id;
+        document.getElementById('addStudentSearch').value = name + (number ? ' (' + number + ')' : '');
+        document.getElementById('addStudentResults').style.display = 'none';
+        document.getElementById('addLinkBtn').disabled = false;
+    }
+
+    function addLinkParent() {
+        const parentId = document.getElementById('newParentUserId').value;
+        if (!addSelectedStudentId || !parentId) return;
+        const btn = document.getElementById('addLinkBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ جاري الربط...';
+
+        const formData = new FormData();
+        formData.append('parent_id', parentId);
+        formData.append('student_id', addSelectedStudentId);
+        formData.append('relationship', 'father');
+
+        fetch('../../api/link_parent.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                const msg = document.getElementById('addLinkMessage');
+                if (data.success) {
+                    msg.style.display = 'block';
+                    msg.className = 'flash-message flash-success mt-3';
+                    msg.innerHTML = '<span>✅ ' + data.message + '</span>';
+                    btn.disabled = true;
+                    btn.textContent = '✓ تم الربط';
+                    document.getElementById('addStudentSearch').disabled = true;
+                } else {
+                    msg.style.display = 'block';
+                    msg.className = 'flash-message flash-danger mt-3';
+                    msg.innerHTML = '<span>❌ ' + data.message + '</span>';
+                    btn.disabled = false;
+                    btn.textContent = '🔗 ربط بالطالب';
+                }
+            })
+            .catch(() => {
+                const msg = document.getElementById('addLinkMessage');
+                msg.style.display = 'block';
+                msg.className = 'flash-message flash-danger mt-3';
+                msg.innerHTML = '<span>❌ حدث خطأ في الاتصال</span>';
+                btn.disabled = false;
+                btn.textContent = '🔗 ربط بالطالب';
+            });
+    }
+
+    // إخفاء نتائج البحث عند النقر خارجها
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#addStudentResults') && !e.target.closest('#addStudentSearch')) {
+            const box = document.getElementById('addStudentResults');
+            if (box) box.style.display = 'none';
+        }
+    });
 
     // مؤشر قوة كلمة المرور
     const passwordField = document.getElementById('password');

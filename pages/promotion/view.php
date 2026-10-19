@@ -119,7 +119,7 @@ $history = $promoEngine->getStudentHistory($decision['student_id']);
                         </div>
                         <div class="flex justify-between p-2" style="background:var(--background); border-radius:var(--radius-sm);">
                             <span class="text-secondary">تاريخ القرار:</span>
-                            <span><?= formatDateAr($decision['decided_at'], 'medium') ?></span>
+                            <span><?= formatDateAr($decision['created_at'], 'medium') ?></span>
                         </div>
                         <?php if ($decision['notes']): ?>
                         <div class="p-2" style="background:var(--background); border-radius:var(--radius-sm);">

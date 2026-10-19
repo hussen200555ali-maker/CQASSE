@@ -32,6 +32,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
         redirect('generate.php?class_id=' . $classId . '&academic_year_id=' . $academicYearId . '&semester_id=' . $semesterId);
     }
 
+    // التحقق من ملكية المدرسة للفصل المطلوب
+    $schoolId = $_SESSION['user']['school_id'] ?? 0;
+    if ($schoolId) {
+        $stmt = $db->prepare("SELECT 1 FROM classes WHERE id = ? AND school_id = ? AND is_active = 1");
+        $stmt->execute([$classId, $schoolId]);
+        if (!$stmt->fetch()) {
+            setFlash('ليس لديك صلاحية للوصول إلى بيانات هذا الفصل', 'danger');
+            redirect('generate.php?academic_year_id=' . $academicYearId . '&semester_id=' . $semesterId);
+        }
+    }
+
     $format = $_POST['format'] ?? 'xlsx';
     $gradeData = generateGradeData($db, $classId, $academicYearId, $semesterId);
 
@@ -50,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export'])) {
             $rows[] = $row;
         }
 
-        $baseFilename = 'كشف_درجات_' . $gradeData['class_info']['class_name'];
+        $baseFilename = 'كشف_درجات_' . ($gradeData['class_info']['name_ar'] ?? 'unknown');
 
         // دعم تصدير PDF
         if ($format === 'pdf') {
@@ -147,9 +158,9 @@ function generateGradeData($db, $classId, $academicYearId, $semesterId) {
     $stmt = $db->prepare("SELECT DISTINCT sub.id, sub.name_ar
                           FROM subjects sub
                           JOIN subject_teachers st ON st.subject_id = sub.id
-                           WHERE st.classroom_id = ? AND st.academic_year_id = ? AND sub.is_active = 1
+                           WHERE st.classroom_id = ? AND sub.is_active = 1
                           ORDER BY sub.name_ar");
-    $stmt->execute([$classId, $academicYearId]);
+    $stmt->execute([$classId]);
     $subjects = $stmt->fetchAll();
     $subjectIds = array_column($subjects, 'id');
     $subjectNames = array_column($subjects, 'name_ar');
@@ -165,8 +176,9 @@ function generateGradeData($db, $classId, $academicYearId, $semesterId) {
 
     // درجات الطلاب
     foreach ($students as &$student) {
-        $stmt = $db->prepare("SELECT subject_id, grade_value FROM grades
-                              WHERE student_id = ? AND class_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+        $stmt = $db->prepare("SELECT t.subject_id, g.grade_value FROM grades g
+                              JOIN tests t ON g.test_id = t.id
+                              WHERE g.student_id = ? AND t.class_id = ? AND g.academic_year_id = ? AND g.semester_id = ? AND g.is_active = 1");
         $stmt->execute([$student['id'], $classId, $academicYearId, $semesterId]);
         $grades = $stmt->fetchAll();
 
@@ -341,7 +353,7 @@ function getCachedSnapshot($db, $classId, $semesterId) {
         <div>
             <h2 class="card-title">📋 كشف درجات - <?php echo e($gradeData['class_info']['school_name']); ?></h2>
             <p class="text-sm text-muted mt-1">
-                <?php echo e($gradeData['class_info']['grade_name'] . ' - ' . $gradeData['class_info']['class_name']); ?>
+                <?php echo e($gradeData['class_info']['grade_name'] . ' - ' . $gradeData['class_info']['name_ar']); ?>
                 | درجة النجاح: <?php echo $gradeData['passing_grade']; ?>%
             </p>
         </div>

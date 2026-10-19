@@ -49,9 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 // معالجة التنزيل
 if (isset($_GET['download'])) {
     $downloadId = (int)$_GET['download'];
-    $stmt = $db->prepare("SELECT * FROM backup_logs WHERE id = ? AND is_active = 1");
-    $stmt->execute([$downloadId]);
-    $backup = $stmt->fetch();
+    $backup = $backupManager->getBackupById($downloadId);
     if ($backup && file_exists($backup['file_path'])) {
         ob_end_clean(); // مسح المخرجات المخزنة
         header('Content-Type: application/gzip');

@@ -16,7 +16,9 @@
  */
 
 // [إصلاح v2.0.3] تحذير الإنتاج
-$isLocal = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1', '::1']);
+$serverName = $_SERVER['SERVER_NAME'] ?? '';
+$isLocal = in_array($serverName, ['localhost', '127.0.0.1', '::1']) 
+           || preg_match('/^192\.168\./', $serverName);
 if (!$isLocal && !getenv('EQAS_DEV_MODE')) {
     trigger_error('⚠️ WARNING: Using development config in production! Use config.production.php instead.', E_USER_WARNING);
 }
@@ -53,7 +55,9 @@ define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');
 // ============================================================================
 // عناوين URL
 // ============================================================================
-define('EQAS_URL', 'http://localhost/eqas');
+$eqasProtocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$eqasHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
+define('EQAS_URL', $eqasProtocol . '://' . $eqasHost . '/eqas');
 define('EQAS_ASSETS_URL', EQAS_URL . '/assets');
 
 // ============================================================================

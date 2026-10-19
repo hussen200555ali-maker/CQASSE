@@ -18,6 +18,7 @@ $pageTitle = 'لوحة تحكم مدير النظام';
 $breadcrumb = ['الرئيسية' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/backup.php';
 
 // التحقق من الدور
 requireRole('group_admin');
@@ -110,14 +111,11 @@ try {
 // ═══════════════════════════════════════════
 $backupStats = ['last_full' => null, 'total_backups' => 0, 'total_size' => 0];
 try {
-    $stmt = $db->query("SELECT COUNT(*) as total, COALESCE(SUM(file_size),0) as total_size FROM backup_logs WHERE is_active = 1 AND status = 'completed'");
-    $row = $stmt->fetch();
-    $backupStats['total_backups'] = $row['total'];
-    $backupStats['total_size'] = $row['total_size'];
-
-    $stmt = $db->query("SELECT created_at FROM backup_logs WHERE backup_type = 'full' AND is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
-    $row = $stmt->fetch();
-    $backupStats['last_full'] = $row ? $row['created_at'] : null;
+    $backupMgr = new BackupManager($db);
+    $backupMgrStats = $backupMgr->getBackupStats();
+    $backupStats['total_backups'] = $backupMgrStats['total_backups'];
+    $backupStats['total_size'] = $backupMgrStats['total_size'];
+    $backupStats['last_full'] = $backupMgrStats['last_full_date'];
 } catch (Exception $e) { }
 
 // ═══════════════════════════════════════════
@@ -496,7 +494,7 @@ if (empty($systemAlerts)) {
                             }
 
                             // التعديل السياقي
-                            $adj = $adjustService->calculateAdjustedSQIWithDetails($s['id'], $currentYearId, $s['raw_eqi']);
+                            $adj = $adjustService->calculateAdjustedSQIWithDetails($s['id'], $s['raw_eqi']);
                             $adjValue = $adj['adjusted_sqi'] ?? null;
                         ?>
                         <tr>

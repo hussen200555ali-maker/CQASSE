@@ -179,7 +179,7 @@ $decisionColors = $promoEngine->getDecisionColors();
                                     <?= $decisionLabels[$d['decision']] ?? $d['decision'] ?>
                                 </span>
                             </td>
-                            <td style="font-size:12px;"><?= formatDateAr($d['decided_at'], 'short') ?></td>
+                            <td style="font-size:12px;"><?= formatDateAr($d['created_at'], 'short') ?></td>
                             <td>
                                 <a href="view.php?id=<?= $d['id'] ?>" class="btn btn-sm btn-light">👁️</a>
                             </td>

@@ -1,0 +1,106 @@
+@startuml BFD1
+skinparam linetype ortho
+hide circle
+
+entity "users" as users {
+  id : INT UNSIGNED <<PK>>
+  username : VARCHAR(50) <<UNIQUE>>
+  password_hash : VARCHAR(255)
+  must_change_password : TINYINT(1)
+  full_name_ar : VARCHAR(200)
+  full_name_en : VARCHAR(200)
+  email : VARCHAR(100)
+  phone : VARCHAR(20)
+  role_id : INT UNSIGNED <<FK>> [to roles.id] [BFD1]
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  is_active : TINYINT(1)
+  last_login_at : DATETIME
+  login_attempts : TINYINT(3) UNSIGNED
+  lockout_until : DATETIME
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "roles" as roles {
+  id : INT UNSIGNED <<PK>>
+  name : VARCHAR(50) <<UNIQUE>>
+  display_name_ar : VARCHAR(100)
+  display_name_en : VARCHAR(100)
+  rank : INT
+  description : TEXT
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "permissions" as permissions {
+  id : INT UNSIGNED <<PK>>
+  name : VARCHAR(100) <<UNIQUE>>
+  name_ar : VARCHAR(200)
+  module : VARCHAR(50)
+  description : TEXT
+  is_active : TINYINT(1)
+}
+
+entity "role_permissions" as role_permissions {
+  id : INT UNSIGNED <<PK>>
+  role_id : INT UNSIGNED <<FK>> [to roles.id] [BFD1]
+  permission_id : INT UNSIGNED <<FK>> [to permissions.id] [BFD1]
+  is_active : TINYINT(1)
+}
+
+entity "activity_logs" as activity_logs {
+  id : INT UNSIGNED <<PK>>
+  user_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  action : VARCHAR(100)
+  entity_type : VARCHAR(50)
+  entity_id : INT UNSIGNED
+  status : ENUM(completed,failed,pending)
+  is_active : TINYINT(1)
+  description : TEXT
+  details_json : LONGTEXT
+  ip_address : VARCHAR(45)
+  user_agent : TEXT
+  created_at : DATETIME
+}
+
+entity "system_settings" as system_settings {
+  id : INT UNSIGNED <<PK>>
+  category : VARCHAR(50)
+  setting_key : VARCHAR(100)
+  setting_value : TEXT
+  value_type : ENUM(string,number,boolean,json)
+  name_ar : VARCHAR(200)
+  description_ar : TEXT
+  is_system : TINYINT(1)
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  sort_order : INT
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "user_preferences" as user_preferences {
+  id : INT UNSIGNED <<PK>>
+  user_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  pref_type : ENUM(dashboard,notification,general)
+  pref_key : VARCHAR(100)
+  pref_value : LONGTEXT
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "export_history" as export_history {
+  id : INT UNSIGNED <<PK>>
+  user_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  export_type : VARCHAR(50)
+  file_name : VARCHAR(255)
+  file_path : VARCHAR(500)
+  file_size : INT UNSIGNED
+  row_count : INT UNSIGNED
+  filters : LONGTEXT
+  status : ENUM(completed,failed,deleted)
+  created_at : DATETIME
+}
+
+@enduml

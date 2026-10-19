@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>وثيقة متطلبات النظام البرمجية (SRS) — نظام EQAS لتقييم جودة التعليم</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Cairo', 'Amiri', sans-serif; color: #1a1a2e; background: #f0f2f5; line-height: 1.9; font-size: 16px; }
+.page-content { max-width: 1100px; margin: 30px auto; padding: 50px 40px; background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.06); border-radius: 12px; }
+@media print { body { background: #fff; } .page-content { box-shadow: none; max-width: 100%; padding: 20px; margin: 0; border-radius: 0; } }
+h1, h2, h3, h4 { font-family: 'Amiri', serif; font-weight: 700; color: #1a2744; margin-top: 2em; margin-bottom: 0.7em; line-height: 1.4; page-break-after: avoid; }
+h1 { font-size: 34px; border-bottom: 3px solid #e94560; padding-bottom: 12px; }
+h2 { font-size: 28px; border-bottom: 2px solid #e8ecf1; padding-bottom: 10px; }
+h3 { font-size: 22px; color: #0d3b66; }
+h4 { font-size: 18px; }
+p { margin-bottom: 1.2em; text-align: justify; }
+strong, b { color: #0d3b66; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 13px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); page-break-inside: avoid; }
+table th, table td { border: 1px solid #e8ecf1; padding: 10px 12px; text-align: right; vertical-align: top; }
+table th { background: linear-gradient(135deg, #1a2744, #0d3b66); color: #fff; font-weight: 600; font-family: 'Cairo', sans-serif; }
+table tr:nth-child(even) { background: #f8f9fb; }
+table tr:hover { background: #eef2f7; }
+table tfoot td { font-weight: 700; background: #e8ecf1; }
+table th:first-child, table td:first-child { text-align: right; }
+ul, ol { margin: 1em 0 1em 2em; }
+li { margin-bottom: 0.5em; }
+hr { border: none; border-top: 2px solid #e8ecf1; margin: 2.5em 0; }
+.out-of-scope { background: #fff3f3; border: 1px solid #fde2e2; border-radius: 8px; padding: 16px 20px; margin: 1em 0; }
+.out-of-scope h4 { color: #dc3545; margin-top: 0; }
+.note-box { background: #f0f7ff; border: 1px solid #d0e3f7; border-radius: 8px; padding: 16px 20px; margin: 1em 0; }
+.note-box strong { color: #0d3b66; }
+.result-box { padding: 16px 20px; border-radius: 8px; margin: 1.5em 0; border-right: 4px solid #1a8a4a; background: #f0faf0; }
+.result-box h4 { margin-top: 0; color: #1a8a4a; }
+.metric-card { display: inline-block; background: linear-gradient(135deg, #f8f9fb, #eef2f7); border: 1px solid #e8ecf1; border-radius: 10px; padding: 20px 24px; margin: 8px; min-width: 180px; text-align: center; }
+.metric-card .value { font-size: 32px; font-weight: 700; color: #0d3b66; font-family: 'Cairo', sans-serif; }
+.metric-card .label { font-size: 13px; color: #6b7280; margin-top: 6px; }
+.kpi-row { display: flex; flex-wrap: wrap; justify-content: center; margin: 1.5em 0; }
+.highlight { background: #fff3cd; padding: 2px 6px; border-radius: 4px; }
+.formula-box { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; margin: 1em 0; font-family: 'Cascadia Code', 'Consolas', monospace; direction: ltr; text-align: left; font-size: 14px; }
+.risk-high { color: #dc3545; font-weight: 700; }
+.risk-medium { color: #e67e22; font-weight: 600; }
+.risk-low { color: #28a745; font-weight: 600; }
+.level-full { color: #1a8a4a; font-weight: 700; }
+.level-partial { color: #b8860b; font-weight: 600; }
+.level-limited { color: #c06000; font-weight: 600; }
+.level-none { color: #c0392b; font-weight: 600; }
+.level-native { color: #1a8a4a; font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 20px; margin: 1em 0; padding: 16px; background: #f8f9fb; border-radius: 8px; border: 1px solid #e8ecf1; }
+.legend-item { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-full { background: #1a8a4a; }
+.dot-partial { background: #b8860b; }
+.dot-limited { background: #c06000; }
+.dot-none { background: #c0392b; }
+.conclusion-box { background: #f0f7ff; border: 1px solid #d0e3f7; border-radius: 8px; padding: 20px; margin: 1.5em 0; }
+.conclusion-box h3 { margin-top: 0; color: #0d3b66; }
+
+/* Table of Contents */
+.toc { background: #f8f9fb; border: 1px solid #e8ecf1; border-radius: 12px; padding: 30px 35px; margin: 2em 0; }
+.toc h2 { margin-top: 0; border-bottom: none; padding-bottom: 0; font-size: 26px; }
+.toc ol { margin: 1em 0 0 1.5em; }
+.toc li { margin-bottom: 0.6em; }
+.toc a { color: #0d3b66; text-decoration: none; border-bottom: 1px dashed #c0c0c0; transition: all 0.2s; }
+.toc a:hover { color: #e94560; border-bottom-color: #e94560; }
+.toc ol ol { margin-top: 0.4em; }
+
+/* Cover page */
+.cover { text-align: center; padding: 60px 40px; background: linear-gradient(135deg, #1a2744, #0d3b66); color: #fff; border-radius: 12px; margin-bottom: 2em; }
+.cover h1 { color: #fff; border-bottom: none; font-size: 42px; margin-top: 0; }
+.cover .subtitle { font-size: 22px; color: #e8ecf1; margin: 1em 0; font-family: 'Amiri', serif; }
+.cover .meta { font-size: 15px; color: #c0c0c0; margin-top: 2em; }
+.cover .meta p { margin: 0.3em 0; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="page-content">
+
+<!-- Cover Page -->
+<div class="cover">
+<h1>نظام EQAS لتقييم جودة التعليم</h1>
+<div class="subtitle">Educational Quality Assessment System</div>
+<div class="subtitle">وثيقة متطلبات النظام البرمجية (SRS)</div>
+<div class="meta">
+<p>إعداد: فريق تطوير EQAS</p>
+<p>القسم: تقنية المعلومات — كلية علوم الحاسب</p>
+<p>التاريخ: مايو 2026</p>
+<p>الإصدار: 4.0.0</p>
+</div>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc">
+<h2>جدول المحتويات</h2>
+<ol>
+<li><a href="#ch1">الفصل الأول: المقدمة</a>
+<ol>
+<li><a href="#intro">1.1 مقدمة</a></li>
+<li><a href="#problem">1.2 بيان المشكلة</a></li>
+<li><a href="#objectives">1.3 أهداف المشروع</a></li>
+<li><a href="#methodology">1.4 منهجية المشروع</a></li>
+<li><a href="#scope">1.5 نطاق المشروع</a>
+<ol>
+<li><a href="#functional-scope">1.5.1 النطاق الوظيفي</a></li>
+<li><a href="#user-scope">1.5.2 نطاق المستخدمين</a></li>
+<li><a href="#technical-scope">1.5.3 النطاق التقني</a></li>
+</ol>
+</li>
+<li><a href="#team">1.6 هيكل الفريق</a></li>
+</ol>
+</li>
+<li><a href="#ch2">الفصل الثاني: دراسة الجدوى</a>
+<ol>
+<li><a href="#background">2.1 الخلفية</a></li>
+<li><a href="#gap">2.2 تحليل الفجوة</a></li>
+<li><a href="#feasibility">2.3 دراسة الجدوى الشاملة</a>
+<ol>
+<li><a href="#technical-feasibility">2.3.1 الجدوى التقنية</a></li>
+<li><a href="#economic-feasibility">2.3.2 الجدوى الاقتصادية</a></li>
+<li><a href="#schedule-feasibility">2.3.3 الجدوى الزمنية</a></li>
+<li><a href="#operational-feasibility">2.3.4 الجدوى التشغيلية</a></li>
+<li><a href="#financial-feasibility">2.3.5 الجدوى المالية الأكاديمية</a></li>
+<li><a href="#social-feasibility">2.3.6 الجدوى الاجتماعية</a></li>
+<li><a href="#legal-feasibility">2.3.7 الجدوى القانونية</a></li>
+</ol>
+</li>
+<li><a href="#risks">2.4 تحليل المخاطر</a></li>
+<li><a href="#timeline">2.5 الخطة الزمنية</a></li>
+</ol>
+</li>
+</ol>
+</div>
+
+<!-- ======================== CHAPTER 1 ======================== -->
+<h1 id="ch1">الفصل الأول: المقدمة</h1>
+
+<h2 id="intro">1.1 مقدمة</h2>
+<p>يشهد قطاع التعليم تحولاً جذرياً في أساليب إدارة الجودة والتقويم المؤسسي، مدفوعاً بالحاجة المتزايدة إلى أدوات قياس موضوعية وشاملة تعكس الواقع التعليمي بدقة. في هذا السياق، يأتي مشروع نظام EQAS (Educational Quality Assessment System) ليكون حلاً تقنياً متكاملاً يهدف إلى أتمتة عملية تقييم جودة التعليم في المجموعات المدرسية.</p>
+<p>سيُبنى النظام باستخدام تقنيات الويب المفتوحة المصدر (PHP 8.2, MySQL 8.0, Bootstrap, Chart.js 4.x, TCPDF)، مما يضمن تكلفة تشغيل منخفضة ومرونة عالية في التخصيص والتطوير. سيخدم النظام أربعة مستويات من المستخدمين: مدير المجموعة، مدير المدرسة، المعلم، وولي الأمر، وسيقيس ستة أبعاد رئيسية لجودة التعليم: الأكاديمي (35%)، التدريس (25%)، المناخ المدرسي (15%)، السلوك (10%)، المهارات (10%)، والحضور (5%).</p>
+<p>يُعدّ هذا المشروع ثمرة تعاون أكاديمي بين ثلاثة طلاب متخصصين في تقنية المعلومات، وسيُنفّذ على مدار 44 أسبوعاً وفق منهجية تطوير رشيقة (Agile) مع تسليمات مرحلية متعددة.</p>
+
+<h2 id="problem">1.2 بيان المشكلة</h2>
+<p>تعاني معظم المجموعات المدرسية من تشتت أدوات تقييم جودة التعليم بين منصات متعددة غير متكاملة، مما يؤدي إلى:</p>
+<ul>
+<li>صعوبة تجميع البيانات من مصادر مختلفة (أكاديمية، سلوكية، مناخية، مهارية) في مؤشر موحد.</li>
+<li>اعتماد العمليات اليدوية في جمع البيانات وإعداد التقارير، مما يستهلك وقتاً طويلاً ويزيد من احتمالية الأخطاء.</li>
+<li>عدم وجود رؤية شاملة وموحّدة لأداء المدارس التابعة للمجموعة الواحدة.</li>
+<li>غياب آلية تنبيه ذكية تكشف عن المشكلات التعليمية قبل تفاقمها.</li>
+<li>صعوبة إجراء تحليلات مقارنة بين المدارس أو تتبع الاتجاهات الزمنية للأداء.</li>
+</ul>
+<p>هذه التحديات تُضعف قدرة متخذي القرار على اتخاذ إجراءات تحسينية مبنية على بيانات دقيقة وحديثة، وهو ما سيُعالجه نظام EQAS من خلال منصة موحدة وشاملة.</p>
+
+<h2 id="objectives">1.3 أهداف المشروع</h2>
+<p>سيسعى المشروع لتحقيق الأهداف الاستراتيجية والتشغيلية التالية:</p>
+<ol>
+<li><strong>توحيد مؤشرات الجودة:</strong> دمج ستة أبعاد تقييمية في مؤشر شامل واحد (EQI) مع أوزان نسبية قابلة للتخصيص.</li>
+<li><strong>أتمتة جمع البيانات:</strong> ربط النظام مباشرة بقواعد البيانات الأكاديمية والسجلات السلوكية واستبيانات المناخ لتقليل التدخل البشري.</li>
+<li><strong>توفير لوحات تحليلية تفاعلية:</strong> ست أدوات تحليلية مع رسوم بيانية متنوعة (خطية، شريطية، دائرية، رادار) لاتخاذ قرارات مبنية على البيانات.</li>
+<li><strong>تمكين التنبيهات الذكية:</strong> اكتشاف المشكلات تلقائياً عند تجاوز عتبات محددة في أي بُعد من أبعاد الجودة.</li>
+<li><strong>دعم التعديل السياقي:</strong> تطبيق تعديل عادل على مؤشرات المدارس بناءً على ظروفها وتحدياتها الخاصة.</li>
+<li><strong>توليد التقارير السنوية:</strong> إنتاج تقارير احترافية بصيغة PDF تتضمن غلافاً، ملخصاً تنفيذياً، اتجاهات، وتوصيات ذكية.</li>
+<li><strong>ضمان سهولة الاستخدام:</strong> واجهة عربية متكاملة (RTL) متجاوبة مع جميع الأجهزة.</li>
+</ol>
+
+<h2 id="methodology">1.4 منهجية المشروع</h2>
+<p>سيتبع فريق التطوير منهجية Agile/Scrum مع دورات تطوير (Sprints) مدتها أسبوعان لكل دورة. ستتضمن كل دورة تخطيطاً، تنفيذاً، مراجعة، واستعراضاً. سيتم استخدام الأدوات التالية:</p>
+<ul>
+<li><strong>إدارة المشروع:</strong> GitHub Projects لتتبع المهام و Kanban board.</li>
+<li><strong>التحكم في الإصدارات:</strong> Git مع GitHub Flow (feature branches + pull requests).</li>
+<li><strong>الاختبار:</strong> PHPUnit للاختبارات الوحدوية والتكاملية، Playwright لاختبارات E2E.</li>
+<li><strong>بيئة التطوير:</strong> XAMPP محلياً مع PHP 8.2 و MySQL 8.0.</li>
+<li><strong>التوثيق:</strong> ملفات Markdown في مستودع المشروع + وثائق HTML منفصلة.</li>
+</ul>
+
+<h2 id="scope">1.5 نطاق المشروع</h2>
+
+<h3 id="functional-scope">1.5.1 النطاق الوظيفي</h3>
+<p>سيُغطي النظام المقترح مجموعة شاملة من الوظائف والميزات التي ستُشكل العمود الفقري لنظام تقييم جودة التعليم المدرسي. يوضح الجدول التالي المجالات الوظيفية الرئيسية التي سيشملها النظام:</p>
+
+<table>
+<tr><th>م</th><th>المجال الوظيفي</th><th>الوصف التفصيلي</th><th>الميزات الرئيسية</th></tr>
+<tr><td>1</td><td>إدارة المستخدمين والأدوار</td><td>نظام إدارة هويات وصلاحيات المستخدمين مع دعم التدرج الهرمي (مدير المجموعة، مدير المدرسة، المعلم، ولي الأمر)</td><td>تسجيل الدخول، إدارة الأدوار، مصفوفة الصلاحيات، سجل النشاط</td></tr>
+<tr><td>2</td><td>إدارة بيانات الطلاب</td><td>قاعدة بيانات شاملة لبيانات الطلاب الشخصية والأكاديمية</td><td>التسجيل، ملف الطالب، استيراد من Excel، البحث AJAX</td></tr>
+<tr><td>3</td><td>إدارة المدارس</td><td>إدارة بيانات المدارس التابعة للمجموعة مع إحصائيات شاملة</td><td>إضافة/تعديل/أرشفة، عرض الإحصائيات</td></tr>
+<tr><td>4</td><td>الأعوام والفصول الدراسية</td><td>إدارة التقويم الأكاديمي والفصول الدراسية (موحدة لجميع المدارس)</td><td>تأسيس السنوات، إدارة الفصول، القفل الإداري (lock_level)، الأرشفة</td></tr>
+<tr><td>5</td><td>إدارة الشعب والمواد</td><td>تنظيم الشعب الدراسية وتعيين المعلمين والمواد</td><td>إنشاء الشعب، ربط المعلمين بالمواد، تسجيل الطلاب</td></tr>
+<tr><td>6</td><td>إدارة الدرجات</td><td>إدخال وإدارة درجات الطلاب بأنواع التقييم المختلفة</td><td>إدخال الدرجات، استيراد من Excel، حساب المعدلات</td></tr>
+<tr><td>7</td><td>إدارة الحضور</td><td>تسجيل ومتابعة حضور الطلاب وغيابهم</td><td>الحضور اليومي، الحضور حسب الفترة، التعديل، الإحصائيات، التنبيهات</td></tr>
+<tr><td>8</td><td>إدارة السلوك</td><td>تسجيل وتتبع السلوكيات الإيجابية والسلبية</td><td>الحوادث السلوكية، تصنيف حسب النوع والشدة، إحصائيات، ربط ببُعد EQI</td></tr>
+<tr><td>9</td><td>نماذج التقييم الديناميكية</td><td>نظام مرن لإنشاء وإدارة استمارات التقييم المختلفة</td><td>استمارات متعددة من نفس النوع، تحديد الافتراضية (is_default)، الإصدارات (version)، معايير وأوزان مخصصة</td></tr>
+<tr><td>10</td><td>تقييم جودة التدريس</td><td>أداة منهجية لتقييم أداء المعلمين من ثلاثة مصادر</td><td>التقييم الذاتي، تقييم الأقران، التقييم الإداري، Radar Chart ثلاثي الأبعاد</td></tr>
+<tr><td>11</td><td>استبيانات المناخ المدرسي</td><td>نظام بناء وتوزيع وتحليل استبيانات المناخ</td><td>استبيانات للمعلمين والطلاب وأولياء الأمور، ثلاثة أبعاد (البيئة، العلاقات، السلامة)</td></tr>
+<tr><td>12</td><td>محرك مؤشر جودة التعليم (EQI)</td><td>حساب المؤشر الشامل من ستة أبعاد مرجّحة</td><td>الأكاديمي 35%، التدريس 25%، المناخ 15%، السلوك 10%، المهارات 10%، الحضور 5%</td></tr>
+<tr><td>13</td><td>التعديل السياقي</td><td>تطبيق تعديل عادل على EQI بناءً على ظروف كل مدرسة</td><td>7 عوامل سياقية، مؤشر التحدي (0-100)، معادلة التعديل التلقائي</td></tr>
+<tr><td>14</td><td>محرك التنبيهات الذكي</td><td>اكتشاف المشكلات تلقائيًا عند تجاوز عتبات محددة</td><td>قواعد EQI والمناخ والتدريس، تصنيف حسب الشدة (info/warning/danger/critical)</td></tr>
+<tr><td>15</td><td>لوحات التحليلات التفاعلية</td><td>ست أدوات تحليلية مع رسوم بيانية متنوعة</td><td>تحليل المدارس، الشعب، المواد، الاتجاهات الزمنية، المقارنات (Chart.js)</td></tr>
+<tr><td>16</td><td>التقارير والتحليلات</td><td>محرك تقارير متقدم سيُنتج تقارير متنوعة</td><td>تقارير PDF (TCPDF)، تصدير CSV/XLSX، لوحات معلومات، مؤشرات الأداء</td></tr>
+<tr><td>17</td><td>التقارير السنوية</td><td>توليد تقارير سنوية احترافية بصيغة PDF</td><td>غلاف، ملخص تنفيذي، بطاقات KPI، اتجاهات، تصنيف المدارس، التعديل السياقي، توصيات</td></tr>
+<tr><td>18</td><td>نظام الإشعارات</td><td>نظام إشعارات داخلية مع تفضيلات قابلة للتخصيص</td><td>إشعارات تلقائية، تنبيهات ذكية، سجل الإشعارات، تفضيلات المستخدم</td></tr>
+<tr><td>19</td><td>الإعدادات والتهيئة</td><td>لوحة إعدادات شاملة لتهيئة النظام وسياسات المجموعة</td><td>ترميز EQI اللوني، نسب النجاح، إعدادات الإشعارات، أوزان الأبعاد</td></tr>
+<tr><td>20</td><td>الترقية الأكاديمية</td><td>محرك ترقية الطلاب بين الفصول الدراسية</td><td>حساب النتائج، تحديد الناجحين/الراسبين، تصدير تقارير الترقية</td></tr>
+</table>
+
+<div class="out-of-scope">
+<h4>خارج نطاق المشروع (Out of Scope)</h4>
+<p>لضمان التركيز على الهدف الأساسي للنظام، تم تحديد المجالات التالية خارج نطاق المشروع الحالي، مع إمكانية إضافتها في مراحل لاحقة:</p>
+<ul>
+<li>التعلم الإلكتروني والدورات التعليمية عبر الإنترنت (E-Learning / Online Courses)</li>
+<li>الإدارة المالية (الرسوم الدراسية، المصروفات، التحصيل المالي)</li>
+<li>إدارة النقل المدرسي (تخطيط المسارات، متابعة الحافلات)</li>
+<li>إدارة المكتبة المدرسية (الفهرسة، الاستعارة، المخزون)</li>
+<li>إدارة الموارد البشرية والرواتب</li>
+<li>إدارة الواجبات المنزلية</li>
+<li>متابعة مخرجات التعلم (Learning Outcomes Tracking)</li>
+<li>الإشعارات عبر البريد الإلكتروني أو SMS</li>
+</ul>
+</div>
+
+<h3 id="user-scope">1.5.2 نطاق المستخدمين</h3>
+<p>سيخدم النظام أربعة مستويات رئيسية من المستخدمين، وسيتمتع كل منها بصلاحيات ووظائف محددة تتناسب مع دوره في العملية التعليمية:</p>
+
+<table>
+<tr><th>الدور</th><th>المستوى</th><th>القدرات الرئيسية</th><th>مثال على المهام</th></tr>
+<tr><td><strong>مدير المجموعة</strong></td><td>أعلى مستوى</td><td>إدارة كاملة لجميع المدارس، مقارنة الأداء، مراقبة مؤشرات الجودة الشاملة</td><td>عرض لوحة القيادة الاستراتيجية، حساب EQI فردي/جماعي، إدارة السياسات، مراجعة التنبيهات</td></tr>
+<tr><td><strong>مدير المدرسة</strong></td><td>مستوى المدرسة</td><td>إدارة مدرسة واحدة، إدارة المعلمين والطلاب، متابعة الأداء</td><td>إدارة البيانات الأكاديمية، مراجعة التقارير، متابعة المناخ والسلوك، التقييم الإداري</td></tr>
+<tr><td><strong>المعلم</strong></td><td>مستوى الصف/المادة</td><td>إدخال الدرجات، تسجيل الحوادث، التقييم الذاتي</td><td>إدخال درجات الطلاب، تسجيل حوادث سلوكية، ملء استبيانات المناخ، التقييم الذاتي</td></tr>
+<tr><td><strong>ولي الأمر</strong></td><td>مستوى العائلة</td><td>عرض أداء الأبناء، متابعة الحضور والسلوك</td><td>عرض تقرير الأبناء، متابعة الحضور، استلام الإشعارات، ملء استبيان المناخ</td></tr>
+</table>
+
+<h3 id="technical-scope">1.5.3 النطاق التقني</h3>
+<p>سيُبنى النظام باستخدام مجموعة من التقنيات المفتوحة المصدر والمتاحة مجانًا، وهي التقنيات المُدرّسة في المناهج الأكاديمية لقسم تقنية المعلومات (IT). يوضح الجدول التالي المواصفات التقنية الأساسية التي سيعتمد عليها النظام:</p>
+
+<table>
+<tr><th>العنصر التقني</th><th>المواصفات والتفاصيل</th></tr>
+<tr><td>نوع التطبيق</td><td>تطبيق ويب (Web-based Application) متجاوب سيعمل عبر المتصفح</td></tr>
+<tr><td>لغة البرمجة الخلفية</td><td>PHP 8.2 — لغة برمجة من جانب الخادم</td></tr>
+<tr><td>الهيكلة الأمامية</td><td>HTML5 — لبناء هيكل صفحات الويب</td></tr>
+<tr><td>التنسيق والتصميم</td><td>CSS3 + Bootstrap 5 — لتصميم واجهات متجاوبة واحترافية</td></tr>
+<tr><td>البرمجة التفاعلية</td><td>Vanilla JavaScript + Chart.js 4.x — للتفاعل والرسوم البيانية</td></tr>
+<tr><td>قاعدة البيانات</td><td>MySQL 8.0 — نظام إدارة قواعد البيانات العلائقية (42 جدولاً)</td></tr>
+<tr><td>بيئة التشغيل المحلية</td><td>XAMPP (Apache + MySQL + PHP) — للتطوير والاختبار المحلي</td></tr>
+<tr><td>توليد التقارير</td><td>TCPDF — لتوليد تقارير PDF احترافية بالعربية (RTL)</td></tr>
+<tr><td>التحكم في الإصدارات</td><td>Git + GitHub — لإدارة الشيفرة والتعاون بين الفريق</td></tr>
+<tr><td>الاختبار الآلي</td><td>PHPUnit (وحدة + تكامل + أمان) + Playwright (E2E)</td></tr>
+</table>
+
+<h2 id="team">1.6 هيكل الفريق</h2>
+<p>يتكون فريق التطوير من ثلاثة طلاب متخصصين في تقنية المعلومات، وسيتم توزيع المهام والمسؤوليات على النحو التالي:</p>
+
+<table>
+<tr><th>الدور في الفريق</th><th>المسؤوليات الرئيسية</th><th>نسبة المساهمة</th></tr>
+<tr><td><strong>قائد المشروع ومطور الواجهات</strong></td><td>التخطيط العام، إدارة المهام، تطوير الواجهات الأمامية، لوحات التحليلات، الرسوم البيانية</td><td>35%</td></tr>
+<tr><td><strong>مطور النظام وقاعدة البيانات</strong></td><td>تصميم قاعدة البيانات، تطوير الطبقة الخلفية، محرك EQI، التعديل السياقي، التنبيهات</td><td>35%</td></tr>
+<tr><td><strong>مطور الاختبارات والتوثيق</strong></td><td>كتابة الاختبارات (PHPUnit + Playwright)، التوثيق التقني، مراجعة الجودة، إعداد التقارير</td><td>30%</td></tr>
+</table>
+
+<hr>
+
+<!-- ======================== CHAPTER 2 ======================== -->
+<h1 id="ch2">الفصل الثاني: دراسة الجدوى</h1>
+
+<h2 id="background">2.1 الخلفية</h2>
+<p>تسعى المجموعات المدرسية بشكل متزايد إلى تبني أنظمة تقييم شاملة تضمن تحسين جودة التعليم بشكل مستمر. ومع تعدد المنصات التعليمية المتاحة (LMS, SIS, BI Tools)، تبقى فجوة كبيرة في توفير نظام موحد يجمع بين التقييم الأكاديمي، السلوكي، المناخي، والمهني في مؤشر واحد قابل للقياس والمقارنة.</p>
+<p>يأتي مشروع EQAS لسد هذه الفجوة من خلال بناء نظام متخصص في تقييم جودة التعليم يعتمد على بيانات فعلية من مصادر متعددة، ويُنتج مؤشرات واضحة وقابلة للتنفيذ لمتخذي القرار.</p>
+
+<h2 id="gap">2.2 تحليل الفجوة وتحديد موقع المشروع (Gap Analysis)</h2>
+<p>يُعدّ تحليل الفجوة الأداة المنهجية الرئيسية التي تُساعد في تحديد الفوارق بين ما تُوفّره الأنظمة الحالية وما سيطلبه المشروع المقترح. يوضح الجدول التالي مقارنة تفصيلية بين فئات الأنظمة المختلفة من حيث تغطية ميزات التقييم الشامل:</p>
+
+<div class="legend">
+<div class="legend-item"><span class="legend-dot dot-full"></span> كاملة</div>
+<div class="legend-item"><span class="legend-dot dot-partial"></span> جزئية</div>
+<div class="legend-item"><span class="legend-dot dot-limited"></span> محدودة</div>
+<div class="legend-item"><span class="legend-dot dot-none"></span> غير متوفرة</div>
+</div>
+
+<table>
+<tr><th>الميزة / البُعد</th><th>LMS (Moodle, Canvas)</th><th>SIS (PowerSchool, Blackboard)</th><th>منصات BI التعليمية</th><th>EQAS (المقترح)</th></tr>
+<tr><td>إدارة الدرجات الأكاديمية</td><td class="level-full">كاملة</td><td class="level-full">كاملة</td><td class="level-partial">جزئية</td><td class="level-native">أصلية</td></tr>
+<tr><td>تقييم جودة التدريس (3 مصادر)</td><td class="level-none">غير متوفرة</td><td class="level-limited">محدودة</td><td class="level-none">غير متوفرة</td><td class="level-native">أصلية</td></tr>
+<tr><td>استبيانات المناخ المدرسي</td><td class="level-limited">محدودة</td><td class="level-none">غير متوفرة</td><td class="level-partial">جزئية</td><td class="level-native">أصلية</td></tr>
+<tr><td>تسجيل الحوادث السلوكية</td><td class="level-limited">محدودة</td><td class="level-partial">جزئية</td><td class="level-none">غير متوفرة</td><td class="level-native">أصلية</td></tr>
+<tr><td>تقييم المهارات</td><td class="level-partial">جزئية</td><td class="level-limited">محدودة</td><td class="level-none">غير متوفرة</td><td class="level-native">أصلية</td></tr>
+<tr><td>مؤشر جودة شامل (EQI)</td><td class="level-none">غير متوفر</td><td class="level-none">غير متوفر</td><td class="level-partial">جزئي</td><td class="level-native">أصلي</td></tr>
+<tr><td>التعديل السياقي</td><td class="level-none">غير متوفر</td><td class="level-none">غير متوفر</td><td class="level-none">غير متوفر</td><td class="level-native">أصلي</td></tr>
+<tr><td>التنبيهات الذكية</td><td class="level-limited">محدودة</td><td class="level-limited">محدودة</td><td class="level-partial">جزئية</td><td class="level-native">أصلية</td></tr>
+<tr><td>لوحات تحليلية تفاعلية</td><td class="level-partial">جزئية</td><td class="level-partial">جزئية</td><td class="level-full">كاملة</td><td class="level-native">أصلية</td></tr>
+<tr><td>التقارير السنوية PDF</td><td class="level-limited">محدودة</td><td class="level-partial">جزئية</td><td class="level-partial">جزئية</td><td class="level-native">أصلية</td></tr>
+<tr><td>واجهة عربية RTL</td><td class="level-partial">جزئية</td><td class="level-limited">محدودة</td><td class="level-limited">محدودة</td><td class="level-native">أصلية</td></tr>
+<tr><td>مفتوح المصدر / مجاني</td><td class="level-full">نعم</td><td class="level-none">لا (مدفوع)</td><td class="level-none">لا (مدفوع)</td><td class="level-full">نعم</td></tr>
+</table>
+
+<div class="conclusion-box">
+<h3>الخلاصة</h3>
+<p>يُظهر تحليل الفجوة أن الأنظمة الحالية تفتقر بشكل واضح إلى التكامل الشامل بين أبعاد التقييم المتعددة. بينما تتفوق أنظمة LMS في إدارة المحتوى والدرجات، وأنظمة SIS في إدارة البيانات الإدارية، ومنصات BI في التحليلات، لا يوجد نظام يجمع بين التقييم الأكاديمي، جودة التدريس، المناخ المدرسي، السلوك، المهارات، والحضور في مؤشر موحد مع تعديل سياقي ذكي. هذا بالضبط ما سيُقدمه نظام EQAS.</p>
+</div>
+
+<h2 id="feasibility">2.3 دراسة الجدوى الشاملة</h2>
+
+<h3 id="technical-feasibility">2.3.1 الجدوى التقنية (Technical Feasibility)</h3>
+<p>يُعدّ المشروع مجدياً تقنياً بشكل كامل للأسباب التالية:</p>
+<ul>
+<li><strong>التقنيات ناضجة ومستقرة:</strong> PHP 8.2 و MySQL 8.0 تقنيات مثبتة وموثوقة مع مجتمع دعم كبير.</li>
+<li><strong>التوافق مع المناهج الدراسية:</strong> جميع التقنيات المستخدمة مُدرّسة في قسم تقنية المعلومات، مما يضمن قدرة الفريق على التطوير والصيانة.</li>
+<li><strong>بيئة تطوير مجانية:</strong> XAMPP يوفر بيئة تطوير متكاملة مجاناً دون تكاليف ترخيص.</li>
+<li><strong>مكتبات مفتوحة المصدر:</strong> Bootstrap, Chart.js, TCPDF جميعها مجانية ومفتوحة المصدر.</li>
+<li><strong>بنية معمارية واضحة:</strong> 42 جدولاً في قاعدة البيانات مع علاقات محددة وموثقة.</li>
+<li><strong>اختبارات آلية شاملة:</strong> PHPUnit + Playwright لضمان الجودة والاستقرار.</li>
+</ul>
+
+<h3 id="economic-feasibility">2.3.2 الجدوى الاقتصادية الشاملة (Economic Feasibility)</h3>
+<p>تُعدّ دراسة الجدوى الاقتصادية العامل الحاسم في اتخاذ قرار الاستثمار في المشروع، إذ تُحدّد ما إذا كانت العوائد المتوقعة تُبرّر التكاليف المطلوبة. تم إجراء تحليل تفصيلي وشامل للتكاليف والعوائد المتوقعة على مدار 5 سنوات، بافتراض تحويل النظام من مشروع تخرج أكاديمي إلى منتج تجاري قابل للتسويق والبيع لمجموعات المدارس.</p>
+
+<h4>أولاً: نموذج العمل المقترح (Business Model)</h4>
+<p>سيعتمد النظام على نموذج الاشتراك السنوي (SaaS — Software as a Service) مع ثلاث باقات:</p>
+
+<table>
+<tr><th>الباقة</th><th>السعر السنوي (للمدرسة)</th><th>الميزات</th></tr>
+<tr><td>أساسية</td><td>$500</td><td>إدارة أكاديمية + EQI أساسي + تقارير أساسية</td></tr>
+<tr><td>احترافية</td><td>$1,000</td><td>جميع الميزات + تحليلات + تعديل سياقي + تنبيهات</td></tr>
+<tr><td>مؤسسية</td><td>$2,000</td><td>جميع الميزات + دعم مخصص + تكامل API + تقارير مخصصة</td></tr>
+</table>
+
+<h4>ثانياً: تقدير التكاليف (بالدولار الأمريكي)</h4>
+
+<table>
+<tr><th>البند</th><th>التكلفة (USD)</th><th>ملاحظات</th></tr>
+<tr><td>تطوير النظام (44 أسبوع × 3 طلاب)</td><td>$120,000</td><td>تكلفة تقديرية بناءً على $15/ساعة × 40 ساعة/أسبوع × 3 طلاب × 44 أسبوع</td></tr>
+<tr><td>البنية التحتية (استضافة + نطاق)</td><td>$5,000</td><td>سنوياً (VPS + Domain + SSL)</td></tr>
+<tr><td>التسويق والمبيعات</td><td>$15,000</td><td>سنوياً</td></tr>
+<tr><td>الصيانة والدعم</td><td>$10,000</td><td>سنوياً</td></tr>
+<tr><td>الطوارئ (10%)</td><td>$15,000</td><td>احتياطي</td></tr>
+<tr><td><strong>إجمالي التكلفة الأولية</strong></td><td><strong>$165,000</strong></td><td>السنة الأولى</td></tr>
+</table>
+
+<h4>ثالثاً: الإيرادات المتوقعة (بالدولار الأمريكي)</h4>
+<p>بافتراض الوصول إلى 103 مدرسة خلال 3 سنوات (متوسط 34 مدرسة/سنة) مع توزيع الباقات: 40% أساسية، 40% احترافية، 20% مؤسسية:</p>
+
+<table>
+<tr><th>السنة</th><th>عدد المدارس</th><th>الإيرادات السنوية</th><th>التكاليف التشغيلية</th><th>صافي الربح</th></tr>
+<tr><td>1</td><td>25</td><td>$22,500</td><td>$30,000</td><td>-$7,500</td></tr>
+<tr><td>2</td><td>60</td><td>$54,000</td><td>$30,000</td><td>$24,000</td></tr>
+<tr><td>3</td><td>103</td><td>$92,700</td><td>$35,000</td><td>$57,700</td></tr>
+<tr><td>4</td><td>150</td><td>$135,000</td><td>$40,000</td><td>$95,000</td></tr>
+<tr><td>5</td><td>200</td><td>$180,000</td><td>$45,000</td><td>$135,000</td></tr>
+</table>
+
+<h4>رابعاً: مؤشرات الربحية</h4>
+
+<div class="kpi-row">
+<div class="metric-card"><div class="value">262%</div><div class="label">العائد على الاستثمار (ROI) خلال 5 سنوات</div></div>
+<div class="metric-card"><div class="value">30-32</div><div class="label">شهراً لنقطة التعادل (Break-even)</div></div>
+<div class="metric-card"><div class="value">$301,200</div><div class="label">إجمالي صافي الربح خلال 5 سنوات</div></div>
+</div>
+
+<div class="formula-box">
+ROI = (Total Revenue - Total Cost) / Total Cost × 100<br>
+= ($484,200 - $183,000) / $183,000 × 100 = <strong>164.6%</strong><br><br>
+Break-even = Fixed Costs / (Revenue per School - Variable Cost per School)<br>
+= $165,000 / ($900 - $300) = <strong>275 مدرسة-سنة</strong> (≈ 30 شهراً مع 103 مدرسة)
+</div>
+
+<h3 id="schedule-feasibility">2.3.3 الجدوى الزمنية (Schedule Feasibility)</h3>
+<p>تم تقسيم المشروع إلى 3 مراحل رئيسية على مدار 44 أسبوعاً مع 19 معلماً رئيسياً:</p>
+
+<table>
+<tr><th>المرحلة</th><th>المدة</th><th>الأسابيع</th><th>النسبة</th><th>الإنجازات الرئيسية</th></tr>
+<tr><td><strong>المرحلة 1: التأسيس</strong></td><td>يناير - أبريل 2026</td><td>16</td><td>36%</td><td>تصميم قاعدة البيانات، نظام المستخدمين، إدارة المدارس، الأعوام والفصول، الشعب والمواد</td></tr>
+<tr><td><strong>المرحلة 2: التطوير الأساسي</strong></td><td>مايو - أغسطس 2026</td><td>16</td><td>36%</td><td>إدارة الدرجات، الحضور، السلوك، نماذج التقييم، تقييم التدريس، استبيانات المناخ</td></tr>
+<tr><td><strong>المرحلة 3: التحليلات والتقارير</strong></td><td>سبتمبر - ديسمبر 2026</td><td>12</td><td>28%</td><td>محرك EQI، التعديل السياقي، التنبيهات، التحليلات، التقارير السنوية، الاختبارات الشاملة</td></tr>
+</table>
+
+<div class="result-box">
+<h4>الخلاصة الزمنية</h4>
+<p>المدة الإجمالية (44 أسبوعاً) معقولة وقابلة للتحقيق لفريق من 3 طلاب بدوام جزئي (20 ساعة/أسبوع لكل طالب). تم توزيع المهام بشكل متوازن مع هوامش أمان (buffer) في كل مرحلة.</p>
+</div>
+
+<h3 id="operational-feasibility">2.3.4 الجدوى التشغيلية (Operational Feasibility)</h3>
+<p>يُعدّ المشروع مجدياً تشغيلياً للأسباب التالية:</p>
+<ul>
+<li><strong>واجهة سهلة الاستخدام:</strong> تصميم عربي كامل (RTL) مع واجهات بديهية لا تتطلب تدريباً مكثفاً.</li>
+<li><strong>تكامل سلس:</strong> يمكن ربط النظام بأنظمة SIS/LMS موجودة عبر API أو استيراد CSV.</li>
+<li><strong>صيانة بسيطة:</strong> بنية PHP تقليدية (MVC-like) يسهل صيانتها وتطويرها.</li>
+<li><strong>دعم فني محلي:</strong> الفريق المطور متاح للصيانة والتطوير المستمر.</li>
+<li><strong>قابلية التوسع:</strong> يمكن إضافة مدارس ومستخدمين جدد دون تعقيدات تقنية.</li>
+</ul>
+
+<h3 id="financial-feasibility">2.3.5 الجدوى المالية الأكاديمية (بالريال السعودي)</h3>
+<p>باعتبار المشروع مشروع تخرج أكاديمي (بدون هدف تجاري)، فإن التكاليف الفعلية محدودة جداً:</p>
+
+<table>
+<tr><th>البند</th><th>التكلفة (SAR)</th><th>ملاحظات</th></tr>
+<tr><td>استضافة سحابية (للعرض)</td><td>1,200</td><td>سنوياً (DigitalOcean VPS)</td></tr>
+<tr><td>نطاق (Domain)</td><td>60</td><td>سنوياً</td></tr>
+<tr><td>شهادة SSL</td><td>0</td><td>مجانية (Let's Encrypt)</td></tr>
+<tr><td>أدوات تطوير</td><td>0</td><td>مجانية (VS Code, Git, XAMPP)</td></tr>
+<tr><td>طباعة وتوثيق</td><td>500</td><td>طباعة الوثائق والتقارير</td></tr>
+<tr><td>احتياطي طوارئ</td><td>300</td><td>نفقات غير متوقعة</td></tr>
+<tr><td><strong>الإجمالي</strong></td><td><strong>2,060</strong></td><td>≈ $550</td></tr>
+</table>
+
+<div class="note-box">
+<strong>ملاحظة:</strong> التكلفة الأكاديمية (2,060 SAR) تختلف جذرياً عن التكلفة التجارية ($165,000) لأن المشروع الأكاديمي لا يشمل تكاليف التطوير المهنية (رواتبر، تسويق، بنية تحتية إنتاجية).
+</div>
+
+<h3 id="social-feasibility">2.3.6 الجدوى الاجتماعية (Social Feasibility)</h3>
+<p>يُحقق المشروع فوائد اجتماعية وتعليمية كبيرة:</p>
+<ul>
+<li><strong>تحسين جودة التعليم:</strong> توفير بيانات دقيقة تساعد في اتخاذ قرارات تحسينية فعّالة.</li>
+<li><strong>تمكين المعلمين:</strong> تقييم شامل وعادل يعكس الأداء الفعلي مع توصيات تطويرية.</li>
+<li><strong>إشراك أولياء الأمور:</strong> منصة شفافة لمتابعة أداء الأبناء والمشاركة في العملية التعليمية.</li>
+<li><strong>دعم متخذي القرار:</strong> لوحات تحليلية شاملة تُمكّن من التخطيط الاستراتيجي المبني على البيانات.</li>
+<li><strong>المساهمة في رؤية 2030:</strong> دعم أهداف تحسين جودة التعليم في المملكة العربية السعودية.</li>
+</ul>
+
+<h3 id="legal-feasibility">2.3.7 الجدوى القانونية (Legal Feasibility)</h3>
+<p>يُعدّ المشروع متوافقاً قانونياً مع المتطلبات التالية:</p>
+<ul>
+<li><strong>حماية البيانات:</strong> تشفير كلمات المرور (bcrypt)، صلاحيات وصول محددة، سجل نشاط شامل.</li>
+<li><strong>الامتثال لأنظمة التعليم:</strong> يتوافق مع معايير هيئة تقويم التعليم والتدريب في المملكة.</li>
+<li><strong>التراخيص المفتوحة:</strong> جميع المكتبات المستخدمة مرخصة تحت تراخيص مفتوحة (MIT, Apache 2.0, GPL).</li>
+<li><strong>الخصوصية:</strong> لا يتم مشاركة بيانات الطلاب أو المعلمين مع أطراف ثالثة.</li>
+</ul>
+
+<h2 id="risks">2.4 تحليل المخاطر</h2>
+<p>تم تحديد 12 مخاطرة رئيسية مع استراتيجيات التخفيف المناسبة:</p>
+
+<table>
+<tr><th>م</th><th>المخاطرة</th><th>الاحتمال</th><th>الأثر</th><th>مستوى الخطر</th><th>استراتيجية التخفيف</th></tr>
+<tr><td>1</td><td>تأخر في الجدول الزمني بسبب ضغوط الدراسة</td><td>عالي</td><td>متوسط</td><td class="risk-high">عالي</td><td>توزيع المهام بشكل متوازن، هوامش أمان في كل مرحلة، مراجعة أسبوعية للتقدم</td></tr>
+<tr><td>2</td><td>تعقيد تقني غير متوقع في محرك EQI</td><td>متوسط</td><td>عالي</td><td class="risk-high">عالي</td><td>نموذج أولي مبكر، استشارة المشرف الأكاديمي، توثيق المعادلات مسبقاً</td></tr>
+<tr><td>3</td><td>فقدان بيانات بسبب عطل تقني</td><td>منخفض</td><td>عالي</td><td class="risk-medium">متوسط</td><td>نسخ احتياطي يومي تلقائي، Git commits متكررة، استضافة سحابية احتياطية</td></tr>
+<tr><td>4</td><td>عدم توافق البيانات مع الأنظمة الموجودة</td><td>متوسط</td><td>متوسط</td><td class="risk-medium">متوسط</td><td>اختبار التكامل مبكراً، أدوات استيراد/تصدير مرنة (CSV, Excel)</td></tr>
+<tr><td>5</td><td>مقاومة المستخدمين للتغيير</td><td>متوسط</td><td>متوسط</td><td class="risk-medium">متوسط</td><td>واجهة سهلة الاستخدام، تدريب موجز، دعم فني مستمر</td></tr>
+<tr><td>6</td><td>ثغرات أمنية (XSS, SQLi, CSRF)</td><td>منخفض</td><td>عالي</td><td class="risk-medium">متوسط</td><td>استعدادات أمنية (prepared statements, CSRF tokens, output escaping)، اختبارات أمان آلية</td></tr>
+<tr><td>7</td><td>تغيير متطلبات المشروع من المشرف</td><td>متوسط</td><td>متوسط</td><td class="risk-medium">متوسط</td><td>مرونة في التصميم، توثيق القرارات المعمارية، اجتماعات دورية مع المشرف</td></tr>
+<tr><td>8</td><td>ضعف أداء النظام مع زيادة البيانات</td><td>منخفض</td><td>متوسط</td><td class="risk-low">منخفض</td><td>فهرسة قاعدة البيانات، استعلامات محسّنة، caching عند الحاجة</td></tr>
+<tr><td>9</td><td>عدم دقة البيانات المدخلة يدوياً</td><td>متوسط</td><td>متوسط</td><td class="risk-medium">متوسط</td><td>تحقق من صحة البيانات (validation)، استيراد تلقائي من مصادر موثوقة</td></tr>
+<tr><td>10</td><td>عدم اكتمال فريق العمل (انسحاب عضو)</td><td>منخفض</td><td>عالي</td><td class="risk-medium">متوسط</td><td>توثيق شامل، مشاركة المعرفة، توزيع المهام بشكل متقاطع</td></tr>
+<tr><td>11</td><td>عدم توافق المتصفحات</td><td>منخفض</td><td>منخفض</td><td class="risk-low">منخفض</td><td>اختبار على المتصفحات الرئيسية (Chrome, Firefox, Edge, Safari)</td></tr>
+<tr><td>12</td><td>تجاوز الميزانية المحددة</td><td>منخفض</td><td>منخفض</td><td class="risk-low">منخفض</td><td>تخطيط مالي دقيق، احتياطي طوارئ (10%)، استخدام أدوات مجانية</td></tr>
+</table>
+
+<h2 id="timeline">2.5 الخطة الزمنية للمشروع</h2>
+<p>تم تقسيم المشروع إلى 3 مراحل رئيسية مع 19 معلماً رئيسياً (Milestones):</p>
+
+<h4>المرحلة 1: التأسيس (الأسابيع 1-16)</h4>
+<table>
+<tr><th>المعلم</th><th>الأسبوع</th><th>الوصف</th></tr>
+<tr><td>M1</td><td>1</td><td>تأسيس المستودع، بيئة التطوير، هيكل المشروع</td></tr>
+<tr><td>M2</td><td>2</td><td>تصميم قاعدة البيانات (42 جدولاً)</td></tr>
+<tr><td>M3</td><td>3</td><td>نظام المصادقة والصلاحيات</td></tr>
+<tr><td>M4</td><td>4</td><td>إدارة المستخدمين (إضافة/تعديل/حذف)</td></tr>
+<tr><td>M5</td><td>5</td><td>إدارة المدارس</td></tr>
+<tr><td>M6</td><td>6</td><td>الأعوام والفصول الدراسية</td></tr>
+<tr><td>M7</td><td>7-8</td><td>إدارة الشعب والمواد</td></tr>
+<tr><td>M8</td><td>9</td><td>مراجعة المرحلة 1 + اختبارات وحدة</td></tr>
+</table>
+
+<h4>المرحلة 2: التطوير الأساسي (الأسابيع 17-32)</h4>
+<table>
+<tr><th>المعلم</th><th>الأسبوع</th><th>الوصف</th></tr>
+<tr><td>M9</td><td>17-18</td><td>إدارة الدرجات (إدخال، استيراد، حساب المعدلات)</td></tr>
+<tr><td>M10</td><td>19-20</td><td>إدارة الحضور (يومي، حسب الفترة)</td></tr>
+<tr><td>M11</td><td>21-22</td><td>إدارة السلوك (حوادث، تصنيف، إحصائيات)</td></tr>
+<tr><td>M12</td><td>23-24</td><td>نماذج التقييم الديناميكية</td></tr>
+<tr><td>M13</td><td>25-26</td><td>تقييم جودة التدريس (ذاتي/أقران/إداري)</td></tr>
+<tr><td>M14</td><td>27-28</td><td>استبيانات المناخ المدرسي</td></tr>
+<tr><td>M15</td><td>29</td><td>تقييم المهارات</td></tr>
+<tr><td>M16</td><td>30-32</td><td>مراجعة المرحلة 2 + اختبارات تكامل</td></tr>
+</table>
+
+<h4>المرحلة 3: التحليلات والتقارير (الأسابيع 33-44)</h4>
+<table>
+<tr><th>المعلم</th><th>الأسبوع</th><th>الوصف</th></tr>
+<tr><td>M17</td><td>33-35</td><td>محرك EQI + التعديل السياقي</td></tr>
+<tr><td>M18</td><td>36-37</td><td>محرك التنبيهات الذكي</td></tr>
+<tr><td>M19</td><td>38-40</td><td>لوحات التحليلات التفاعلية (6 أدوات)</td></tr>
+<tr><td>M20</td><td>41</td><td>التقارير السنوية PDF</td></tr>
+<tr><td>M21</td><td>42</td><td>نظام الإشعارات</td></tr>
+<tr><td>M22</td><td>43</td><td>اختبارات شاملة (PHPUnit + Playwright E2E)</td></tr>
+<tr><td>M23</td><td>44</td><td>التوثيق النهائي + التسليم</td></tr>
+</table>
+
+<div class="result-box">
+<h4>ملخص الخطة الزمنية</h4>
+<p>المدة الإجمالية: <strong>44 أسبوعاً</strong> (≈ 10 أشهر) مع <strong>23 معلماً رئيسياً</strong> موزعة على 3 مراحل. تم تصميم الخطة لتكون واقعية وقابلة للتحقيق لفريق من 3 طلاب بدوام جزئي، مع هوامش أمان مدمجة في كل مرحلة.</p>
+</div>
+
+</div>
+
+</body>
+</html>

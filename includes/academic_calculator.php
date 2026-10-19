@@ -175,9 +175,9 @@ class AcademicCalculator {
             SELECT DISTINCT sub.id AS subject_id, sub.name_ar, sub.code
             FROM subject_teachers st
             INNER JOIN subjects sub ON sub.id = st.subject_id
-            WHERE st.classroom_id = ? AND st.academic_year_id = ?
+            WHERE st.classroom_id = ?
         ");
-        $stmt->execute([$enrollment['class_id'], $academicYearId]);
+        $stmt->execute([$enrollment['class_id']]);
         $subjects = $stmt->fetchAll();
         
         $results = [];
@@ -1472,17 +1472,21 @@ class AcademicCalculator {
      */
     public function logGradeChange($gradeId, $oldValue, $newValue, $reason, $changedBy) {
         try {
-            $sql = "INSERT INTO grade_change_log 
-                    (grade_id, old_value, new_value, reason, changed_by, changed_at, is_active)
-                    VALUES (:grade_id, :old_value, :new_value, :reason, :changed_by, NOW(), 1)";
-            
+            $detailsJson = json_encode([
+                'old_value' => $oldValue,
+                'new_value' => $newValue,
+                'reason' => $reason,
+                'grade_id' => $gradeId
+            ]);
+            $sql = "INSERT INTO activity_logs 
+                    (user_id, action, entity_type, entity_id, description, details_json, created_at)
+                    VALUES (?, 'grade_change', 'grades', ?, ?, ?, NOW())";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
-                ':grade_id' => $gradeId,
-                ':old_value' => $oldValue,
-                ':new_value' => $newValue,
-                ':reason' => $reason,
-                ':changed_by' => $changedBy
+                $changedBy,
+                $gradeId,
+                "تغيير الدرجة من {$oldValue} إلى {$newValue}",
+                $detailsJson
             ]);
         } catch (Exception $e) {
             error_log('AcademicCalculator::logGradeChange - ' . $e->getMessage());
@@ -1499,14 +1503,22 @@ class AcademicCalculator {
     public function getGradeChangeLog($gradeId) {
         try {
             $stmt = $this->db->prepare("
-                SELECT gcl.*, u.full_name_ar AS changer_name
-                FROM grade_change_log gcl
-                LEFT JOIN users u ON u.id = gcl.changed_by
-                WHERE gcl.grade_id = ? AND gcl.is_active = 1
-                ORDER BY gcl.changed_at DESC
+                SELECT al.id, al.entity_id AS grade_id, al.description, al.details_json,
+                       al.user_id AS changed_by, al.created_at, u.full_name_ar AS changer_name
+                FROM activity_logs al
+                LEFT JOIN users u ON u.id = al.user_id
+                WHERE al.action = 'grade_change' AND al.entity_type = 'grades' AND al.entity_id = ?
+                ORDER BY al.created_at DESC
             ");
             $stmt->execute([$gradeId]);
-            return $stmt->fetchAll();
+            $rows = $stmt->fetchAll();
+            foreach ($rows as &$row) {
+                $details = json_decode($row['details_json'], true) ?: [];
+                $row['old_value'] = $details['old_value'] ?? 0;
+                $row['new_value'] = $details['new_value'] ?? 0;
+                $row['reason'] = $details['reason'] ?? '';
+            }
+            return $rows;
         } catch (Exception $e) {
             error_log('AcademicCalculator::getGradeChangeLog - ' . $e->getMessage());
             return [];

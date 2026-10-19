@@ -676,7 +676,7 @@ class AssessmentEngine {
     public function getResponses($filters) {
         $sql = "SELECT ar.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value
                 FROM assessment_responses ar
-                JOIN assessment_items ai ON ar.item_id = ai.id
+                JOIN assessment_structure ai ON ar.item_id = ai.id
                 WHERE ar.is_active = 1";
         $params = [];
         
@@ -858,8 +858,8 @@ class AssessmentEngine {
             $target = $data['target'] ?? $this->deriveTargetFromKey($data['form_key']);
             
             $stmt = $this->db->prepare("
-                INSERT INTO assessment_forms (name_ar, name_en, form_key, category, target, description, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, 1)
+                INSERT INTO assessment_forms (name_ar, name_en, form_key, category, target, description, version, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
             ");
             $stmt->execute([
                 $data['name_ar'],
@@ -867,7 +867,8 @@ class AssessmentEngine {
                 $data['form_key'],
                 $category,
                 $target,
-                $data['description'] ?? null
+                $data['description'] ?? null,
+                $data['version'] ?? null
             ]);
             return $this->db->lastInsertId();
         } catch (Exception $e) {

@@ -482,7 +482,7 @@ class AssessmentEngineTest extends TestCase
     }
 
     /**
-     * TC-007.2: إنشاء فئة يستخدم جدول assessment_criteria
+     * TC-007.2: إنشاء فئة يستخدم جدول assessment_structure (type='criteria')
      */
     public function testCreateCategoryUsesCriteriaTable(): void
     {
@@ -499,8 +499,8 @@ class AssessmentEngineTest extends TestCase
 
         $this->assertIsNumeric($categoryId);
 
-        // التحقق من حفظ البيانات في جدول assessment_criteria
-        $stmt = $this->db->prepare("SELECT name_ar FROM assessment_criteria WHERE id = ?");
+        // التحقق من حفظ البيانات في جدول assessment_structure
+        $stmt = $this->db->prepare("SELECT name_ar FROM assessment_structure WHERE id = ? AND type = 'criteria'");
         $stmt->execute([$categoryId]);
         $result = $stmt->fetchColumn();
         $this->assertEquals('فئة اختبار', $result);
@@ -532,15 +532,15 @@ class AssessmentEngineTest extends TestCase
 
         $this->assertIsNumeric($itemId);
 
-        // التحقق من أن criteria_id محفوظ
-        $stmt = $this->db->prepare("SELECT criteria_id FROM assessment_items WHERE id = ?");
+        // التحقق من أن parent_id (criteria_id) محفوظ في assessment_structure
+        $stmt = $this->db->prepare("SELECT parent_id FROM assessment_structure WHERE id = ? AND type = 'item'");
         $stmt->execute([$itemId]);
         $result = $stmt->fetchColumn();
-        $this->assertEquals($criteriaId, $result, 'criteria_id يجب أن يكون محفوظاً بشكل صحيح');
+        $this->assertEquals($criteriaId, $result, 'parent_id (criteria_id) يجب أن يكون محفوظاً بشكل صحيح');
     }
 
     /**
-     * TC-007.4: getFormWithItems يستخدم assessment_criteria و criteria_id
+     * TC-007.4: getFormWithItems يستخدم assessment_structure
      */
     public function testGetFormWithItemsUsesCorrectSchema(): void
     {

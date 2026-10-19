@@ -54,6 +54,18 @@ if (!$classInfo) {
     redirect('index.php');
 }
 
+// التحقق الأمني للمعلم: يملك صلاحية لهذا الفصل
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
+$schoolId = $_SESSION['user']['school_id'] ?? 0;
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array((int)$classId, $allowedIds)) {
+        setFlash('ليس لديك صلاحية لعرض كشف درجات هذا الفصل', 'danger');
+        redirect('index.php');
+    }
+}
+
 // جلب الفصل الدراسي
 $stmt = $db->prepare("SELECT * FROM semesters WHERE id = ?");
 $stmt->execute([$semesterId]);
@@ -63,14 +75,14 @@ $semesterInfo = $stmt->fetch();
 $stmt = $db->prepare("SELECT DISTINCT sub.id, sub.name_ar
                       FROM subjects sub
                       JOIN subject_teachers st ON st.subject_id = sub.id
-                       WHERE st.classroom_id = ? AND st.academic_year_id = ? AND sub.is_active = 1
+                       WHERE st.classroom_id = ? AND sub.is_active = 1
                       ORDER BY sub.name_ar");
-$stmt->execute([$classId, $academicYearId]);
+$stmt->execute([$classId]);
 $subjects = $stmt->fetchAll();
 $subjectIds = array_column($subjects, 'id');
 
 // جلب الطلاب
-$stmt = $db->prepare("SELECT s.id, s.student_number, s.full_name_ar, s.gender
+$stmt = $db->prepare("SELECT s.id, s.student_number, s.full_name_ar
                       FROM students s
                       JOIN student_enrollments se ON se.student_id = s.id
                       WHERE se.class_id = ? AND se.academic_year_id = ? AND se.status = 'enrolled' AND s.is_active = 1
@@ -85,8 +97,9 @@ $stmt->execute();
 if ($row = $stmt->fetch()) $passingGrade = (float)$row['setting_value'];
 
 foreach ($students as &$student) {
-    $stmt = $db->prepare("SELECT subject_id, grade_value, grade_type FROM grades
-                          WHERE student_id = ? AND class_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1");
+    $stmt = $db->prepare("SELECT t.subject_id, g.grade_value FROM grades g
+                          JOIN tests t ON g.test_id = t.id
+                          WHERE g.student_id = ? AND t.class_id = ? AND g.academic_year_id = ? AND g.semester_id = ? AND g.is_active = 1");
     $stmt->execute([$student['id'], $classId, $academicYearId, $semesterId]);
     $grades = $stmt->fetchAll(PDO::FETCH_GROUP);
 

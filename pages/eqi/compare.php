@@ -45,6 +45,19 @@ $selectedSemester = (int)($_GET['semester_id'] ?? 0);
 $selectedSchools = $_GET['schools'] ?? [];
 $selectedSchoolIds = array_map('intval', (array)$selectedSchools);
 
+// تصفية المدارس لغير group_admin — لا يمكنه مقارنة مدارس أخرى
+if ($userRole !== 'group_admin') {
+    $mySchoolId = $_SESSION['user']['school_id'] ?? 0;
+    if (!empty($selectedSchoolIds)) {
+        $selectedSchoolIds = array_values(array_filter($selectedSchoolIds, function($sid) use ($mySchoolId) {
+            return $sid === $mySchoolId;
+        }));
+    }
+    if (empty($selectedSchoolIds)) {
+        $selectedSchoolIds = [$mySchoolId];
+    }
+}
+
 $semesters = [];
 if ($selectedYear) {
     try {
@@ -72,7 +85,7 @@ if (!empty($selectedSchoolIds) && $selectedYear && $selectedSemester) {
     }
 
     $schoolIds = array_map(function($c) { return $c['school_id']; }, $comparisons);
-    $adjustedResults = $adjustService->batchCalculateAdjustedSQI($schoolIds, $selectedYear, $rawMap);
+    $adjustedResults = $adjustService->batchCalculateAdjustedSQI($schoolIds, $rawMap);
 }
 ?>
 

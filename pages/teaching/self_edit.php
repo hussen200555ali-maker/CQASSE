@@ -19,7 +19,7 @@ $dateStr = $_GET['date'] ?? null;
 if (!$dateStr) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('self_index.php'); }
 
 $formId = 0;
-$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
 $stmt->execute();
 $formId = (int)$stmt->fetchColumn();
 

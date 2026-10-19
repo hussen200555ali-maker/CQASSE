@@ -1,0 +1,40 @@
+@startuml UC-01 — السياق العام للنظام
+skinparam backgroundColor #fafafa
+skinparam usecaseFontColor #2c3e50
+skinparam usecaseBorderColor #2c3e50
+skinparam usecaseBackgroundColor #e8f4f8
+skinparam rectangleBorderColor #34495e
+skinparam rectangleBackgroundColor #f8f9fa
+
+left to right direction
+title نظام التقييم الشامل لجودة التعليم\nCQASSE - السياق العام
+
+actor "group_admin\nمدير المجموعة" as GA
+actor "school_admin\nمدير المدرسة" as SA
+actor "teacher\nمعلم" as T
+actor "parent\nولي أمر" as P
+
+rectangle "CQASSE" {
+  usecase "إدارة النظام والصلاحيات" as U01
+  usecase "إدارة البيانات الأساسية\nوالتسجيل" as U02
+  usecase "تسجيل الطلاب\nفي الشعب" as U03
+  usecase "إدارة الحضور\nوالسلوك والمهارات" as U04
+  usecase "التقييم الأكاديمي\nوالمهارات" as U05
+  usecase "حساب مؤشر\nالجودة EQI" as U06
+  usecase "لوحات القيادة\nوالتقارير" as U08
+  usecase "بوابة ولي الأمر\nوالإقرارات" as U09
+  usecase "إدارة سياسات\nالمجموعة" as U10
+}
+
+GA --> U01
+GA --> U02
+GA --> U06
+GA --> U08
+GA --> U10
+SA --> U02
+SA --> U03
+SA --> U08
+T --> U04
+T --> U05
+P --> U09
+@enduml

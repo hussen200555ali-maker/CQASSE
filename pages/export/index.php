@@ -6,10 +6,10 @@
  * ============================================================
  */
 
-$pageTitle = 'مركز التصدير';
-$breadcrumb = ['مركز التصدير' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
+// Include required files BEFORE any output
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/export.php';
 require_once __DIR__ . '/../../includes/filters.php';
 
@@ -26,11 +26,216 @@ $exportTypes = [
     'attendance' => ['label' => 'الحضور', 'icon' => '📅', 'table' => 'attendance', 'desc' => 'سجلات الحضور والغياب'],
     'assessments' => ['label' => 'التقييمات', 'icon' => '📋', 'table' => 'assessment_responses', 'desc' => 'نتائج التقييمات'],
     'eqi' => ['label' => 'مؤشر الجودة', 'icon' => '📈', 'table' => 'eqi_results', 'desc' => 'حسابات مؤشر جودة التعليم'],
+    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'table' => 'promotions', 'desc' => 'قرارات الترفيع والرسوب للعام الحالي'],
+    'alerts_overview' => ['label' => 'نظرة عامة على التنبيهات', 'icon' => '🔔', 'table' => 'alerts', 'desc' => 'جميع التنبيهات النشطة بصيغة CSV'],
+];
 
-    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'table' => 'promotions', 'desc' => 'قرارات الترفيع والرسوب'],
+// صيغ التصدير المتاحة
+$exportFormats = [
+    'xlsx' => ['label' => 'إكسل', 'icon' => '📄', 'ext' => 'XLSX', 'color' => '#28a745'],
+    'csv' => ['label' => 'CSV', 'icon' => '📝', 'ext' => 'CSV', 'color' => '#17a2b8'],
+    'pdf' => ['label' => 'PDF', 'icon' => '📑', 'ext' => 'PDF', 'color' => '#dc3545'],
+    'html' => ['label' => 'HTML', 'icon' => '🌐', 'ext' => 'HTML', 'color' => '#6f42c1'],
+];
 
-    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'type' => 'promotions', 'format' => 'xlsx', 'desc' => 'قرارات الترفيع والرسوب للعام الحالي'],
-    'alerts_overview' => ['label' => 'نظرة عامة على التنبيهات', 'icon' => '🔔', 'type' => 'alerts', 'format' => 'csv', 'desc' => 'جميع التنبيهات النشطة بصيغة CSV'],
+// معالجة حفظ إعدادات التصدير المجدول
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_schedule'])) {
+    if (!verifyCsrf()) {
+        setFlash('خطأ في التحقق من الأمان', 'danger');
+        redirect('index.php');
+    }
+    $scheduleName = trim($_POST['schedule_name'] ?? '');
+    $scheduleType = $_POST['schedule_type'] ?? '';
+    $scheduleFormat = $_POST['schedule_format'] ?? 'xlsx';
+    $scheduleSchoolId = $_POST['schedule_school_id'] ?? '';
+    $scheduleAcademicYearId = $_POST['schedule_academic_year_id'] ?? '';
+
+    if ($scheduleName && isset($exportTypes[$scheduleType])) {
+        $config = json_encode([
+            'name' => $scheduleName,
+            'type' => $scheduleType,
+            'format' => $scheduleFormat,
+            'school_id' => $scheduleSchoolId,
+            'academic_year_id' => $scheduleAcademicYearId,
+        ], JSON_UNESCAPED_UNICODE);
+
+        $stmt = $db->prepare("INSERT INTO export_templates (user_id, name, config, created_at) VALUES (?, ?, ?, NOW())");
+        $stmt->execute([$_SESSION['user']['id'], $scheduleName, $config]);
+        logActivity($db, $_SESSION['user']['id'], 'export_schedule_save', 'حفظ إعدادات تصدير مجدول: ' . $scheduleName, 'export', null);
+        setFlash('تم حفظ إعدادات التصدير بنجاح', 'success');
+    }
+    redirect('index.php');
+}
+
+// معالجة التصدير (يجب أن يكون قبل header.php لتجنب headers already sent)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !isset($_POST['save_schedule'])) {
+    if (!verifyCsrf()) {
+        setFlash('خطأ في التحقق من الأمان', 'danger');
+        redirect('index.php');
+    }
+
+    $exportType = $_POST['export_type'] ?? '';
+    $format = $_POST['format'] ?? 'xlsx';
+    $schoolId = $_POST['school_id'] ?? '';
+    $academicYearId = $_POST['academic_year_id'] ?? getCurrentAcademicYearId($db);
+    $semesterId = $_POST['semester_id'] ?? '0';
+
+    if (!isset($exportTypes[$exportType])) {
+        setFlash('نوع تصدير غير صالح', 'danger');
+        redirect('index.php');
+    }
+
+    $headers = [];
+    $data = [];
+
+    switch ($exportType) {
+        case 'students':
+            $headers = ['رقم الطالب', 'الاسم', 'الصف', 'المدرسة', 'الجنس', 'تاريخ الميلاد', 'ولي الأمر', 'هاتف ولي الأمر'];
+            $sql = "SELECT s.student_number, s.full_name_ar, gl.name_ar as grade_name, sch.name_ar as school_name,
+                    s.gender, s.date_of_birth, s.guardian_name, s.guardian_phone
+                    FROM students s
+                    LEFT JOIN grade_levels gl ON gl.id = s.grade_level_id
+                    LEFT JOIN schools sch ON sch.id = s.school_id
+                    WHERE s.is_active = 1";
+            $params = [];
+            if ($schoolId) { $sql .= " AND s.school_id = ?"; $params[] = $schoolId; }
+            $sql .= " ORDER BY s.full_name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'grades':
+            $headers = ['رقم الطالب', 'اسم الطالب', 'المادة', 'الفصل', 'الدرجة', 'الدرجة القصوى', 'نوع الدرجة'];
+            $sql = "SELECT s.student_number, s.full_name_ar, sub.name_ar, c.name_ar, g.grade_value, g.max_value, g.grade_type
+                    FROM grades g
+                    JOIN students s ON s.id = g.student_id
+                    JOIN subjects sub ON sub.id = g.subject_id
+                    JOIN classes c ON c.id = g.class_id
+                    WHERE g.is_active = 1";
+            $params = [];
+            if ($academicYearId) { $sql .= " AND g.academic_year_id = ?"; $params[] = $academicYearId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND g.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
+            if ($schoolId) { $sql .= " AND s.school_id = ?"; $params[] = $schoolId; }
+            $sql .= " ORDER BY s.full_name_ar, sub.name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'attendance':
+            $headers = ['رقم الطالب', 'اسم الطالب', 'التاريخ', 'الحالة', 'ملاحظات'];
+            $sql = "SELECT s.student_number, s.full_name_ar, a.date, a.status, a.notes
+                    FROM attendance a
+                    JOIN students s ON s.id = a.student_id
+                    WHERE a.is_active = 1";
+            $params = [];
+            if ($academicYearId) { $sql .= " AND a.academic_year_id = ?"; $params[] = $academicYearId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND a.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
+            $sql .= " ORDER BY a.date DESC, s.full_name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'assessments':
+            $headers = ['نوع النموذج', 'العنصر', 'الطالب', 'القيمة الرقمية', 'تاريخ الاستجابة'];
+            $sql = "SELECT af.form_key, ai.text_ar, s.full_name_ar, ar.numeric_value, ar.response_date
+                    FROM assessment_responses ar
+                    JOIN assessment_forms af ON af.id = ar.form_id
+                    JOIN assessment_structure ai ON ai.id = ar.item_id
+                    LEFT JOIN students s ON s.id = ar.student_id
+                    WHERE ar.is_active = 1";
+            $params = [];
+            if ($academicYearId) { $sql .= " AND ar.academic_year_id = ?"; $params[] = $academicYearId; }
+            if ($semesterId && $semesterId !== '0') {
+                $semName = semesterValueToNameAr((int)$semesterId);
+                if ($semName) { $sql .= " AND ar.semester_id IN (SELECT id FROM semesters WHERE name_ar = ? AND is_active = 1)"; $params[] = $semName; }
+            }
+            $sql .= " ORDER BY ar.response_date DESC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'eqi':
+            $headers = ['المدرسة', 'الأكاديمي', 'التدريس', 'المناخ', 'السلوك', 'المهارات', 'الحضور', 'المؤشر الكلي', 'تاريخ الحساب'];
+            $sql = "SELECT sch.name_ar, eq.academic_score, eq.teaching_score, eq.climate_score,
+                    eq.behavior_score, eq.skills_score, eq.attendance_score, eq.overall_eqi, eq.calculated_at
+                    FROM eqi_results eq
+                    JOIN schools sch ON sch.id = eq.school_id
+                    WHERE eq.is_active = 1";
+            $params = [];
+            if ($academicYearId) { $sql .= " AND eq.academic_year_id = ?"; $params[] = $academicYearId; }
+            $sql .= " ORDER BY eq.calculated_at DESC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'alerts':
+            $headers = ['المدرسة', 'النوع', 'الخطورة', 'العنوان', 'الرسالة', 'الحالة', 'التاريخ'];
+            $sql = "SELECT sch.name_ar, a.alert_type, a.severity, a.title_ar, a.message_ar,
+                    CASE WHEN a.is_resolved = 1 THEN 'محلول' WHEN a.is_read = 1 THEN 'مقروء' ELSE 'جديد' END, a.created_at
+                    FROM alerts a
+                    LEFT JOIN schools sch ON sch.id = a.school_id
+                    WHERE 1=1";
+            $params = [];
+            if ($schoolId) { $sql .= " AND a.school_id = ?"; $params[] = $schoolId; }
+            $sql .= " ORDER BY a.created_at DESC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+
+        case 'promotions':
+            $headers = ['الطالب', 'الدرجة الأكاديمية', 'درجة السلوك', 'نسبة الحضور', 'القرار', 'التاريخ'];
+            $sql = "SELECT s.full_name_ar, p.academic_score, p.behavior_score, p.attendance_score, p.decision, p.created_at
+                    FROM promotions p
+                    JOIN students s ON s.id = p.student_id
+                    WHERE p.is_active = 1";
+            $params = [];
+            if ($academicYearId) { $sql .= " AND p.academic_year_id = ?"; $params[] = $academicYearId; }
+            $sql .= " ORDER BY p.created_at DESC";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_NUM);
+            break;
+    }
+
+    if (!empty($data)) {
+        $baseFilename = $exportTypes[$exportType]['label'] . '_' . date('Ymd');
+        $filters = ['type' => $exportType, 'school_id' => $schoolId, 'academic_year_id' => $academicYearId, 'semester_id' => $semesterId];
+        $exportInfo = createExportFile($db, $_SESSION['user']['id'], $exportType, $format, $data, $headers, $baseFilename, $filters);
+        logActivity($db, $_SESSION['user']['id'], 'export_data', "تصدير بيانات: {$exportTypes[$exportType]['label']} - " . count($data) . " صف", 'export', null);
+        downloadExportFile($exportInfo['file_path'], $exportInfo['file_name']);
+    } else {
+        setFlash('لا توجد بيانات للتصدير', 'warning');
+        redirect('index.php');
+    }
+}
+
+// Now include header (after all redirect/download logic)
+$pageTitle = 'مركز التصدير';
+$breadcrumb = ['مركز التصدير' => null];
+require_once __DIR__ . '/../../includes/header.php';
+
+// أنواع التصدير
+$exportTypes = [
+    'students' => ['label' => 'الطلاب', 'icon' => '👥', 'table' => 'students', 'desc' => 'بيانات الطلاب المسجلين'],
+    'grades' => ['label' => 'الدرجات', 'icon' => '📊', 'table' => 'grades', 'desc' => 'سجلات الدرجات'],
+    'attendance' => ['label' => 'الحضور', 'icon' => '📅', 'table' => 'attendance', 'desc' => 'سجلات الحضور والغياب'],
+    'assessments' => ['label' => 'التقييمات', 'icon' => '📋', 'table' => 'assessment_responses', 'desc' => 'نتائج التقييمات'],
+    'eqi' => ['label' => 'مؤشر الجودة', 'icon' => '📈', 'table' => 'eqi_results', 'desc' => 'حسابات مؤشر جودة التعليم'],
+
+    'promotions' => ['label' => 'قرارات الترفيع', 'icon' => '🎓', 'table' => 'promotions', 'desc' => 'قرارات الترفيع والرسوب للعام الحالي'],
+    'alerts_overview' => ['label' => 'نظرة عامة على التنبيهات', 'icon' => '🔔', 'table' => 'alerts', 'desc' => 'جميع التنبيهات النشطة بصيغة CSV'],
 ];
 
 // صيغ التصدير المتاحة
@@ -153,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_type']) && !is
             $sql = "SELECT af.form_key, ai.text_ar, s.full_name_ar, ar.numeric_value, ar.response_date
                     FROM assessment_responses ar
                     JOIN assessment_forms af ON af.id = ar.form_id
-                    JOIN assessment_items ai ON ai.id = ar.item_id
+                    JOIN assessment_structure ai ON ai.id = ar.item_id
                     LEFT JOIN students s ON s.id = ar.student_id
                     WHERE ar.is_active = 1"; // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
             $params = [];
@@ -237,20 +442,29 @@ $academicYears = $stmt->fetchAll();
 
 // إحصائيات التصدير
 $recentExports = [];
-$stmt = $db->prepare("SELECT eh.*, u.full_name_ar as user_name
-                      FROM export_history eh
-                      LEFT JOIN users u ON u.id = eh.user_id
-                      ORDER BY eh.created_at DESC LIMIT 10");
-$stmt->execute();
-$recentExports = $stmt->fetchAll();
+try {
+    $stmt = $db->prepare("SELECT eh.*, u.full_name_ar as user_name
+                          FROM export_history eh
+                          LEFT JOIN users u ON u.id = eh.user_id
+                          ORDER BY eh.created_at DESC LIMIT 10");
+    $stmt->execute();
+    $recentExports = $stmt->fetchAll();
+} catch (Exception $e) {
+    $recentExports = [];
+}
 
 // إحصائيات عامة للتصدير
 $totalExports = 0;
 $totalSize = 0;
-$stmt = $db->query("SELECT COUNT(*) as cnt, COALESCE(SUM(file_size), 0) as total_sz FROM export_history WHERE status = 'completed'");
-$exportStats = $stmt->fetch();
-$totalExports = $exportStats['cnt'] ?? 0;
-$totalSize = $exportStats['total_sz'] ?? 0;
+try {
+    $stmt = $db->query("SELECT COUNT(*) as cnt, COALESCE(SUM(file_size), 0) as total_sz FROM export_history WHERE status = 'completed'");
+    $exportStats = $stmt->fetch();
+    $totalExports = $exportStats['cnt'] ?? 0;
+    $totalSize = $exportStats['total_sz'] ?? 0;
+} catch (Exception $e) {
+    $totalExports = 0;
+    $totalSize = 0;
+}
 
 // جلب القوالب المحفوظة
 $savedTemplates = [];
@@ -291,14 +505,14 @@ foreach ($exportTypes as $type => $info) {
             </div>
             <div class="card-body">
                 <div class="row">
-                    <?php foreach ($exportTemplates as $tplKey => $tpl): ?>
+                    <?php foreach ($exportTypes as $tplKey => $tpl): ?>
                     <div class="col-md-4 col-sm-6 mb-3">
                         <div class="export-template-card" style="padding:14px;border:2px solid var(--border-light);border-radius:var(--radius-md);cursor:pointer;transition:all 0.2s;text-align:center;"
-                             onclick="applyTemplate('<?php echo $tplKey; ?>', '<?php echo $tpl['type']; ?>', '<?php echo $tpl['format']; ?>')">
+                             onclick="applyTemplate('<?php echo $tplKey; ?>', '<?php echo $tplKey; ?>', 'xlsx')">
                             <div style="font-size:28px;margin-bottom:4px;"><?php echo $tpl['icon']; ?></div>
                             <div style="font-weight:600;font-size:13px;"><?php echo e($tpl['label']); ?></div>
                             <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;"><?php echo e($tpl['desc']); ?></div>
-                            <span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:var(--radius-md);font-size:10px;font-weight:700;background:<?php echo $exportFormats[$tpl['format']]['color']; ?>20;color:<?php echo $exportFormats[$tpl['format']]['color']; ?>;"><?php echo strtoupper($tpl['format']); ?></span>
+                            <span style="display:inline-block;margin-top:6px;padding:2px 8px;border-radius:var(--radius-md);font-size:10px;font-weight:700;background:<?php echo $exportFormats['xlsx']['color']; ?>20;color:<?php echo $exportFormats['xlsx']['color']; ?>;">XLSX</span>
                         </div>
                     </div>
                     <?php endforeach; ?>

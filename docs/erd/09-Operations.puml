@@ -1,0 +1,148 @@
+@startuml 09-Operations
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "promotions" as promotions {
+  id : int(10)
+  * student_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  academic_score : decimal(5,2)
+  behavior_score : decimal(5,2)
+  attendance_score : decimal(5,2)
+  academic_pass : tinyint(1)
+  behavior_pass : tinyint(1)
+  attendance_pass : tinyint(1)
+}
+
+entity "promotion_overrides" as promotion_overrides {
+  id : int(10)
+  * student_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  criterion : enum('academic','behavior','attendance')
+  override_reason : text
+  approved_by : int(10)
+  approved_at : datetime
+  is_active : tinyint(1)
+  id : int(10)
+}
+
+entity "notifications" as notifications {
+  id : int(10)
+  * user_id : int(10)
+  type : varchar(50)
+  title_ar : varchar(200)
+  message_ar : text
+  related_entity_type : varchar(50)
+  * related_entity_id : int(10)
+  is_read : tinyint(1)
+  read_at : datetime
+  created_at : datetime
+}
+
+entity "alerts" as alerts {
+  id : int(10)
+  * school_id : int(10)
+  * student_id : int(10)
+  * user_id : int(10)
+  alert_type : enum('academic','behavior','attendance','eqi','promotion','climate','teaching','system','reminder')
+  severity : enum('info','warning','danger','critical')
+  title_ar : varchar(200)
+  message_ar : text
+  threshold_json : longtext
+  is_read : tinyint(1)
+}
+
+entity "activity_logs" as activity_logs {
+  id : int(10)
+  * user_id : int(10)
+  action : varchar(100)
+  entity_type : varchar(50)
+  * entity_id : int(10)
+  status : enum('completed','failed','pending')
+  is_active : tinyint(1)
+  description : text
+  details_json : longtext
+  ip_address : varchar(45)
+}
+
+entity "attachments" as attachments {
+  id : int(10)
+  file_name : varchar(255)
+  file_type : varchar(100)
+  file_path : varchar(500)
+  * school_id : int(10)
+  file_size : int(10)
+  is_active : tinyint(1)
+  created_at : datetime
+  updated_at : datetime
+  id : int(10)
+}
+
+entity "export_history" as export_history {
+  id : int(10)
+  * user_id : int(10)
+  export_type : varchar(50)
+  file_name : varchar(255)
+  file_path : varchar(500)
+  file_size : int(10)
+  row_count : int(10)
+  filters : longtext
+  status : enum('completed','failed','deleted')
+  created_at : datetime
+}
+
+entity "system_settings" as system_settings {
+  id : int(10)
+  category : varchar(50)
+  setting_key : varchar(100)
+  setting_value : text
+  value_type : enum('string','number','boolean','json')
+  name_ar : varchar(200)
+  description_ar : text
+  is_system : tinyint(1)
+  * school_id : int(10)
+  sort_order : int(11)
+}
+
+entity "user_preferences" as user_preferences {
+  id : int(10)
+  * user_id : int(10)
+  pref_type : enum('dashboard','notification','general')
+  pref_key : varchar(100)
+  pref_value : longtext
+  is_active : tinyint(1)
+  created_at : datetime
+  updated_at : datetime
+}
+
+entity "learning_outcomes" as learning_outcomes {
+  id : int(10)
+  * subject_id : int(10)
+  code : varchar(20)
+  description_ar : text
+  description_en : text
+  is_active : tinyint(1)
+}
+
+entity "student_subject_summary" as student_subject_summary {
+  id : bigint(21)
+}
+
+entity "v_attendance_summary" as v_attendance_summary {
+  * student_id : int(10)
+}
+
+entity "v_semester_scores" as v_semester_scores {
+  * student_id : int(10)
+}
+
+entity "v_student_current" as v_student_current {
+}
+
+entity "v_student_subject_summary" as v_student_subject_summary {
+  * student_id : int(10)
+}
+
+@enduml

@@ -647,18 +647,122 @@ function updateBulkActionBar() {
 EQAS.initNotifications = function() {
     // Check for new notifications periodically
     setInterval(checkNotifications, 60000); // every minute
+
+    // Load preview when notification dropdown opens
+    const toggle = document.getElementById('notification-toggle');
+    const dropdown = document.getElementById('notifDropdown');
+    if (toggle && dropdown) {
+        var previewLoaded = false;
+        toggle.addEventListener('click', function() {
+            if (!previewLoaded || dropdown.classList.contains('show')) {
+                loadNotifPreview();
+                previewLoaded = true;
+            }
+        });
+    }
 };
 
 function checkNotifications() {
     eqasAjax(EQAS.baseUrl + '/api/notifications/check.php', 'GET', null, function(result) {
         if (result.count !== undefined) {
-            const badge = document.querySelector('#notification-toggle .header-action-badge');
+            const badge = document.getElementById('notifBadge');
             if (badge) {
-                badge.textContent = result.count;
-                badge.style.display = result.count > 0 ? 'flex' : 'none';
+                badge.textContent = result.count > 99 ? '99+' : result.count;
+                badge.style.display = result.count > 0 ? '' : 'none';
+            }
+            const footer = document.getElementById('notifPreviewCount');
+            if (footer) {
+                footer.textContent = result.count + ' إشعار غير مقروء';
             }
         }
     });
+}
+
+/**
+ * Load notification preview via AJAX
+ */
+function loadNotifPreview() {
+    const list = document.getElementById('notifPreviewList');
+    if (!list) return;
+
+    list.innerHTML = '<div class="notification-loading" style="padding:20px;text-align:center;color:#888;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+
+    eqasAjax(EQAS.baseUrl + '/api/notifications/preview.php', 'GET', null, function(result) {
+        if (!result || !result.items) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:13px;">لا توجد إشعارات</div>';
+            return;
+        }
+
+        if (result.items.length === 0) {
+            list.innerHTML = '<div style="padding:20px;text-align:center;color:#888;font-size:13px;">🎉 لا توجد إشعارات جديدة</div>';
+            return;
+        }
+
+        var html = '';
+        var typeIcons = {
+            'alert': '🚨', 'announcement': '📢', 'reminder': '⏰',
+            'system': '⚙️', 'acknowledgment': '✅', 'info': 'ℹ️',
+            'ack_request': '📋', 'parent_link': '🔗'
+        };
+
+        result.items.forEach(function(item) {
+            var icon = typeIcons[item.type] || '📨';
+            var created = item.created_at || '';
+            var timeLabel = created.substring(11, 16);
+
+            html += '<div class="notification-item unread" id="notif-preview-' + item.id + '">';
+            html += '  <div class="notification-icon" style="font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + icon + '</div>';
+            html += '  <div class="notification-content" style="flex:1;min-width:0;">';
+            html += '    <div class="notification-text" style="font-size:13px;color:#1a1a2e;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.title_ar) + '</div>';
+            html += '    <div class="notification-text" style="font-size:11px;color:#888;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(item.message_ar) + '</div>';
+            html += '    <div class="notification-time" style="font-size:10px;color:#adb5bd;">' + timeLabel + '</div>';
+            html += '  </div>';
+            html += '  <button type="button" class="notif-mark-read" data-id="' + item.id + '"';
+            html += '          style="background:none;border:none;color:#28a745;cursor:pointer;padding:4px;font-size:13px;flex-shrink:0;"';
+            html += '          title="تحديد كمقروء"><i class="fas fa-check-circle"></i></button>';
+            html += '</div>';
+        });
+
+        list.innerHTML = html;
+
+        // Bind mark-as-read buttons
+        list.querySelectorAll('.notif-mark-read').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var id = this.getAttribute('data-id');
+                markNotifAsRead(id);
+            });
+        });
+    });
+}
+
+/**
+ * Mark a single notification as read via AJAX
+ */
+function markNotifAsRead(id) {
+    eqasAjax(EQAS.baseUrl + '/api/notifications/mark_read.php?id=' + id, 'GET', null, function(result) {
+        if (result && result.success) {
+            // Remove from preview list
+            var el = document.getElementById('notif-preview-' + id);
+            if (el) {
+                el.style.transition = 'opacity 0.3s';
+                el.style.opacity = '0';
+                setTimeout(function() { el.remove(); checkNotifications(); }, 300);
+            } else {
+                checkNotifications();
+            }
+        }
+    });
+}
+
+/**
+ * Simple HTML escape
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
 }
 
 // ============================================================

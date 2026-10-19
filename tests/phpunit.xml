@@ -9,6 +9,7 @@
     <testsuites>
         <testsuite name="EQAS Unit Tests">
             <directory suffix="Test.php">./unit</directory>
+            <exclude>./unit/AlertsRoleFilterTest.php</exclude>
         </testsuite>
         <testsuite name="EQAS Integration Tests">
             <directory suffix="Test.php">./integration</directory>

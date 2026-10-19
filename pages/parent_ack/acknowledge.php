@@ -1,63 +1,113 @@
-﻿<?php
+<?php
 /**
  * ============================================================
- * EQAS - ط¥ظ‚ط±ط§ط± ط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط± - ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظ‚ط±ط§ط±
- * ظ†ط¸ط§ظ… ط§ظ„طھظ‚ظٹظٹظ… ط§ظ„ط´ط§ظ…ظ„ - طµظپط­ط© ط¥ظ‚ط±ط§ط± ظˆظ„ظٹ ط§ظ„ط£ظ…ط±
+ * EQAS - إقرار أولياء الأمور - نموذج الإقرار
+ * نظام التقييم الشامل - صفحة إقرار ولي الأمر
  * ============================================================
  */
 
-$pageTitle = 'ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظ‚ط±ط§ط±';
-$breadcrumb = ['ط¥ظ‚ط±ط§ط± ط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط±' => 'index.php', 'ط§ظ„ط¥ظ‚ط±ط§ط±' => null];
+$pageTitle = 'نموذج الإقرار';
+$breadcrumb = ['إقرار أولياء الأمور' => 'index.php', 'الإقرار' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
 
-$ackId = $_GET['id'] ?? 0;
+$studentId = (int)($_GET['student_id'] ?? 0);
+$ackType = $_GET['type'] ?? 'grades';
+$parentParam = $_GET['parent_id'] ?? null;
 
-// ط¬ظ„ط¨ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط¥ظ‚ط±ط§ط±
-$stmt = $db->prepare("SELECT pa.*, s.full_name_ar as student_name, s.student_number, s.school_id,
-                      p.full_name_ar as parent_name, p.phone as parent_phone
-                      FROM parent_acknowledgments pa
-                      JOIN students s ON s.id = pa.student_id
-                      JOIN users p ON p.id = pa.parent_id
-                      WHERE pa.id = ? AND pa.is_active = 1");
-$stmt->execute([$ackId]);
-$acknowledgment = $stmt->fetch();
-
-if (!$acknowledgment) {
-    setFlash('ط§ظ„ط¥ظ‚ط±ط§ط± ط؛ظٹط± ظ…ظˆط¬ظˆط¯', 'danger');
+if (!$studentId || !in_array($ackType, ['grades', 'behavior', 'attendance', 'promotion'])) {
+    setFlash('بيانات الإقرار غير مكتملة', 'danger');
     redirect('index.php');
 }
 
-// ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط§ظ„طµظ„ط§ط­ظٹط§طھ
+$ackTypeMap = [
+    'grades' => 'ack_grade',
+    'behavior' => 'ack_behavior',
+    'attendance' => 'ack_attendance',
+    'promotion' => 'ack_promotion',
+];
+
+// التحقق من الصلاحيات أولاً
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'];
+
+// جلب بيانات الطالب وولي الأمر
+if ($userRole === 'parent') {
+    // ولي الأمر: يبحث عن إقراراته فقط
+    $stmt = $db->prepare("SELECT ps.id, s.id as student_id, s.full_name_ar as student_name, s.student_number, s.school_id,
+                          p.id as parent_id, p.full_name_ar as parent_name, p.phone as parent_phone,
+                          ps.$ackTypeMap[$ackType] as is_acknowledged, ps.last_ack_at as acknowledged_at
+                          FROM parent_students ps
+                          JOIN students s ON s.id = ps.student_id
+                          JOIN users p ON p.id = ps.parent_id
+                          WHERE ps.student_id = ? AND ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1");
+    $stmt->execute([$studentId, $userId]);
+} else {
+    // المدير: يمكنه عرض أي إقرار (يستخدم parent_id من URL أو يبحث عن أي ولي أمر)
+    $targetParentId = $parentParam ? (int)$parentParam : null;
+    if ($targetParentId) {
+        $stmt = $db->prepare("SELECT ps.id, s.id as student_id, s.full_name_ar as student_name, s.student_number, s.school_id,
+                              p.id as parent_id, p.full_name_ar as parent_name, p.phone as parent_phone,
+                              ps.$ackTypeMap[$ackType] as is_acknowledged, ps.last_ack_at as acknowledged_at
+                              FROM parent_students ps
+                              JOIN students s ON s.id = ps.student_id
+                              JOIN users p ON p.id = ps.parent_id
+                              WHERE ps.student_id = ? AND ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1");
+        $stmt->execute([$studentId, $targetParentId]);
+    } else {
+        // إذا لم يُحدد parent_id، نأخذ أول ولي أمر مرتبط بالطالب
+        $stmt = $db->prepare("SELECT ps.id, s.id as student_id, s.full_name_ar as student_name, s.student_number, s.school_id,
+                              p.id as parent_id, p.full_name_ar as parent_name, p.phone as parent_phone,
+                              ps.$ackTypeMap[$ackType] as is_acknowledged, ps.last_ack_at as acknowledged_at
+                              FROM parent_students ps
+                              JOIN students s ON s.id = ps.student_id
+                              JOIN users p ON p.id = ps.parent_id
+                              WHERE ps.student_id = ? AND ps.is_active = 1 AND s.is_active = 1
+                              ORDER BY ps.id ASC LIMIT 1");
+        $stmt->execute([$studentId]);
+    }
+}
+$acknowledgment = $stmt->fetch();
+
+if (!$acknowledgment) {
+    setFlash('الإقرار غير موجود', 'danger');
+    redirect('index.php');
+}
+
+$acknowledgment['acknowledgment_type'] = $ackType;
+
+// التحقق من الصلاحيات
 $userRole = $_SESSION['user']['role'] ?? '';
 $userId = $_SESSION['user']['id'];
 
 if ($userRole === 'parent') {
     if ($userId != $acknowledgment['parent_id']) {
-        setFlash('ظ„ظٹط³ ظ„ط¯ظٹظƒ طµظ„ط§ط­ظٹط© ظ„ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ‡ط°ط§ ط§ظ„ط¥ظ‚ط±ط§ط±', 'danger');
+        setFlash('ليس لديك صلاحية للوصول إلى هذا الإقرار', 'danger');
         redirect('index.php');
     }
 }
 
-// ط£ظ†ظˆط§ط¹ ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ
+// أنواع الإقرارات
 $ackTypeLabels = [
-    'grades' => 'ط§ظ„ط¯ط±ط¬ط§طھ',
-    'promotion' => 'ظ‚ط±ط§ط± ط§ظ„طھط±ظپظٹط¹',
-    'behavior' => 'ط§ظ„طھظ‚ظٹظٹظ… ط§ظ„ط³ظ„ظˆظƒظٹ',
-    'attendance' => 'ط³ط¬ظ„ ط§ظ„ط­ط¶ظˆط±',
+    'grades' => 'الدرجات',
+    'promotion' => 'قرار الترفيع',
+    'behavior' => 'التقييم السلوكي',
+    'attendance' => 'سجل الحضور',
 ];
 
-// ط¬ظ„ط¨ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط±طھط¨ط·ط© ط­ط³ط¨ ظ†ظˆط¹ ط§ظ„ط¥ظ‚ط±ط§ط±
+// جلب البيانات المرتبطة حسب نوع الإقرار
 $relatedData = null;
 switch ($acknowledgment['acknowledgment_type']) {
     case 'grades':
-        if ($acknowledgment['entity_id']) {
-            $stmt = $db->prepare("SELECT g.*, sub.name_ar as subject_name
+        $semesterId = currentSemesterId();
+        if ($semesterId) {
+            $stmt = $db->prepare("SELECT g.*, t.title_ar as test_title, sub.name_ar as subject_name
                                   FROM grades g
-                                  JOIN subjects sub ON sub.id = g.subject_id
+                                  JOIN tests t ON g.test_id = t.id
+                                  JOIN subjects sub ON t.subject_id = sub.id
                                   WHERE g.student_id = ? AND g.semester_id = ? AND g.is_active = 1
-                                  ORDER BY sub.name_ar");
-            $stmt->execute([$acknowledgment['student_id'], $acknowledgment['entity_id']]);
+                                  ORDER BY sub.name_ar, t.test_date");
+            $stmt->execute([$acknowledgment['student_id'], $semesterId]);
             $grades = $stmt->fetchAll();
 
             $total = 0;
@@ -76,27 +126,28 @@ switch ($acknowledgment['acknowledgment_type']) {
         break;
 
     case 'behavior':
-        $stmt = $db->prepare("SELECT e.*, u.full_name_ar as evaluator_name
-                              FROM evaluations e
-                              LEFT JOIN users u ON u.id = e.student_id
-                              WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.is_active = 1
-                              ORDER BY e.id DESC LIMIT 1");
+        $stmt = $db->prepare("SELECT *
+                              FROM behavior_scores
+                              WHERE student_id = ? AND is_active = 1
+                              ORDER BY updated_at DESC LIMIT 1");
         $stmt->execute([$acknowledgment['student_id']]);
         $behavior = $stmt->fetch();
         $relatedData = ['type' => 'behavior', 'evaluation' => $behavior];
         break;
 
     case 'attendance':
-        $stmt = $db->prepare("SELECT * FROM v_attendance_summary
-                              WHERE student_id = ?
-                              ORDER BY student_id DESC LIMIT 1");
+        $stmt = $db->prepare("SELECT *
+                              FROM v_attendance_summary
+                              WHERE student_id = ? AND is_active = 1
+                              LIMIT 1");
         $stmt->execute([$acknowledgment['student_id']]);
         $attendance = $stmt->fetch();
         $relatedData = ['type' => 'attendance', 'summary' => $attendance];
         break;
 
     case 'promotion':
-        $stmt = $db->prepare("SELECT * FROM promotions
+        $stmt = $db->prepare("SELECT *
+                              FROM promotions
                               WHERE student_id = ? AND is_active = 1
                               ORDER BY created_at DESC LIMIT 1");
         $stmt->execute([$acknowledgment['student_id']]);
@@ -105,79 +156,79 @@ switch ($acknowledgment['acknowledgment_type']) {
         break;
 }
 
-// ظ…ط¹ط§ظ„ط¬ط© ط§ظ„ط¥ظ‚ط±ط§ط±
+// معالجة الإقرار
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acknowledge'])) {
     if (!verifyCsrf()) {
-        setFlash('ط®ط·ط£ ظپظٹ ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط§ظ„ط£ظ…ط§ظ†', 'danger');
-        redirect('acknowledge.php?id=' . $ackId);
+        setFlash('خطأ في التحقق من الأمان', 'danger');
+        redirect('acknowledge.php?student_id=' . $studentId . '&type=' . $ackType);
     }
 
-    // ظپظ‚ط· ظˆظ„ظٹ ط§ظ„ط£ظ…ط± ظٹظ…ظƒظ†ظ‡ ط§ظ„ط¥ظ‚ط±ط§ط±
+    // فقط ولي الأمر يمكنه الإقرار
     if ($userRole !== 'parent') {
-        setFlash('ظپظ‚ط· ظˆظ„ظٹ ط§ظ„ط£ظ…ط± ظٹظ…ظƒظ†ظ‡ طھظ‚ط¯ظٹظ… ط§ظ„ط¥ظ‚ط±ط§ط±', 'danger');
-        redirect('acknowledge.php?id=' . $ackId);
+        setFlash('فقط ولي الأمر يمكنه تقديم الإقرار', 'danger');
+        redirect('acknowledge.php?student_id=' . $studentId . '&type=' . $ackType);
     }
 
     if ($acknowledgment['is_acknowledged']) {
-        setFlash('طھظ… ط§ظ„ط¥ظ‚ط±ط§ط± ظ…ط³ط¨ظ‚ط§ظ‹', 'info');
+        setFlash('تم الإقرار مسبقاً', 'info');
         redirect('index.php');
     }
 
     $notes = trim($_POST['notes'] ?? '');
 
-    $stmt = $db->prepare("UPDATE parent_acknowledgments SET is_acknowledged = 1, acknowledged_at = NOW(), notes = ? WHERE id = ?");
-    $stmt->execute([$notes, $ackId]);
+    $stmt = $db->prepare("UPDATE parent_students SET $ackTypeMap[$ackType] = 1, last_ack_at = NOW() WHERE student_id = ? AND parent_id = ?");
+    $stmt->execute([$studentId, $userId]);
 
-    logActivity($db, $userId, 'parent_acknowledgment', 'ط¥ظ‚ط±ط§ط± ظˆظ„ظٹ ط§ظ„ط£ظ…ط±: ' . $acknowledgment['acknowledgment_type'] . ' ظ„ظ„ط·ط§ظ„ط¨ ' . $acknowledgment['student_name'], 'parent_acknowledgment', $ackId);
+    logActivity($db, $userId, 'parent_acknowledgment', 'إقرار ولي الأمر: ' . $ackType . ' للطالب ' . $acknowledgment['student_name'], 'parent_acknowledgment', $studentId);
 
-    setFlash('طھظ… طھط³ط¬ظٹظ„ ط¥ظ‚ط±ط§ط±ظƒ ط¨ظ†ط¬ط§ط­. ط´ظƒط±ط§ظ‹ ظ„طھط¹ط§ظˆظ†ظƒظ….', 'success');
+    setFlash('تم تسجيل إقرارك بنجاح. شكراً لتعاونكم.', 'success');
     redirect('index.php');
 }
 
 $decisionLabels = [
-    'promoted' => ['ظ†ط§ط¬ط­ - ظ…ط±ظپظ‘ط¹', 'success'],
-    'repeated' => ['ط±ط§ط³ط¨ - ظ…ط¹ظٹط¯', 'danger'],
-    'conditional' => ['طھط±ظپظٹط¹ ظ…ط´ط±ظˆط·', 'warning'],
-    'under_review' => ['ظ‚ظٹط¯ ط§ظ„ظ…ط±ط§ط¬ط¹ط©', 'info'],
+    'promoted' => ['ناجح - مرفّع', 'success'],
+    'repeated' => ['راسب - معيد', 'danger'],
+    'conditional' => ['ترفيع مشروط', 'warning'],
+    'under_review' => ['قيد المراجعة', 'info'],
 ];
 ?>
 
 <div class="card">
     <div class="card-header">
-        <h2 class="card-title">ًں“„ ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظ‚ط±ط§ط± - <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? 'ط¹ط§ظ…'); ?></h2>
+        <h2 class="card-title">📄 نموذج الإقرار - <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? 'عام'); ?></h2>
     </div>
     <div class="card-body">
-        <!-- ظ…ط¹ظ„ظˆظ…ط§طھ ط§ظ„ط·ط§ظ„ط¨ -->
+        <!-- معلومات الطالب -->
         <div class="card bg-light mb-4">
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>ًں‘¨â€چًںژ“ ط§ظ„ط·ط§ظ„ط¨:</strong> <?php echo e($acknowledgment['student_name']); ?></p>
-                        <p><strong>ًں”¢ ط±ظ‚ظ… ط§ظ„ظ‚ظٹط¯:</strong> <?php echo e($acknowledgment['student_number']); ?></p>
+                        <p><strong>👨‍🎓 الطالب:</strong> <?php echo e($acknowledgment['student_name']); ?></p>
+                        <p><strong>🔢 رقم القيد:</strong> <?php echo e($acknowledgment['student_number']); ?></p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>ًں‘¤ ظˆظ„ظٹ ط§ظ„ط£ظ…ط±:</strong> <?php echo e($acknowledgment['parent_name']); ?></p>
-                        <p><strong>ًں“‹ ظ†ظˆط¹ ط§ظ„ط¥ظ‚ط±ط§ط±:</strong> <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? 'ط¹ط§ظ…'); ?></p>
+                        <p><strong>👤 ولي الأمر:</strong> <?php echo e($acknowledgment['parent_name']); ?></p>
+                        <p><strong>📋 نوع الإقرار:</strong> <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? 'عام'); ?></p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ط±طھط¨ط·ط© -->
+        <!-- البيانات المرتبطة -->
         <?php if ($relatedData): ?>
         <div class="card border mb-4">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0 text-white">ًں“ٹ ط§ظ„ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…طھط¹ظ„ظ‚ط©</h4>
+                <h4 class="mb-0 text-white">📊 البيانات المتعلقة</h4>
             </div>
             <div class="card-body">
                 <?php if ($relatedData['type'] === 'grades' && !empty($relatedData['grades'])): ?>
                 <table class="table table-bordered table-sm">
                     <thead class="table-primary">
                         <tr>
-                            <th>ط§ظ„ظ…ط§ط¯ط©</th>
-                            <th>ط§ظ„ط¯ط±ط¬ط©</th>
-                            <th>ظ…ظ†</th>
-                            <th>ط§ظ„ظ†ظˆط¹</th>
+                            <th>المادة</th>
+                            <th>الدرجة</th>
+                            <th>من</th>
+                            <th>النوع</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -188,13 +239,13 @@ $decisionLabels = [
                                 <?php echo $g['grade_value']; ?>
                             </td>
                             <td><?php echo $g['max_value']; ?></td>
-                            <td><?php echo e($g['grade_type']); ?></td>
+                            <td><?php echo e($g['letter_grade'] ?? '-'); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
                         <tr class="table-secondary">
-                            <td><strong>ط§ظ„ظ…ط¹ط¯ظ„ ط§ظ„ط¹ط§ظ…</strong></td>
+                            <td><strong>المعدل العام</strong></td>
                             <td colspan="3"><strong class="<?php echo $relatedData['average'] >= 50 ? 'text-success' : 'text-danger'; ?>">
                                 <?php echo $relatedData['average']; ?>%
                             </strong></td>
@@ -206,16 +257,16 @@ $decisionLabels = [
                 <div class="row">
                     <div class="col-md-4">
                         <div class="stat-card">
-                            <div class="stat-card-label">ط§ظ„ط¯ط±ط¬ط© ط§ظ„ظƒظ„ظٹط©</div>
-                            <div class="stat-card-value <?php echo $relatedData['evaluation']['overall_score'] >= 60 ? 'text-success' : 'text-danger'; ?>">
-                                <?php echo $relatedData['evaluation']['overall_score']; ?>%
+                            <div class="stat-card-label">الدرجة الكلية</div>
+                            <div class="stat-card-value <?php echo ($relatedData['evaluation']['current_percentage'] ?? 0) >= 60 ? 'text-success' : 'text-danger'; ?>">
+                                <?php echo $relatedData['evaluation']['current_percentage'] ?? 0; ?>%
                             </div>
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <p><strong>طھط§ط±ظٹط® ط§ظ„طھظ‚ظٹظٹظ…:</strong> <?php echo formatDateAr($relatedData['evaluation']['evaluation_date']); ?></p>
-                        <?php if ($relatedData['evaluation']['notes']): ?>
-                        <p><strong>ظ…ظ„ط§ط­ط¸ط§طھ:</strong> <?php echo nl2br(e($relatedData['evaluation']['notes'])); ?></p>
+                        <p><strong>تاريخ التقييم:</strong> <?php echo formatDateAr($relatedData['evaluation']['updated_at'] ?? date('Y-m-d')); ?></p>
+                        <?php if (!empty($relatedData['evaluation']['is_passing'])): ?>
+                        <p><strong>السلوك:</strong> <?php echo $relatedData['evaluation']['is_passing'] ? 'مقبول' : 'غير مقبول'; ?></p>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -224,25 +275,25 @@ $decisionLabels = [
                 <div class="row">
                     <div class="col-md-3">
                         <div class="stat-card stat-card-sm">
-                            <div class="stat-card-label">ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط£ظٹط§ظ…</div>
+                            <div class="stat-card-label">إجمالي الأيام</div>
                             <div class="stat-card-value"><?php echo $relatedData['summary']['total_days']; ?></div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card stat-card-sm">
-                            <div class="stat-card-label">ط£ظٹط§ظ… ط§ظ„ط­ط¶ظˆط±</div>
+                            <div class="stat-card-label">أيام الحضور</div>
                             <div class="stat-card-value text-success"><?php echo $relatedData['summary']['present_days']; ?></div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card stat-card-sm">
-                            <div class="stat-card-label">ط£ظٹط§ظ… ط§ظ„ط؛ظٹط§ط¨</div>
+                            <div class="stat-card-label">أيام الغياب</div>
                             <div class="stat-card-value text-danger"><?php echo $relatedData['summary']['absent_days']; ?></div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card stat-card-sm">
-                            <div class="stat-card-label">ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±</div>
+                            <div class="stat-card-label">نسبة الحضور</div>
                             <div class="stat-card-value"><?php echo $relatedData['summary']['attendance_rate']; ?>%</div>
                         </div>
                     </div>
@@ -252,7 +303,7 @@ $decisionLabels = [
                 <div class="row">
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="stat-card-label">ط§ظ„ظ‚ط±ط§ط±</div>
+                            <div class="stat-card-label">القرار</div>
                             <div class="stat-card-value" style="font-size:16px;">
                                 <?php
                                 $dec = $relatedData['decision']['decision'];
@@ -264,73 +315,73 @@ $decisionLabels = [
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="stat-card-label">ط§ظ„ط¯ط±ط¬ط© ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹط©</div>
+                            <div class="stat-card-label">الدرجة الأكاديمية</div>
                             <div class="stat-card-value"><?php echo $relatedData['decision']['academic_score'] ?? '-'; ?>%</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="stat-card-label">ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ</div>
+                            <div class="stat-card-label">درجة السلوك</div>
                             <div class="stat-card-value"><?php echo $relatedData['decision']['behavior_score'] ?? '-'; ?>%</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="stat-card-label">ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±</div>
+                            <div class="stat-card-label">نسبة الحضور</div>
                             <div class="stat-card-value"><?php echo $relatedData['decision']['attendance_score'] ?? '-'; ?>%</div>
                         </div>
                     </div>
                 </div>
                 <?php if ($relatedData['decision']['notes']): ?>
                 <div class="alert alert-info mt-3">
-                    <strong>ظ…ظ„ط§ط­ط¸ط§طھ:</strong> <?php echo e($relatedData['decision']['notes']); ?>
+                    <strong>ملاحظات:</strong> <?php echo e($relatedData['decision']['notes']); ?>
                 </div>
                 <?php endif; ?>
                 <?php else: ?>
-                <p class="text-muted">ظ„ط§ طھظˆط¬ط¯ ط¨ظٹط§ظ†ط§طھ ظ…طھط§ط­ط© ط­ط§ظ„ظٹط§ظ‹</p>
+                <p class="text-muted">لا توجد بيانات متاحة حالياً</p>
                 <?php endif; ?>
             </div>
         </div>
         <?php endif; ?>
 
-        <!-- ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظ‚ط±ط§ط± -->
+        <!-- نموذج الإقرار -->
         <?php if ($acknowledgment['is_acknowledged']): ?>
         <div class="alert alert-success">
-            <strong>âœ… طھظ… ط§ظ„ط¥ظ‚ط±ط§ط±</strong> ظپظٹ <?php echo formatDateAr($acknowledgment['acknowledged_at'], 'full'); ?>
-            <?php if ($acknowledgment['notes']): ?>
-            <br><strong>ظ…ظ„ط§ط­ط¸ط§طھ:</strong> <?php echo e($acknowledgment['notes']); ?>
+            <strong>✅ تم الإقرار</strong> في <?php echo formatDateAr($acknowledgment['acknowledged_at'], 'full'); ?>
+            <?php if (isset($acknowledgment['notes']) && $acknowledgment['notes']): ?>
+            <br><strong>ملاحظات:</strong> <?php echo e($acknowledgment['notes']); ?>
             <?php endif; ?>
         </div>
         <?php elseif ($userRole === 'parent'): ?>
         <div class="card border-primary">
             <div class="card-header bg-primary text-white">
-                <h4 class="mb-0 text-white">âœ… ظ†ظ…ظˆط°ط¬ ط§ظ„ط¥ظ‚ط±ط§ط±</h4>
+                <h4 class="mb-0 text-white">✅ نموذج الإقرار</h4>
             </div>
             <div class="card-body">
                 <p class="mb-3">
-                    ط£ظ‚ط± ط¨ط£ظ†ظ†ظٹ ظ‚ط¯ ط§ط·ظ„ط¹طھ ط¹ظ„ظ‰ ط¨ظٹط§ظ†ط§طھ <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? ''); ?>
-                    ط§ظ„ط®ط§طµط© ط¨ط§ط¨ظ†ظٹ/ط§ط¨ظ†طھظٹ <strong><?php echo e($acknowledgment['student_name']); ?></strong>
-                    ظˆط£طھط­ظ…ظ„ ظ…ط³ط¤ظˆظ„ظٹط© ط§ظ„ط¹ظ„ظ… ط¨ظ‡ط§.
+                    أقر بأنني قد اطلعت على بيانات <?php echo e($ackTypeLabels[$acknowledgment['acknowledgment_type']] ?? ''); ?>
+                    الخاصة بابني/ابنتي <strong><?php echo e($acknowledgment['student_name']); ?></strong>
+                    وأتحمل مسؤولية العلم بها.
                 </p>
 
                 <form method="POST">
                     <?= csrfField() ?>
 
                     <div class="form-group">
-                        <label class="form-label">ظ…ظ„ط§ط­ط¸ط§طھ (ط§ط®طھظٹط§ط±ظٹ)</label>
+                        <label class="form-label">ملاحظات (اختياري)</label>
                         <textarea name="notes" class="form-control" rows="3"
-                                  placeholder="ط£ظٹ ظ…ظ„ط§ط­ط¸ط§طھ طھظˆط¯ ط¥ط¶ط§ظپطھظ‡ط§..."></textarea>
+                                  placeholder="أي ملاحظات تود إضافتها..."></textarea>
                     </div>
 
                     <button type="submit" name="acknowledge" value="1" class="btn btn-primary btn-lg">
-                        âœ… ط¥ظ‚ط±ط§ط± ط¨ط§ظ„ط§ط·ظ„ط§ط¹ ظˆط§ظ„ظ…ظˆط§ظپظ‚ط©
+                        ✅ إقرار بالاطلاع والموافقة
                     </button>
                 </form>
             </div>
         </div>
         <?php else: ?>
         <div class="alert alert-info">
-            ط¨ط§ظ†طھط¸ط§ط± ط¥ظ‚ط±ط§ط± ظˆظ„ظٹ ط§ظ„ط£ظ…ط± <strong><?php echo e($acknowledgment['parent_name']); ?></strong>
+            بانتظار إقرار ولي الأمر <strong><?php echo e($acknowledgment['parent_name']); ?></strong>
         </div>
         <?php endif; ?>
     </div>

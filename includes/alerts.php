@@ -611,7 +611,7 @@ class AlertEngine {
      * القاعدة 1: خطة معلم متأخرة عن موعد المتابعة
      * القاعدة 2: خطة طالب متأخرة عن موعد المتابعة
      */
-    public function checkImprovementPlanOverdue($schoolId) {
+    public function checkImprovementPlanOverdue($schoolId, $academicYearId = null, $semesterId = null) {
         $alertsCreated = 0;
 
         try {
@@ -767,17 +767,8 @@ class AlertEngine {
             
             if (count($values) >= $periods) {
                 $recentValues = array_slice($values, 0, $periods);
-                $allDeclining = true;
-                
-                for ($i = 0; $i < count($recentValues) - 1; $i++) {
-                    if ($recentValues[$i] >= $recentValues[$i + 1]) {
-                        $allDeclining = false;
-                        break;
-                    }
-                }
-                
-                // بدلنا: نتحقق من القيم تنازلياً (الأحدث أولاً)
-                // نريد أن القيم تتناقص: values[0] > values[1] > values[2]
+                // القيم مرتبة تنازلياً (الأحدث أولاً)
+                // نتحقق من تناقص مستمر: values[0] > values[1] > values[2]
                 $allDeclining = true;
                 for ($i = 0; $i < count($recentValues) - 1; $i++) {
                     if ($recentValues[$i] <= $recentValues[$i + 1]) {
@@ -820,20 +811,21 @@ class AlertEngine {
     /**
      * الحصول على تاريخ القيم لمقياس معين
      */
-    private function getMetricHistory($studentId, $metricType, $limit = 4) {
+    private function getMetricHistory($studentId, $metricType, $limit = 4, $schoolId = null) {
         $values = [];
         
         try {
             switch ($metricType) {
                 case 'academic':
-                    $sql = "SELECT AVG(grade_value / max_value * 100) AS avg_score
-                            FROM grades 
-                            WHERE student_id = :student_id AND is_active = 1
-                            GROUP BY semester_id
-                            ORDER BY semester_id DESC
-                            LIMIT :limit";
+                    $sql = "SELECT AVG(g.grade_value / g.max_value * 100) AS avg_score
+                            FROM grades g
+                            JOIN students s ON s.id = g.student_id
+                            WHERE g.student_id = :student_id AND g.is_active = 1";
+                    if ($schoolId) { $sql .= " AND s.school_id = :school_id"; }
+                    $sql .= " GROUP BY g.semester_id ORDER BY g.semester_id DESC LIMIT :limit";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
+                    if ($schoolId) { $stmt->bindValue(':school_id', $schoolId, PDO::PARAM_INT); }
                     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
                     $stmt->execute();
                     while ($row = $stmt->fetch()) {
@@ -844,12 +836,14 @@ class AlertEngine {
                 case 'behavior':
                     $sql = "SELECT e.current_percentage 
                             FROM evaluations e
+                            JOIN students s ON s.id = e.student_id
                             WHERE e.eval_type = 'behavior_score'
-                              AND e.student_id = :student_id AND e.is_active = 1
-                            ORDER BY e.semester_id DESC
-                            LIMIT :limit";
+                              AND e.student_id = :student_id AND e.is_active = 1";
+                    if ($schoolId) { $sql .= " AND s.school_id = :school_id"; }
+                    $sql .= " ORDER BY e.semester_id DESC LIMIT :limit";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
+                    if ($schoolId) { $stmt->bindValue(':school_id', $schoolId, PDO::PARAM_INT); }
                     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
                     $stmt->execute();
                     while ($row = $stmt->fetch()) {
@@ -860,11 +854,13 @@ class AlertEngine {
                 case 'attendance':
                     $sql = "SELECT v.attendance_rate 
                             FROM v_attendance_summary v
-                            WHERE v.student_id = :student_id
-                            ORDER BY v.semester_id DESC
-                            LIMIT :limit";
+                            JOIN students s ON s.id = v.student_id
+                            WHERE v.student_id = :student_id";
+                    if ($schoolId) { $sql .= " AND s.school_id = :school_id"; }
+                    $sql .= " ORDER BY v.semester_id DESC LIMIT :limit";
                     $stmt = $this->db->prepare($sql);
                     $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
+                    if ($schoolId) { $stmt->bindValue(':school_id', $schoolId, PDO::PARAM_INT); }
                     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
                     $stmt->execute();
                     while ($row = $stmt->fetch()) {
@@ -1093,8 +1089,10 @@ class AlertEngine {
     private function createNotificationsForAlert($alertId, $alertData) {
         try {
             $userIds = [];
+            $strategicTypes = ['eqi', 'climate', 'teaching', 'improvement_plan'];
+            $alertType = $alertData['alert_type'] ?? '';
             
-            // مدير المدرسة
+            // مدير المدرسة — يرى كل الأنواع
             if (!empty($alertData['school_id'])) {
                 $stmt = $this->db->prepare("SELECT id FROM users WHERE school_id = :school_id AND is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'school_admin')");
                 $stmt->execute([':school_id' => $alertData['school_id']]);
@@ -1103,14 +1101,16 @@ class AlertEngine {
                 }
             }
             
-            // مدير النظام
-            $stmt = $this->db->prepare("SELECT id FROM users WHERE is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'group_admin')");
-            $stmt->execute();
-            while ($row = $stmt->fetch()) {
-                $userIds[] = $row['id'];
+            // مدير النظام — فقط الاستراتيجي
+            if (in_array($alertType, $strategicTypes)) {
+                $stmt = $this->db->prepare("SELECT id FROM users WHERE is_active = 1 AND role_id IN (SELECT id FROM roles WHERE name = 'group_admin')");
+                $stmt->execute();
+                while ($row = $stmt->fetch()) {
+                    $userIds[] = $row['id'];
+                }
             }
             
-            // ولي أمر الطالب
+            // ولي أمر الطالب — فقط التشغيلي وبوجود student_id
             if (!empty($alertData['student_id'])) {
                 $stmt = $this->db->prepare("SELECT u.id FROM users u INNER JOIN parent_students ps ON ps.parent_id = u.id WHERE ps.student_id = :student_id AND ps.is_active = 1 AND u.is_active = 1");
                 $stmt->execute([':student_id' => $alertData['student_id']]);
@@ -1121,6 +1121,24 @@ class AlertEngine {
             
             // إزالة التكرار
             $userIds = array_unique($userIds);
+            
+            // تطبيق تفضيلات المستخدمين (تصفية حسب DND ونوع الإشعار)
+            if (!empty($userIds)) {
+                $ph = implode(',', array_fill(0, count($userIds), '?'));
+                $prefStmt = $this->db->prepare("SELECT user_id, pref_key, pref_value FROM user_preferences WHERE pref_type = 'notification' AND user_id IN ($ph)");
+                $prefStmt->execute(array_values($userIds));
+                $prefs = [];
+                while ($p = $prefStmt->fetch()) {
+                    $prefs[$p['user_id']][$p['pref_key']] = $p['pref_value'];
+                }
+                $userIds = array_filter($userIds, function($uid) use ($prefs) {
+                    $uPrefs = $prefs[$uid] ?? [];
+                    if (($uPrefs['dnd'] ?? '0') === '1') return false;
+                    if (($uPrefs['in_app'] ?? '1') === '0') return false;
+                    if (isset($uPrefs['alert']) && $uPrefs['alert'] === '0') return false;
+                    return true;
+                });
+            }
             
             // إنشاء الإشعارات
             $sql = "INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read)
@@ -1171,7 +1189,15 @@ class AlertEngine {
     public function getAlerts($filters = []) {
         $where = [];
         $params = [];
-        
+
+        // معالجة الشروط الإضافية من الفلترة حسب الدور
+        if (!empty($filters['where']) && is_array($filters['where'])) {
+            $where = array_merge($where, $filters['where']);
+        }
+        if (!empty($filters['params']) && is_array($filters['params'])) {
+            $params = array_merge($params, $filters['params']);
+        }
+
         if (!empty($filters['school_id'])) {
             $where[] = 'a.school_id = :school_id';
             $params[':school_id'] = $filters['school_id'];
@@ -1240,7 +1266,15 @@ class AlertEngine {
     public function getAlertsCount($filters = []) {
         $where = [];
         $params = [];
-        
+
+        // معالجة الشروط الإضافية من الفلترة حسب الدور
+        if (!empty($filters['where']) && is_array($filters['where'])) {
+            $where = array_merge($where, $filters['where']);
+        }
+        if (!empty($filters['params']) && is_array($filters['params'])) {
+            $params = array_merge($params, $filters['params']);
+        }
+
         if (!empty($filters['school_id'])) {
             $where[] = 'school_id = :school_id';
             $params[':school_id'] = $filters['school_id'];
@@ -1270,13 +1304,151 @@ class AlertEngine {
         }
         
         $whereClause = $where ? implode(' AND ', $where) : '1';
-        $sql = "SELECT COUNT(*) FROM alerts WHERE {$whereClause}";
+        $sql = "SELECT COUNT(*) FROM alerts a WHERE {$whereClause}";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         
         return (int)$stmt->fetchColumn();
     }
-    
+
+    // ========================================================================
+    // تصفية التنبيهات حسب الدور (Role-based Filtering)
+    // ========================================================================
+
+    /**
+     * الحصول على فلتر التنبيهات حسب الدور
+     * يُرجع مصفوفة من الشروط الإضافية حسب دور المستخدم
+     */
+    public function getRoleBasedFilter($userRole, $userId = null, $academicYearId = null) {
+        $filter = [
+            'conditions' => [],
+            'params' => [],
+            'alert_types' => 'all', // all, strategic, operational
+        ];
+
+        // أنواع التنبيهات الاستراتيجية والتشغيلية
+        $strategicTypes = ['eqi', 'climate', 'teaching', 'improvement_plan'];
+        $operationalTypes = ['academic', 'behavior', 'attendance', 'promotion'];
+
+        // الحصول على academic_year_id من الجلسة إذا لم يُمرر
+        if ($academicYearId === null && isset($_SESSION['academic_year_id'])) {
+            $academicYearId = $_SESSION['academic_year_id'];
+        }
+
+        switch ($userRole) {
+            case 'group_admin':
+                // مدير المجموعة: يرى التنبيهات الاستراتيجية من كل المدارس
+                $filter['alert_types'] = $strategicTypes;
+                // لا يوجد فلتر بمدرسة - يرى الكل
+                break;
+
+            case 'school_admin':
+                // مدير المدرسة: يرى كل التنبيهات التشغيلة من مدرسته
+                $filter['alert_types'] = 'all';
+                // الفلترة تكون من خلال school_id في الصفحة
+                break;
+
+            case 'teacher':
+                $filter['alert_types'] = $operationalTypes;
+                if ($userId) {
+                    $filter['conditions'][] = "(a.student_id IS NULL OR a.student_id IN (
+                        SELECT DISTINCT se.student_id
+                        FROM student_enrollments se
+                        JOIN subject_teachers st
+                            ON st.classroom_id = se.class_id
+                            AND st.teacher_id = :tch_id
+                            AND st.is_active = 1
+                        WHERE se.status = 'enrolled' AND se.is_active = 1
+                        UNION
+                        SELECT DISTINCT se.student_id
+                        FROM student_enrollments se
+                        JOIN classes c
+                            ON c.id = se.class_id
+                            AND c.teacher_id = :tch_id2
+                        WHERE se.status = 'enrolled' AND se.is_active = 1
+                    ))";
+                    $filter['params'][':tch_id'] = $userId;
+                    $filter['params'][':tch_id2'] = $userId;
+                }
+                break;
+
+            case 'parent':
+                $filter['alert_types'] = $operationalTypes;
+                if ($userId) {
+                    $filter['conditions'][] = "(a.student_id IS NULL OR a.student_id IN (
+                        SELECT ps.student_id
+                        FROM parent_students ps
+                        WHERE ps.parent_id = :parent_id AND ps.is_active = 1
+                    ))";
+                    $filter['params'][':parent_id'] = $userId;
+                }
+                break;
+
+            default:
+                // guest或其他: لا يرى شيئاً
+                $filter['conditions'][] = '1 = 0';
+                break;
+        }
+
+        return $filter;
+    }
+
+    /**
+     * تطبيق فلتر الدور على استعلام التنبيهات
+     */
+    public function applyRoleFilter($filters, $userRole, $userId = null, $academicYearId = null) {
+        $roleFilter = $this->getRoleBasedFilter($userRole, $userId);
+
+        // إضافة أنواع التنبيهات المسموحة
+        if (is_array($roleFilter['alert_types']) && !empty($roleFilter['alert_types'])) {
+            $typePlaceholders = [];
+            $i = 0;
+            foreach ($roleFilter['alert_types'] as $type) {
+                $key = ':role_type_' . $i++;
+                $typePlaceholders[] = $key;
+                $filters['params'][$key] = $type;
+            }
+            $filters['where'][] = 'a.alert_type IN (' . implode(',', $typePlaceholders) . ')';
+        }
+
+        // إضافة شروط الفلترة الإضافية
+        if (!empty($roleFilter['conditions'])) {
+            $filters['where'] = array_merge($filters['where'], $roleFilter['conditions']);
+        }
+
+        // دمج المعاملات
+        if (!empty($roleFilter['params'])) {
+            $filters['params'] = array_merge($filters['params'], $roleFilter['params']);
+        }
+
+        return $filters;
+    }
+
+    /**
+     * التحقق إذا كان الدور يرى نوع التنبيه معين
+     */
+    public function canViewAlertType($userRole, $alertType) {
+        $strategicTypes = ['eqi', 'climate', 'teaching', 'improvement_plan'];
+        $operationalTypes = ['academic', 'behavior', 'attendance', 'promotion'];
+
+        switch ($userRole) {
+            case 'group_admin':
+                return in_array($alertType, $strategicTypes);
+            case 'school_admin':
+                return true; // يرى كل شيء لمدرسته
+            case 'teacher':
+                return in_array($alertType, $operationalTypes);
+            case 'parent':
+                return in_array($alertType, $operationalTypes);
+            default:
+                return false;
+        }
+    }
+
+    // ========================================================================
+    // نهاية تصفية التنبيهات حسب الدور
+    // ========================================================================
+
     /**
      * الحصول على تنبيه واحد
      */
@@ -1331,11 +1503,17 @@ class AlertEngine {
     public function resolveAlert($alertId, $resolvedBy, $notes = '') {
         try {
             $stmt = $this->db->prepare("UPDATE alerts SET is_resolved = 1, resolved_by = :resolved_by, resolved_at = NOW(), notes = :notes WHERE id = :id AND is_resolved = 0");
-            return $stmt->execute([
+            $result = $stmt->execute([
                 ':id' => $alertId,
                 ':resolved_by' => $resolvedBy,
                 ':notes' => $notes,
             ]);
+            if ($result && $stmt->rowCount() > 0) {
+                // تحديث الإشعارات المرتبطة
+                $this->db->prepare("UPDATE notifications SET is_read = 1, read_at = NOW() WHERE related_entity_type = 'alert' AND related_entity_id = ? AND is_read = 0")
+                    ->execute([$alertId]);
+            }
+            return $result;
         } catch (Exception $e) {
             return false;
         }
@@ -1363,30 +1541,41 @@ class AlertEngine {
     public function getUnreadCount($userId = null) {
         try {
             $schoolId = null;
+            $roleName = null;
+            $extraWhere = '';
+            $extraParams = [];
             
             if ($userId) {
-                $stmt = $this->db->prepare("SELECT school_id, role_id FROM users WHERE id = :id");
+                // استعلام واحد بدلاً من 3 — JOIN مباشر
+                $stmt = $this->db->prepare("SELECT u.school_id, r.name AS role_name
+                    FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = :id");
                 $stmt->execute([':id' => $userId]);
                 $user = $stmt->fetch();
                 
                 if ($user) {
-                    $roleStmt = $this->db->prepare("SELECT name FROM roles WHERE id = :id");
-                    $roleStmt->execute([':id' => $user['role_id']]);
-                    $role = $roleStmt->fetchColumn();
-                    
-                    if (in_array($role, ['school_admin', 'teacher']) && $user['school_id']) {
+                    $roleName = $user['role_name'];
+                    if (in_array($roleName, ['school_admin', 'teacher']) && $user['school_id']) {
                         $schoolId = (int)$user['school_id'];
+                    }
+                    // إضافة فلترة حسب نوع التنبيه للدور
+                    $roleFilter = $this->getRoleBasedFilter($roleName, $userId);
+                    if (is_array($roleFilter['alert_types'])) {
+                        $ph = implode(',', array_fill(0, count($roleFilter['alert_types']), '?'));
+                        $extraWhere .= " AND alert_type IN ($ph)";
+                        $extraParams = array_values($roleFilter['alert_types']);
                     }
                 }
             }
             
             if ($schoolId) {
-                $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0 AND school_id = ?");
-                $stmt->execute([$schoolId]);
+                $sql = "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0 AND school_id = ?{$extraWhere}";
+                $params = array_merge([$schoolId], $extraParams);
             } else {
-                $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0");
-                $stmt->execute();
+                $sql = "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0{$extraWhere}";
+                $params = $extraParams;
             }
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
             return (int)$stmt->fetchColumn();
         } catch (Exception $e) {
             return 0;
@@ -1396,7 +1585,7 @@ class AlertEngine {
     /**
      * الحصول على إحصائيات التنبيهات
      */
-    public function getAlertStats($schoolId = null) {
+    public function getAlertStats($schoolId = null, $userRole = null, $userId = null) {
         $stats = [
             'total' => 0,
             'unread' => 0,
@@ -1406,23 +1595,43 @@ class AlertEngine {
         ];
         
         try {
-            $schoolFilter = $schoolId ? " AND school_id = " . (int)$schoolId : '';
+            $where = '';
+            $params = [];
+            if ($schoolId) {
+                $where = ' AND school_id = ?';
+                $params[] = $schoolId;
+            }
+            
+            // فلترة حسب الدور
+            $extraWhere = '';
+            $extraParams = [];
+            if ($userRole) {
+                $roleFilter = $this->getRoleBasedFilter($userRole, $userId);
+                if (is_array($roleFilter['alert_types'])) {
+                    $ph = implode(',', array_fill(0, count($roleFilter['alert_types']), '?'));
+                    $extraWhere = " AND alert_type IN ($ph)";
+                    $extraParams = array_values($roleFilter['alert_types']);
+                }
+            }
             
             // الإجمالي
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE 1=1 {$schoolFilter}");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE 1=1{$where}{$extraWhere}");
+            $stmt->execute(array_merge($params, $extraParams));
             $stats['total'] = (int)$stmt->fetchColumn();
             
             // غير المقروءة
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_read = 0 {$schoolFilter}");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_read = 0{$where}{$extraWhere}");
+            $stmt->execute(array_merge($params, $extraParams));
             $stats['unread'] = (int)$stmt->fetchColumn();
             
             // غير المحلولة
-            $stmt = $this->db->query("SELECT COUNT(*) FROM alerts WHERE is_resolved = 0 {$schoolFilter}");
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM alerts WHERE is_resolved = 0{$where}{$extraWhere}");
+            $stmt->execute(array_merge($params, $extraParams));
             $stats['unresolved'] = (int)$stmt->fetchColumn();
             
             // حسب النوع
-            $sql = "SELECT alert_type, COUNT(*) AS cnt FROM alerts WHERE 1=1 {$schoolFilter} GROUP BY alert_type";
-            $stmt = $this->db->query($sql);
+            $stmt = $this->db->prepare("SELECT alert_type, COUNT(*) AS cnt FROM alerts WHERE 1=1{$where}{$extraWhere} GROUP BY alert_type");
+            $stmt->execute(array_merge($params, $extraParams));
             $oldToNew = [
                 'low_grade' => 'academic',
                 'failing_subject' => 'academic',
@@ -1446,8 +1655,8 @@ class AlertEngine {
             }
             
             // حسب الخطورة
-            $sql = "SELECT severity, COUNT(*) AS cnt FROM alerts WHERE 1=1 {$schoolFilter} GROUP BY severity";
-            $stmt = $this->db->query($sql);
+            $stmt = $this->db->prepare("SELECT severity, COUNT(*) AS cnt FROM alerts WHERE 1=1{$where}{$extraWhere} GROUP BY severity");
+            $stmt->execute(array_merge($params, $extraParams));
             while ($row = $stmt->fetch()) {
                 $stats['by_severity'][$row['severity']] = (int)$row['cnt'];
             }
@@ -1536,11 +1745,11 @@ class AlertEngine {
             $results['teaching_thresholds'] = $this->checkTeachingThresholds($schoolId, $academicYearId, $semesterId);
             
             // 2. فحص خطط التحسين
-            $results['improvement_plan_overdue'] = $this->checkImprovementPlanOverdue($schoolId);
+            $results['improvement_plan_overdue'] = $this->checkImprovementPlanOverdue($schoolId, $academicYearId, $semesterId);
             $results['improvement_plan_needed'] = $this->checkSchoolImprovementNeeded($schoolId, $academicYearId, $semesterId);
             
-            // 2. فحص الاتجاهات والأنماط لكل الطلاب
-            $stmt = $this->db->prepare("SELECT id FROM students WHERE school_id = :school_id AND is_active = 1");
+            // 2. فحص الاتجاهات والأنماط لكل الطلاب (حد أقصى: 200 طالب)
+            $stmt = $this->db->prepare("SELECT id FROM students WHERE school_id = :school_id AND is_active = 1 LIMIT 200");
             $stmt->execute([':school_id' => $schoolId]);
             $students = $stmt->fetchAll(PDO::FETCH_COLUMN);
             

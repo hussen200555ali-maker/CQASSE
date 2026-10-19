@@ -34,8 +34,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(baseUrl('pages/climate/survey.php'));
 }
 
-// جلب الاستبيانات
-$stmt = $db->prepare("SELECT * FROM surveys WHERE survey_type = 'climate' AND school_id = ? AND is_active = 1 ORDER BY created_at DESC");
+// جلب الاستبيانات — مجمعة حسب نوع المستجيب لأن جدول surveys الجديد يخزن استجابة فردية لكل صف
+$stmt = $db->prepare("
+    SELECT 
+        respondent_type,
+        COUNT(*) AS total_respondents,
+        ROUND(AVG(overall_score), 1) AS avg_score,
+        CASE 
+            WHEN COUNT(CASE WHEN status = 'active' THEN 1 END) > 0 THEN 'active'
+            WHEN COUNT(CASE WHEN status = 'draft' THEN 1 END) > 0 THEN 'draft'
+            ELSE 'closed'
+        END AS status,
+        MIN(survey_date) AS survey_date,
+        MAX(created_at) AS last_date
+    FROM surveys 
+    WHERE survey_type = 'climate' AND school_id = ? AND is_active = 1 AND respondent_type IS NOT NULL
+    GROUP BY respondent_type
+    ORDER BY MAX(created_at) DESC
+");
 $stmt->execute([$schoolId]);
 $surveys = $stmt->fetchAll();
 
@@ -176,7 +192,7 @@ $statusColors = ['draft' => 'secondary', 'active' => 'success', 'closed' => 'inf
                     <tbody>
                         <?php foreach ($surveys as $survey): ?>
                         <tr>
-                            <td><strong><?= e($survey['title']) ?></strong></td>
+                            <td><strong><?= $respondentLabels[$survey['respondent_type']] ?? $survey['respondent_type'] ?></strong></td>
                             <td><?= $respondentLabels[$survey['respondent_type']] ?? $survey['respondent_type'] ?></td>
                             <td>
                                 <span style="padding:2px 8px;border-radius:var(--radius-full);font-size:11px;background:var(--<?= $statusColors[$survey['status']] ?? 'secondary' ?>);color:white;">
@@ -186,21 +202,7 @@ $statusColors = ['draft' => 'secondary', 'active' => 'success', 'closed' => 'inf
                             <td><?= $survey['total_respondents'] ?></td>
                             <td><?= $survey['avg_score'] !== null ? round($survey['avg_score'], 1) . '%' : '-' ?></td>
                             <td>
-                                <?php if ($survey['status'] === 'draft'): ?>
-                                <form method="POST" style="display:inline;">
-                                    <?= csrfField() ?>
-                                    <input type="hidden" name="action" value="activate_survey">
-                                    <input type="hidden" name="survey_id" value="<?= $survey['id'] ?>">
-                                    <button type="submit" class="btn btn-success" style="padding:2px 8px;font-size:11px;">▶️ تفعيل</button>
-                                </form>
-                                <?php elseif ($survey['status'] === 'active'): ?>
-                                <form method="POST" style="display:inline;">
-                                    <?= csrfField() ?>
-                                    <input type="hidden" name="action" value="close_survey">
-                                    <input type="hidden" name="survey_id" value="<?= $survey['id'] ?>">
-                                    <button type="submit" class="btn btn-info" style="padding:2px 8px;font-size:11px;">⏹️ إغلاق</button>
-                                </form>
-                                <?php endif; ?>
+                                <span style="color:var(--text-muted);font-size:11px;">—</span>
                             </td>
                         </tr>
                         <?php endforeach; ?>

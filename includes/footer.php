@@ -11,7 +11,7 @@
             <!-- Footer -->
             <footer class="footer">
                 <p>
-                    © <?php echo date('Y'); ?> نظام التقييم الشامل لجودة التعليم المدرسي  (EQAS)
+                    © <?php echo date('Y'); ?> نظام التقييم الشامل لجودة التعليم المدرسي  (CQASSE)
                     — جميع الحقوق محفوظة
                 </p>
             </footer>

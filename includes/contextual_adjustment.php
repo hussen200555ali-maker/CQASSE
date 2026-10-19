@@ -47,13 +47,16 @@ class ContextualAdjustmentService {
 
     /**
      * يحسب adjusted_sqi لمدرسة معينة
+     * @param int $schoolId
+     * @param int|null $academicYearId (اختياري — غير مستخدم حالياً، للتوافق العكسي)
+     * @param float|null $rawEqi
      */
-    public function calculateAdjustedSQI($schoolId, $academicYearId, $rawEqi) {
+    public function calculateAdjustedSQI($schoolId, $academicYearId = null, $rawEqi = null) {
         if ($rawEqi === null) {
             return null;
         }
 
-        $context = $this->loadContext($schoolId, $academicYearId);
+        $context = $this->loadContext($schoolId);
 
         if ($context === null) {
             return $rawEqi;
@@ -68,13 +71,16 @@ class ContextualAdjustmentService {
 
     /**
      * يحسب adjusted_sqi مع معلومات التعديل كاملة
+     * @param int $schoolId
+     * @param int|null $academicYearId (اختياري — للتوافق العكسي)
+     * @param float|null $rawEqi
      */
-    public function calculateAdjustedSQIWithDetails($schoolId, $academicYearId, $rawEqi) {
+    public function calculateAdjustedSQIWithDetails($schoolId, $academicYearId = null, $rawEqi = null) {
         if ($rawEqi === null) {
             return null;
         }
 
-        $context = $this->loadContext($schoolId, $academicYearId);
+        $context = $this->loadContext($schoolId);
 
         if ($context === null) {
             return [
@@ -106,38 +112,30 @@ class ContextualAdjustmentService {
 
     /**
      * يحسب adjusted_sqi لمجموعة مدارس دفعة واحدة
+     * @param array $schoolIds
+     * @param int|null $academicYearId (اختياري — للتوافق العكسي)
+     * @param array $rawEqiMap
      */
-    public function batchCalculateAdjustedSQI($schoolIds, $academicYearId, $rawEqiMap) {
+    public function batchCalculateAdjustedSQI($schoolIds, $academicYearId = null, $rawEqiMap = []) {
         $results = [];
         foreach ($schoolIds as $schoolId) {
             $raw = isset($rawEqiMap[$schoolId]) ? $rawEqiMap[$schoolId] : null;
-            $results[$schoolId] = $this->calculateAdjustedSQIWithDetails($schoolId, $academicYearId, $raw);
+            $results[$schoolId] = $this->calculateAdjustedSQIWithDetails($schoolId, null, $raw);
         }
         return $results;
     }
 
     /**
      * يحمل بيانات السياق المدرسي
+     * @param int $schoolId
+     * @param int|null $academicYearId (اختياري — تجاهل السنة)
      */
-    private function loadContext($schoolId, $academicYearId) {
+    private function loadContext($schoolId, $academicYearId = null) {
         try {
-            $stmt = $this->db->prepare("
-                SELECT * FROM school_context
-                WHERE school_id = ? AND academic_year_id = ? AND is_active = 1
-                LIMIT 1
-            ");
-            $stmt->execute([$schoolId, $academicYearId]);
-            $context = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($context) {
-                return $context;
-            }
-
-            // محاولة إيجاد أحدث سياق متاح للمدرسة
+            // تجاهل السنة — نأخذ أحدث سياق نشط للمدرسة
             $stmt = $this->db->prepare("
                 SELECT * FROM school_context
                 WHERE school_id = ? AND is_active = 1
-                ORDER BY academic_year_id DESC
                 LIMIT 1
             ");
             $stmt->execute([$schoolId]);
@@ -225,9 +223,9 @@ class ContextualAdjustmentService {
     }
 
     /**
-     * يحفظ أو يحدث بيانات السياق لمدرسة
+     * يحفظ أو يحدث بيانات السياق لمدرسة (بدون ربط بالسنة)
      */
-    public function saveContext($schoolId, $academicYearId, $data) {
+    public function saveContext($schoolId, $data) {
         $allowedFields = [
             'location_type', 'total_students', 'student_teacher_ratio',
             'socioeconomic_index', 'parent_education_level',
@@ -235,55 +233,71 @@ class ContextualAdjustmentService {
             'student_mobility_rate', 'notes',
         ];
 
-        $fields = [];
-        $params = [':school_id' => $schoolId, ':academic_year_id' => $academicYearId];
+        $setFields = [];
+        $fieldNames = [];
+        $params = [];
 
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
-                $fields[] = "`$field` = :$field";
+                $setFields[] = "`$field` = :$field";
+                $fieldNames[] = $field;
                 $params[":$field"] = $data[$field];
             }
         }
 
-        if (empty($fields)) {
+        if (empty($setFields)) {
             return false;
         }
 
-        $fieldList = implode(', ', $fields);
+        $setList = implode(', ', $setFields);
+        $colList = '`' . implode('`, `', $fieldNames) . '`';
+        $valList = ':' . implode(', :', $fieldNames);
 
         try {
             // التحقق من وجود السجل
-            $stmt = $this->db->prepare("SELECT id FROM school_context WHERE school_id = :school_id AND academic_year_id = :academic_year_id");
-            $stmt->execute([':school_id' => $schoolId, ':academic_year_id' => $academicYearId]);
+            $stmt = $this->db->prepare("SELECT id FROM school_context WHERE school_id = ?");
+            $stmt->execute([$schoolId]);
             $existing = $stmt->fetchColumn();
 
             if ($existing) {
-                $sql = "UPDATE school_context SET $fieldList WHERE id = :id";
+                $sql = "UPDATE school_context SET $setList, updated_at = NOW() WHERE id = :id";
                 $params[':id'] = $existing;
             } else {
-                $sql = "INSERT INTO school_context (school_id, academic_year_id, $fieldList) VALUES (:school_id, :academic_year_id, $fieldList)";
+                $sql = "INSERT INTO school_context (school_id, $colList, created_at, updated_at) VALUES (:school_id, $valList, NOW(), NOW())";
+                $params[':school_id'] = $schoolId;
             }
 
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute($params);
+            $result = $stmt->execute($params);
+
+            if ($result) {
+                // إعادة حساب مؤشر التحدي بعد الحفظ
+                $stmt2 = $this->db->prepare("SELECT * FROM school_context WHERE school_id = ?");
+                $stmt2->execute([$schoolId]);
+                $context = $stmt2->fetch(PDO::FETCH_ASSOC);
+                if ($context) {
+                    $this->calculateChallengeIndex($context);
+                }
+            }
+
+            return $result;
         } catch (Exception $e) {
             return false;
         }
     }
 
     /**
-     * يحصل على جميع سياقات المدارس لعام دراسي
+     * يحصل على جميع سياقات المدارس المسجلة
      */
-    public function getAllContexts($academicYearId) {
+    public function getAllContexts($academicYearId = null) {
         try {
-            $stmt = $this->db->prepare("
+            $stmt = $this->db->query("
                 SELECT sc.*, s.name_ar as school_name
                 FROM school_context sc
                 JOIN schools s ON s.id = sc.school_id
-                WHERE sc.academic_year_id = ? AND sc.is_active = 1
+                WHERE sc.is_active = 1
                 ORDER BY s.name_ar
             ");
-            $stmt->execute([$academicYearId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];
@@ -293,19 +307,17 @@ class ContextualAdjustmentService {
     /**
      * يحصل على المدارس بدون سياق مسجل
      */
-    public function getSchoolsWithoutContext($academicYearId) {
+    public function getSchoolsWithoutContext($academicYearId = null) {
         try {
-            $stmt = $this->db->prepare("
+            $stmt = $this->db->query("
                 SELECT s.id, s.name_ar
                 FROM schools s
                 WHERE s.is_active = 1
                 AND s.id NOT IN (
-                    SELECT school_id FROM school_context
-                    WHERE academic_year_id = ? AND is_active = 1
+                    SELECT school_id FROM school_context WHERE is_active = 1
                 )
                 ORDER BY s.name_ar
             ");
-            $stmt->execute([$academicYearId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             return [];

@@ -477,6 +477,11 @@ $governorates = [
             text-align: center;
             margin-bottom: 30px;
         }
+        .setup-logo .setup-logo-img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 10px;
+        }
         .setup-logo h1 {
             color: white;
             font-size: 28px;
@@ -524,8 +529,9 @@ $governorates = [
     <div class="setup-wrapper">
         <!-- Logo -->
         <div class="setup-logo">
-            <h1>🎓 نظام التقييم الشامل</h1>
-            <p>معالج التثبيت - EQAS</p>
+            <img src="assets/img/logo-login.svg" alt="CQASSE" class="setup-logo-img">
+            <h1>نظام التقييم الشامل لجودة التعليم المدرسي</h1>
+            <p>معالج التثبيت - CQASSE</p>
         </div>
 
         <div class="setup-card">

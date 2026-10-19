@@ -25,18 +25,35 @@ $userId = $_SESSION['user']['id'];
 $userRole = $_SESSION['user']['role'];
 $schoolId = $_SESSION['user']['school_id'] ?? null;
 
-// جلب الفصول
+// جلب الفصول — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND c.school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $sql = "SELECT DISTINCT c.id, c.name_ar, gl.name_ar as grade_name
+                FROM classes c
+                JOIN grade_levels gl ON c.grade_level_id = gl.id
+                JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+                WHERE c.is_active = 1 AND c.school_id = ?
+                UNION
+                SELECT DISTINCT c.id, c.name_ar, gl.name_ar as grade_name
+                FROM classes c
+                JOIN grade_levels gl ON c.grade_level_id = gl.id
+                WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+                ORDER BY grade_name, name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$userId, $schoolId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND c.school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY gl.level_number, c.name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
     }
-    $sql .= " ORDER BY gl.level_number, c.name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
     $classes = $stmt->fetchAll();
 } catch (Exception $e) {
     $classes = [];
@@ -53,7 +70,7 @@ try {
 $behaviorForm = null;
 $behaviorItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'behavior_eval' AND is_active = 1 LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'behavior_eval' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -87,6 +104,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $sStmt = $db->prepare("SELECT id FROM semesters WHERE name_ar = ? AND academic_year_id = ? AND is_active = 1 LIMIT 1");
                     $sStmt->execute([$semName, $academicYearId]);
                     $semesterId = (int)$sStmt->fetchColumn();
+                }
+            }
+            // التحقق الأمني: المعلم يملك صلاحية لهذا الفصل
+            if ($userRole === 'teacher') {
+                $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+                if (!in_array($classId, $allowedIds)) {
+                    throw new Exception('ليس لديك صلاحية لتقييم سلوك في هذا الفصل');
                 }
             }
             $notes = trim($_POST['notes'] ?? '');
@@ -124,26 +148,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $db->prepare("
                 INSERT INTO evaluations 
                 (eval_type, student_id, class_id, school_id, academic_year_id, semester_id, 
-                 combined_score, current_percentage, is_active, created_at, updated_at)
-                VALUES ('behavior_score', ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
+                 evaluated_by, combined_score, current_percentage, is_active, created_at, updated_at)
+                VALUES ('behavior_score', ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             ");
             $stmt->execute([
                 $studentId, $classId, $schoolId, $academicYearId, $semesterId,
-                $overallScore, $overallScore
+                $userId, $overallScore, $overallScore
             ]);
             $evaluationId = $db->lastInsertId();
             
-            // حفظ عناصر التقييم
+            // حفظ عناصر التقييم في assessment_responses
+            $formId = $formRow['id'];
             $stmt = $db->prepare("
-                INSERT INTO behavior_items (evaluation_id, item_id, score, notes, is_active)
-                VALUES (?, ?, ?, ?, 1)
+                INSERT INTO assessment_responses 
+                (form_id, item_id, student_id, school_id, class_id, academic_year_id, semester_id, numeric_value, responded_by, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ");
             foreach ($itemScores as $itemId => $scores) {
                 $stmt->execute([
-                    $evaluationId,
+                    $formId,
                     $itemId,
+                    $studentId,
+                    $schoolId,
+                    $classId,
+                    $academicYearId,
+                    $semesterId,
                     $scores['normalized'],
-                    null
+                    $userId
                 ]);
             }
             

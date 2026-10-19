@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-18T05:00:00.000Z" agent="Python-ERD-Generator" version="21.0.0">
+  <diagram name="02-Users-Permissions" id="diagram_02">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="المستخدمين والصلاحيات - Users &amp; Permissions" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#333333;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Database ERD - 4 Tables, 3 Relationships" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="200" y="55" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="100" value="users" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#ED7D31;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="50" y="120" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="101" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="155" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="102" value="username (varchar(50)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="177" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="103" value="password_hash (varchar(255)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="199" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="104" value="must_change_password (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="221" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="105" value="full_name_ar (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="243" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="106" value="full_name_en (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="265" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="107" value="email (varchar(100)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="287" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="108" value="phone (varchar(20)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="309" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="109" value="role_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="50" y="331" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="school_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="50" y="353" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="111" value="... +6 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="50" y="375" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="112" value="roles" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#ED7D31;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="470" y="120" width="380" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="113" value="permissions" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#ED7D31;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="890" y="120" width="380" height="167" as="geometry" />
+        </mxCell>
+        <mxCell id="114" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="890" y="155" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="115" value="name (varchar(100)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="177" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="116" value="name_ar (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="199" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="117" value="module (varchar(50)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="221" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="118" value="description (text...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="243" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="119" value="is_active (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="265" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="120" value="role_permissions" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#ED7D31;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="50" y="400" width="380" height="123" as="geometry" />
+        </mxCell>
+        <mxCell id="121" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="435" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="122" value="role_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="50" y="457" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="123" value="permission_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="50" y="479" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="124" value="is_active (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="501" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_3_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="500" />
+              <mxPoint x="660" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_0_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="220" />
+              <mxPoint x="450" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_0_1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="220" />
+              <mxPoint x="450" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

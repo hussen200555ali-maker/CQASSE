@@ -31,11 +31,10 @@ $filterAy = (int)($_GET['academic_year_id'] ?? 0);
 
 $sql = "SELECT cs.*, s.name_ar as school_name, sem.name_ar as semester_name, ay.name as year_name
         FROM surveys cs
-        WHERE cs.survey_type = 'climate'
         JOIN schools s ON cs.school_id = s.id
         JOIN semesters sem ON cs.semester_id = sem.id
         JOIN academic_years ay ON cs.academic_year_id = ay.id
-        WHERE cs.is_active = 1";
+        WHERE cs.survey_type = 'climate' AND cs.is_active = 1";
 $params = [];
 
 if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND cs.school_id = ?"; $params[] = $schoolId; }

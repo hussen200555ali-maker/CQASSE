@@ -58,7 +58,7 @@ $repairPriorities = [
 $facilityForm = null;
 $facilityItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'facility_checklist' AND is_active = 1 LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'facility_checklist' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -75,11 +75,11 @@ try {
 $previousChecklists = [];
 try {
     $stmt = $db->prepare("
-        SELECT fc.id, fc.overall_score, fc.evaluation_date, sem.name_ar as semester_name
-        FROM facility_checklists fc
-        JOIN semesters sem ON fc.semester_id = sem.id
-        WHERE fc.school_id = ? AND fc.is_active = 1
-        ORDER BY fc.evaluation_date DESC LIMIT 5
+        SELECT s.id, s.overall_score, s.survey_date as evaluation_date, sem.name_ar as semester_name
+        FROM surveys s
+        JOIN semesters sem ON s.semester_id = sem.id
+        WHERE s.school_id = ? AND s.survey_type = 'facility' AND s.is_active = 1
+        ORDER BY s.survey_date DESC LIMIT 5
     ");
     $stmt->execute([$schoolId ?: 0]);
     $previousChecklists = $stmt->fetchAll();
@@ -144,22 +144,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $overallScore = $engine->calculateScore($responses);
             
             $stmt = $db->prepare("
-                INSERT INTO facility_checklists 
-                (school_id, academic_year_id, semester_id, evaluator_id, evaluation_date, overall_score, notes, is_active)
-                VALUES (?, ?, ?, ?, CURDATE(), ?, ?, 1)
+                INSERT INTO surveys 
+                (survey_type, school_id, academic_year_id, semester_id, evaluator_id, survey_date, overall_score, notes, status, is_active)
+                VALUES ('facility', ?, ?, ?, ?, CURDATE(), ?, ?, 'closed', 1)
             ");
             $stmt->execute([$schoolIdPost, $academicYearId, $semesterId, $userId, $overallScore, $notes ?: null]);
-            $checklistId = $db->lastInsertId();
+            $surveyId = $db->lastInsertId();
             
-            $stmt = $db->prepare("INSERT INTO facility_items (checklist_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
+            $stmt = $db->prepare("INSERT INTO survey_items (survey_id, item_id, numeric_value, normalized_value, is_active) VALUES (?, ?, ?, ?, 1)");
             foreach ($itemScores as $itemId => $scores) {
-                $stmt->execute([$checklistId, $itemId, $scores['normalized'], null]);
+                $stmt->execute([$surveyId, $itemId, $scores['raw'], $scores['normalized']]);
             }
             
             $db->commit();
-            logActivity($db, $userId, 'facility_checklist_create', 'فحص مرافق جديد - الدرجة: ' . number_format($overallScore, 1) . '%', 'facility_checklist', $checklistId);
+            logActivity($db, $userId, 'survey_create', 'فحص مرافق جديد - الدرجة: ' . number_format($overallScore, 1) . '%', 'surveys', $surveyId);
             setFlash('تم حفظ فحص المرافق بنجاح', 'success');
-            redirect('view.php?id=' . $checklistId);
+            redirect('view.php?id=' . $surveyId);
         } catch (Exception $e) {
             $db->rollBack();
             setFlash('خطأ: ' . $e->getMessage(), 'danger');

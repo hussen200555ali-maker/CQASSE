@@ -1,0 +1,225 @@
+@startuml BFD2 — البيانات الأساسية والتسجيل
+skinparam linetype ortho
+skinparam rectangle { backgroundColor White }
+hide circle
+
+' ═══════════════════════════════════════════════════
+' BFD 2: البيانات الأساسية والتسجيل
+' جداول: governorates, schools, academic_years, semesters,
+'         grade_levels, classes, subjects, subject_grade_years,
+'         subject_weight_distribution, subject_teachers, teacher_assignments,
+'         students, student_enrollments, student_notes, attachments
+' ═══════════════════════════════════════════════════
+
+entity "governorates" as governorates {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  * code : VARCHAR(5) <<UNIQUE>>
+  is_active : TINYINT(1)
+}
+
+entity "schools" as schools {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(200)
+  name_en : VARCHAR(200)
+  * reference_code : VARCHAR(5) <<UNIQUE>>
+  address : TEXT
+  * governorate : VARCHAR(100)
+  district : VARCHAR(100)
+  * school_type : ENUM
+  principal_name : VARCHAR(200)
+  phone : VARCHAR(20)
+  email : VARCHAR(100)
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "academic_years" as academic_years {
+  id : INT UNSIGNED <<PK>>
+  * name : VARCHAR(50)
+  * start_date : DATE
+  * end_date : DATE
+  * is_current : TINYINT(1)
+  * status : ENUM
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "semesters" as semesters {
+  id : INT UNSIGNED <<PK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * name_ar : VARCHAR(50)
+  * start_date : DATE
+  * end_date : DATE
+  * is_current : TINYINT(1)
+  * lock_level : ENUM
+  locked_at : DATETIME
+  locked_by : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+}
+
+entity "grade_levels" as grade_levels {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(50)
+  name_en : VARCHAR(50)
+  * level_number : TINYINT(3) <<UNIQUE>>
+  * stage : ENUM
+  is_active : TINYINT(1)
+}
+
+entity "classes" as classes {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(100)
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * grade_level_id : INT UNSIGNED <<FK>>
+  * school_id : INT UNSIGNED <<FK>>
+  teacher_id : INT UNSIGNED <<FK>>
+  capacity : INT UNSIGNED
+  is_active : TINYINT(1)
+}
+
+entity "subjects" as subjects {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  * code : VARCHAR(20) <<UNIQUE>>
+  is_active : TINYINT(1)
+}
+
+entity "subject_grade_years" as subject_grade_years {
+  id : INT UNSIGNED <<PK>>
+  * subject_id : INT UNSIGNED <<FK>>
+  * grade_level_id : INT UNSIGNED <<FK>>
+  hours_per_week : TINYINT(3)
+  passing_grade : DECIMAL(5,2)
+  weights_json : JSON
+  is_active : TINYINT(1)
+}
+
+entity "subject_weight_distribution" as subject_weight_distribution {
+  id : INT UNSIGNED <<PK>>
+  * subject_grade_year_id : INT UNSIGNED <<FK>>
+  * assessment_type_id : INT UNSIGNED <<FK>>
+  * weight : DECIMAL(5,2)
+  * academic_year_id : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+}
+
+entity "subject_teachers" as subject_teachers {
+  id : INT UNSIGNED <<PK>>
+  * subject_id : INT UNSIGNED <<FK>>
+  * teacher_id : INT UNSIGNED <<FK>>
+  * classroom_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * school_id : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+  * semester_id : INT UNSIGNED <<FK>>
+}
+
+entity "teacher_assignments" as teacher_assignments {
+  id : INT UNSIGNED <<PK>>
+  * teacher_id : INT UNSIGNED <<FK>>
+  * subject_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "students" as students {
+  id : INT UNSIGNED <<PK>>
+  * student_number : VARCHAR(20) <<UNIQUE>>
+  * full_name_ar : VARCHAR(200)
+  full_name_en : VARCHAR(200)
+  guardian_name : VARCHAR(200)
+  guardian_phone : VARCHAR(20)
+  guardian_email : VARCHAR(100)
+  * grade_level_id : INT UNSIGNED <<FK>>
+  * school_id : INT UNSIGNED <<FK>>
+  enrollment_date : DATE
+  is_active : TINYINT(1)
+}
+
+entity "student_enrollments" as student_enrollments {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  enrollment_date : DATE
+  * status : ENUM
+  is_active : TINYINT(1)
+}
+
+entity "student_notes" as student_notes {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * note_type : ENUM
+  * title_ar : VARCHAR(200)
+  * content_ar : TEXT
+  * priority : ENUM
+  is_pinned : TINYINT(1)
+  is_draft : TINYINT(1)
+  attachment_id : INT UNSIGNED
+  * created_by : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "attachments" as attachments {
+  id : INT UNSIGNED <<PK>>
+  * file_name : VARCHAR(255)
+  file_type : VARCHAR(100)
+  * file_path : VARCHAR(500)
+  school_id : INT UNSIGNED <<FK>>
+  file_size : INT UNSIGNED
+  is_active : TINYINT(1)
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+' ═══ Relationships ═══
+academic_years ||--o{ semesters : contains
+academic_years ||--o{ classes : "for year"
+academic_years ||--o{ student_enrollments : "registers"
+academic_years ||--o{ subject_weight_distribution : "weights for"
+academic_years ||--o{ subject_teachers : "assigns"
+
+grade_levels ||--o{ classes : "level of"
+grade_levels ||--o{ subject_grade_years : "teaches"
+grade_levels ||--o{ students : "enrolled in"
+
+schools ||--o{ classes : "has"
+schools ||--o{ students : "enrolls"
+schools ||--o{ attachments : "stores"
+schools ||--o{ subject_teachers : "employs"
+governorate : schools ..> governorates : "نصي وليس FK"
+
+subjects ||--o{ subject_grade_years : "taught at"
+subjects ||--o{ subject_weight_distribution : "has" [norole]
+subject_grade_years ||--o{ subject_weight_distribution : "distributes weight"
+
+subjects ||--o{ subject_teachers : "taught by"
+users ||--o{ subject_teachers : teacher_id
+users ||--o{ teacher_assignments : teacher_id
+users ||--o{ student_notes : created_by
+users ||--o{ classes : teacher_id
+users ||--o{ semesters : locked_by
+
+classes ||--o{ subject_teachers : classroom_id
+classes ||--o{ teacher_assignments : class_id
+classes ||--o{ student_enrollments : enrolls
+
+students ||--o{ student_enrollments : enrolls
+students ||--o{ student_notes : has
+
+teacher_assignments ||--o{ subjects : "for subject" [norole]
+teacher_assignments ||--o{ classes : "in class" [norole]
+teacher_assignments ||--o{ academic_years : "in year" [norole]
+
+@enduml

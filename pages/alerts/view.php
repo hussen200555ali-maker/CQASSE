@@ -32,6 +32,13 @@ if (!$alert) {
     redirect('index.php');
 }
 
+// السماح للمدير العام بمشاهدة جميع التنبيهات
+$userRole = $_SESSION['user']['role'] ?? '';
+if ($userRole !== 'group_admin' && $alert['school_id'] != $_SESSION['user']['school_id']) {
+    setFlash('ليس لديك صلاحية لعرض هذا التنبيه.', 'danger');
+    redirect('index.php');
+}
+
 // تحديد كمقروء عند الفتح
 if (!$alert['is_read']) {
     $alertEngine->markAsRead($alertId);

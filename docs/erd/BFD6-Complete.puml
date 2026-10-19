@@ -1,0 +1,50 @@
+@startuml BFD6
+skinparam linetype ortho
+hide circle
+
+entity "parent_acknowledgments" as parent_acknowledgments {
+  id : INT UNSIGNED <<PK>>
+  parent_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  ack_type : ENUM(grade,behavior,attendance,promotion)
+  entity_id : INT UNSIGNED
+  is_acknowledged : TINYINT(1)
+  acknowledged_at : DATETIME
+  notes : TEXT
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "notifications" as notifications {
+  id : INT UNSIGNED <<PK>>
+  user_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  type : VARCHAR(50)
+  title_ar : VARCHAR(200)
+  message_ar : TEXT
+  related_entity_type : VARCHAR(50)
+  related_entity_id : INT UNSIGNED
+  is_read : TINYINT(1)
+  read_at : DATETIME
+  created_at : DATETIME
+}
+
+entity "alerts" as alerts {
+  id : INT UNSIGNED <<PK>>
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  user_id : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  alert_type : ENUM(academic,behavior,attendance,eqi,promotion,climate,teaching,system,reminder)
+  severity : ENUM(info,warning,danger,critical)
+  title_ar : VARCHAR(200)
+  message_ar : TEXT
+  threshold_json : LONGTEXT
+  is_read : TINYINT(1)
+  read_at : DATETIME
+  is_resolved : TINYINT(1)
+  resolved_by : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  resolved_at : DATETIME
+  notes : TEXT
+  created_at : DATETIME
+}
+
+@enduml

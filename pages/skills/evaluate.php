@@ -13,9 +13,6 @@ $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة ا
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/filters.php';
 
-setFlash('وحدة تقييم المهارات قيد التحديث. يرجى استخدام نظام التقييم الموحد.', 'warning');
-redirect(baseUrl('pages/assessment/index.php'));
-
 if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
@@ -44,14 +41,31 @@ $skillLevels = [
     ['key' => 'expert',       'label' => 'خبير',     'min' => 75, 'max' => 100, 'color' => '#28a745', 'icon' => '🟢'],
 ];
 
-// جلب البيانات الأساسية
+// جلب البيانات الأساسية — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
-    $p = [];
-    if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND c.school_id = ?"; $p[] = $schoolId; }
-    $sql .= " ORDER BY gl.level_number, c.name_ar";
-    $stmt = $db->prepare($sql); $stmt->execute($p); $classes = $stmt->fetchAll();
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $sql = "SELECT DISTINCT c.id, c.name_ar, gl.name_ar as grade_name
+                FROM classes c
+                JOIN grade_levels gl ON c.grade_level_id = gl.id
+                JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+                WHERE c.is_active = 1 AND c.school_id = ?
+                UNION
+                SELECT DISTINCT c.id, c.name_ar, gl.name_ar as grade_name
+                FROM classes c
+                JOIN grade_levels gl ON c.grade_level_id = gl.id
+                WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+                ORDER BY grade_name, name_ar";
+        $stmt = $db->prepare($sql); $stmt->execute([$userId, $schoolId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
+        $p = [];
+        if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND c.school_id = ?"; $p[] = $schoolId; }
+        $sql .= " ORDER BY gl.level_number, c.name_ar";
+        $stmt = $db->prepare($sql); $stmt->execute($p);
+    }
+    $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 $academicYears = [];
@@ -65,7 +79,7 @@ $skillsForm = null;
 $skillsItems = [];
 $categoryGroups = []; // تجميع العناصر حسب فئة المهارة
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'skills_checklist' AND is_active = 1 LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'skills_checklist' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1"); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -99,11 +113,11 @@ $selectedStudentId = $_GET['student_id'] ?? 0;
 if ($selectedStudentId) {
     try {
         $stmt = $db->prepare("
-            SELECT se.id, se.overall_score, se.evaluation_date, sem.name_ar as semester_name
-            FROM skills_evaluations se
-            JOIN semesters sem ON se.semester_id = sem.id
-            WHERE se.student_id = ? AND se.is_active = 1
-            ORDER BY se.evaluation_date DESC LIMIT 5
+            SELECT e.id, e.combined_score as overall_score, DATE(e.created_at) as evaluation_date, sem.name_ar as semester_name
+            FROM evaluations e
+            JOIN semesters sem ON e.semester_id = sem.id
+            WHERE e.student_id = ? AND e.eval_type = 'skills_checklist' AND e.is_active = 1
+            ORDER BY e.created_at DESC LIMIT 5
         ");
         $stmt->execute([$selectedStudentId]);
         $previousEvals = $stmt->fetchAll();
@@ -123,6 +137,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $academicYearId = (int)($_POST['academic_year_id'] ?? 0);
             $semesterVal = (int)($_POST['semester_id'] ?? 0);
             $semesterId = 0;
+
+            // التحقق الأمني: المعلم يملك صلاحية لهذا الفصل
+            if ($userRole === 'teacher') {
+                $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+                if (!in_array($classId, $allowedIds)) {
+                    throw new Exception('ليس لديك صلاحية لتقييم مهارات في هذا الفصل');
+                }
+            }
             if ($semesterVal && $academicYearId) {
                 $semName = semesterValueToNameAr($semesterVal);
                 if ($semName) {
@@ -157,20 +179,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $overallScore = $engine->calculateScore($responses);
             
             $stmt = $db->prepare("
-                INSERT INTO skills_evaluations 
-                (student_id, class_id, academic_year_id, semester_id, evaluator_id, evaluation_date, overall_score, notes, is_active)
-                VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, 1)
+                INSERT INTO evaluations 
+                (eval_type, student_id, class_id, school_id, academic_year_id, semester_id, 
+                 evaluated_by, combined_score, current_percentage, notes, is_active, created_at, updated_at)
+                VALUES ('skills_checklist', ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
             ");
-            $stmt->execute([$studentId, $classId, $academicYearId, $semesterId, $userId, $overallScore, $notes ?: null]);
+            $stmt->execute([$studentId, $classId, $schoolId, $academicYearId, $semesterId, $userId, $overallScore, $overallScore, $notes ?: null]);
             $evaluationId = $db->lastInsertId();
             
-            $stmt = $db->prepare("INSERT INTO skills_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
+            $formId = $formRow['id'];
+            $stmt = $db->prepare("
+                INSERT INTO assessment_responses 
+                (form_id, evaluation_id, item_id, student_id, school_id, class_id, academic_year_id, 
+                 semester_id, numeric_value, responded_by, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            ");
             foreach ($itemScores as $itemId => $scores) {
-                $stmt->execute([$evaluationId, $itemId, $scores['normalized'], null]);
+                $stmt->execute([$formId, $evaluationId, $itemId, $studentId, $schoolId, $classId, $academicYearId, $semesterId, $scores['normalized'], $userId]);
             }
             
             $db->commit();
-            logActivity($db, $userId, 'skills_evaluation_create', 'تقييم مهارات جديد - الدرجة: ' . number_format($overallScore, 1) . '%', 'skills_evaluation', $evaluationId);
+            logActivity($db, $userId, 'skills_evaluation_create', 'تقييم مهارات جديد - الدرجة: ' . number_format($overallScore, 1) . '%', 'evaluation', $evaluationId);
             setFlash('تم حفظ تقييم المهارات بنجاح - الدرجة الكلية: ' . number_format($overallScore, 1) . '%', 'success');
             redirect('view.php?id=' . $evaluationId);
         } catch (Exception $e) {
@@ -462,6 +491,8 @@ function updateProgress() {
 document.addEventListener('change', function(e) {
     if (e.target.closest('.assessment-item')) {
         let totalWeight = 0, weightedSum = 0;
+        var categoryScores = {};
+        var categoryWeights = {};
         document.querySelectorAll('.assessment-item').forEach(item => {
             const input = item.querySelector('input[type="radio"]:checked, input[type="number"]');
             if (input) {
@@ -476,12 +507,39 @@ document.addEventListener('change', function(e) {
                 else if (tool === 'numeric_100') n = val;
                 else n = (val/5)*100;
                 weightedSum += weight * n; totalWeight += weight;
+                var catName = item.closest('.mb-4').querySelector('h4')?.textContent?.replace('✅', '').trim() || 'عام';
+                if (!categoryScores[catName]) { categoryScores[catName] = 0; categoryWeights[catName] = 0; }
+                categoryScores[catName] += weight * n;
+                categoryWeights[catName] += weight;
             }
         });
         var score = totalWeight > 0 ? Math.round((weightedSum/totalWeight)*10)/10 : 0;
         document.getElementById('live-score').textContent = score;
         updateLevelIndicator(score);
         updateProgress();
+        if (typeof skillsPreviewChart !== 'undefined' && skillsPreviewChart) {
+            var catData = [];
+            var catColors = [];
+            var groupColors = {
+                'أكاديمي': 'rgba(26, 86, 50, 0.7)',
+                'اجتماعي': 'rgba(23, 162, 184, 0.7)',
+                'بدني': 'rgba(253, 126, 20, 0.7)',
+                'إبداعي': 'rgba(111, 66, 193, 0.7)'
+            };
+            skillsPreviewChart.data.labels.forEach(function(label) {
+                var matchedGroup = 'أكاديمي';
+                for (var gk in groupColors) {
+                    if (label.indexOf(gk) !== -1 || gk.indexOf(label) !== -1) { matchedGroup = gk; break; }
+                }
+                var catWeight = categoryWeights[label] || 0;
+                var catScore = catWeight > 0 ? Math.round((categoryScores[label] / catWeight) * 10) / 10 : 0;
+                catData.push(catScore);
+                catColors.push(groupColors[matchedGroup]);
+            });
+            skillsPreviewChart.data.datasets[0].data = catData;
+            skillsPreviewChart.data.datasets[0].backgroundColor = catColors;
+            skillsPreviewChart.update();
+        }
     }
 });
 </script>
@@ -508,7 +566,7 @@ if (!empty($skillsForm)):
     }
     if (!isset($pageJs)) $pageJs = '';
     $pageJs .= "
-        eqasBarChart('skillsPreviewChart', 'توزيع المهارات حسب الفئة', " . json_encode($previewLabels, JSON_UNESCAPED_UNICODE) . ", [{label: 'الدرجة المتوقعة', data: new Array(" . count($previewLabels) . ").fill(0), backgroundColor: 'rgba(26, 86, 50, 0.6)'}], {scales: {y: {beginAtZero: true, max: 100}}});
+        var skillsPreviewChart = eqasBarChart('skillsPreviewChart', 'توزيع المهارات حسب الفئة', " . json_encode($previewLabels, JSON_UNESCAPED_UNICODE) . ", [{label: 'الدرجة المتوقعة', data: new Array(" . count($previewLabels) . ").fill(0), backgroundColor: 'rgba(26, 86, 50, 0.6)'}], {scales: {y: {beginAtZero: true, max: 100}}});
     ";
 endif;
 ?>

@@ -1,0 +1,3572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قاموس بيانات نظام CQASSE</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Traditional Arabic", "Arial", sans-serif;
+            line-height: 1.7;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            direction: rtl;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-size: 2.2em;
+            margin: 10px 0 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .stat-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .stat-pill {
+            padding: 8px 18px;
+            border-radius: 20px;
+            color: #fff;
+            font-size: 0.9em;
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .bfd-section {
+            background: #fff;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+            overflow: hidden;
+        }
+        .bfd-header {
+            padding: 16px 24px;
+            margin: -20px -20px 25px -20px;
+            color: #fff;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .bfd-count { font-size: 0.65em; opacity: 0.9; }
+        .tbl-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 12px;
+            margin-bottom: 28px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        .tbl-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .tbl-header {
+            background: #f8f9fa;
+            padding: 14px 18px;
+            font-weight: bold;
+            font-size: 1.1em;
+            border-bottom: 3px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .tbl-meta { font-size: 0.8em; color: #7f8c8d; font-weight: normal; }
+        .tbl-comment {
+            padding: 10px 18px;
+            background: #fef9e7;
+            border-bottom: 1px solid #eee;
+            color: #856404;
+            font-size: 0.95em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.93em;
+        }
+        th {
+            background: #f1f3f5;
+            padding: 10px 14px;
+            text-align: right;
+            font-weight: bold;
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+        }
+        td {
+            padding: 8px 14px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        tr:hover { background: #f8f9fa; }
+        .row-pk { background: #fff8e1; }
+        .row-fk { background: #e8f5e9; }
+        .row-pk.row-fk { background: #fff3e0; }
+        code {
+            background: #e9ecef;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #d63384;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 5px;
+            font-size: 0.78em;
+            margin: 1px 2px;
+            font-weight: bold;
+        }
+        .ba-pk { background: #ffc107; color: #333; }
+        .ba-fk { background: #28a745; color: #fff; }
+        .ba-nn { background: #dc3545; color: #fff; }
+        .ba-nu { background: #6c757d; color: #fff; }
+        .ba-df { background: #6f42c1; color: #fff; }
+        .ba-ai { background: #e67e22; color: #fff; }
+        .ba-vi { background: #17a2b8; color: #fff; }
+        .unique-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            padding: 10px 16px;
+            border-top: 0;
+            font-size: 0.9em;
+            color: #004085;
+        }
+        .view-box {
+            background: #fff3cd;
+            border-bottom: 1px solid #ffc107;
+            padding: 10px 16px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+        @media print {
+            body { background: #fff; padding: 10px; }
+            .bfd-section { break-inside: avoid; }
+            .stat-bar { display: none; }
+            h1 { color: #333; text-shadow: none; }
+            .subtitle { color: #666; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 قاموس بيانات نظام CQASSE</h1>
+    <p class="subtitle">نظام التقييم الشامل لجودة التعليم المدرسي — توثيق كامل لقاعدة البيانات</p>
+<div class="stat-bar"><span class="stat-pill" style="background:#e74c3c;">BFD 1: 8</span><span class="stat-pill" style="background:#3498db;">BFD 2: 15</span><span class="stat-pill" style="background:#2ecc71;">BFD 3: 4</span><span class="stat-pill" style="background:#9b59b6;">BFD 4: 17</span><span class="stat-pill" style="background:#f39c12;">BFD 5: 5</span><span class="stat-pill" style="background:#1abc9c;">BFD 6: 4</span><span class="stat-pill" style="background:#636e72;">المجموع: 53 جدول/مشهد</span><span class="stat-pill" style="background:#636e72;">536 عموداً</span></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#e74c3c;">
+            <span>📂 BFD 1 — إدارة المستخدمين والصلاحيات والنظام</span>
+            <span class="bfd-count">8 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">users</code>
+                    <span class="tbl-meta">🗄️ TABLE — 21 صف</span>
+                </span>
+                <span class="tbl-meta">16 عموداً</span>
+            </div><div class="tbl-comment">📝 المستخدمون</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمستخدم</td>
+            </tr><tr class="">
+                <td><code>username</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>اسم المستخدم الفريد</td>
+            </tr><tr class="">
+                <td><code>password_hash</code></td>
+                <td>VARCHAR(255)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>كلمة المرور المشفرة (bcrypt)</td>
+            </tr><tr class="">
+                <td><code>must_change_password</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>إجباري تغيير كلمة المرور عند أول تسجيل دخول</td>
+            </tr><tr class="">
+                <td><code>full_name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم الكامل بالعربية</td>
+            </tr><tr class="">
+                <td><code>full_name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم الكامل بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>email</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>البريد الإلكتروني</td>
+            </tr><tr class="">
+                <td><code>phone</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>رقم الهاتف</td>
+            </tr><tr class="row-fk">
+                <td><code>role_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معرف دور المستخدم</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>معرف المدرسة (NULL للمستخدمين غير المرتبطين بمدرسة)</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>last_login_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>آخر مرة سجل فيها دخول</td>
+            </tr><tr class="">
+                <td><code>login_attempts</code></td>
+                <td>TINYINT(3)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>عدد محاولات الدخول الفاشلة</td>
+            </tr><tr class="">
+                <td><code>lockout_until</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>وقت انتهاء حظر الحساب</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ آخر تحديث</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_username</code>: (<code>username</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">roles</code>
+                    <span class="tbl-meta">🗄️ TABLE — 4 صف</span>
+                </span>
+                <span class="tbl-meta">8 عموداً</span>
+            </div><div class="tbl-comment">📝 الأدوار</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للدور</td>
+            </tr><tr class="">
+                <td><code>name</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>اسم الدور (group_admin, school_admin, teacher, parent)</td>
+            </tr><tr class="">
+                <td><code>display_name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>الاسم المعروض بالعربية</td>
+            </tr><tr class="">
+                <td><code>display_name_en</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>الاسم المعروض بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>rank</code></td>
+                <td>INT</td>
+                <td></td>
+                <td>ترتيب الدور في التسلسل الهرمي للصلاحيات</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>وصف الدور</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>name</code>: (<code>name</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">permissions</code>
+                    <span class="tbl-meta">🗄️ TABLE — 36 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 الصلاحيات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للصلاحية</td>
+            </tr><tr class="">
+                <td><code>name</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>اسم الصلاحية</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>module</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الوحدة التي تنتمي إليها الصلاحية (users, schools, eqi, إلخ)</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>وصف الصلاحية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>name</code>: (<code>name</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">role_permissions</code>
+                    <span class="tbl-meta">🗄️ TABLE — 87 صف</span>
+                </span>
+                <span class="tbl-meta">4 عموداً</span>
+            </div><div class="tbl-comment">📝 صلاحيات الأدوار (جسر M:N)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>role_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معرف الدور</td>
+            </tr><tr class="row-fk">
+                <td><code>permission_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معرف الصلاحية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_role_permission</code>: (<code>role_id</code>, <code>permission_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>5. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">activity_logs</code>
+                    <span class="tbl-meta">🗄️ TABLE — 94 صف</span>
+                </span>
+                <span class="tbl-meta">12 عموداً</span>
+            </div><div class="tbl-comment">📝 سجل النشاطات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>معرف المستخدم (NULL للأنشطة النظامية)</td>
+            </tr><tr class="">
+                <td><code>action</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع النشاط</td>
+            </tr><tr class="">
+                <td><code>entity_type</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>نوع الكيان المتأثر (مستخدم، مدرسة، طالب، إلخ)</td>
+            </tr><tr class="">
+                <td><code>entity_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>معرف الكيان المتأثر</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>حالة النشاط (success, failure, pending)</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>وصف النشاط</td>
+            </tr><tr class="">
+                <td><code>details_json</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تفاصيل إضافية بصيغة JSON</td>
+            </tr><tr class="">
+                <td><code>ip_address</code></td>
+                <td>VARCHAR(45)</td>
+                <td></td>
+                <td>عنوان IP للمستخدم</td>
+            </tr><tr class="">
+                <td><code>user_agent</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>معلومات متصفح المستخدم</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ النشاط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>6. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">system_settings</code>
+                    <span class="tbl-meta">🗄️ TABLE — 138 صف</span>
+                </span>
+                <span class="tbl-meta">11 عموداً</span>
+            </div><div class="tbl-comment">📝 إعدادات النظام</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للإعداد</td>
+            </tr><tr class="">
+                <td><code>category</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>فئة الإعداد (system, notification, policy, إلخ)</td>
+            </tr><tr class="">
+                <td><code>setting_key</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>مفتاح الإعداد</td>
+            </tr><tr class="">
+                <td><code>setting_value</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>قيمة الإعداد</td>
+            </tr><tr class="">
+                <td><code>value_type</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع القيمة (string, integer, boolean, json)</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>description_ar</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الوصف بالعربية</td>
+            </tr><tr class="">
+                <td><code>is_system</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>هل هو إعداد نظامي (لا يمكن حذفه)</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>معرف المدرسة (NULL = إعداد عام)</td>
+            </tr><tr class="">
+                <td><code>sort_order</code></td>
+                <td>INT</td>
+                <td></td>
+                <td>ترتيب العرض</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_setting</code>: (<code>category</code>, <code>setting_key</code>, <code>school_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>7. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">user_preferences</code>
+                    <span class="tbl-meta">🗄️ TABLE — 20 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 تفضيلات المستخدم</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للتفضيل</td>
+            </tr><tr class="row-fk">
+                <td><code>user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معرف المستخدم</td>
+            </tr><tr class="">
+                <td><code>pref_type</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع التفضيل (ui, notification, dashboard)</td>
+            </tr><tr class="">
+                <td><code>pref_key</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>مفتاح التفضيل</td>
+            </tr><tr class="">
+                <td><code>pref_value</code></td>
+                <td>JSON</td>
+                <td></td>
+                <td>قيمة التفضيل بصيغة JSON</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_user_pref</code>: (<code>user_id</code>, <code>pref_type</code>, <code>pref_key</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#e74c3c;">
+                <span>8. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">export_history</code>
+                    <span class="tbl-meta">🗄️ TABLE — 7 صف</span>
+                </span>
+                <span class="tbl-meta">9 عموداً</span>
+            </div><div class="tbl-comment">📝 سجل التصدير</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد لسجل التصدير</td>
+            </tr><tr class="row-fk">
+                <td><code>user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>معرف المستخدم الذي طلب التصدير</td>
+            </tr><tr class="">
+                <td><code>export_type</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع التصدير (excel, csv, pdf)</td>
+            </tr><tr class="">
+                <td><code>file_name</code></td>
+                <td>VARCHAR(255)</td>
+                <td></td>
+                <td>اسم الملف المصدَّر</td>
+            </tr><tr class="">
+                <td><code>file_path</code></td>
+                <td>VARCHAR(500)</td>
+                <td></td>
+                <td>مسار الملف المصدَّر</td>
+            </tr><tr class="">
+                <td><code>file_size</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>حجم الملف بالبايت</td>
+            </tr><tr class="">
+                <td><code>row_count</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>عدد السجلات في التصدير</td>
+            </tr><tr class="">
+                <td><code>filters</code></td>
+                <td>JSON</td>
+                <td></td>
+                <td>معايير التصدير بصيغة JSON</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>حالة التصدير (pending, completed, failed)</td>
+            </tr></tbody></table></div></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#3498db;">
+            <span>📂 BFD 2 — البيانات الأساسية والتسجيل</span>
+            <span class="bfd-count">15 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">governorates</code>
+                    <span class="tbl-meta">🗄️ TABLE — 22 صف</span>
+                </span>
+                <span class="tbl-meta">5 عموداً</span>
+            </div><div class="tbl-comment">📝 المحافظات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمحافظة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم المحافظة بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>اسم المحافظة بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>code</code></td>
+                <td>VARCHAR(5)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>رمز المحافظة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>code</code>: (<code>code</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">schools</code>
+                    <span class="tbl-meta">🗄️ TABLE — 4 صف</span>
+                </span>
+                <span class="tbl-meta">14 عموداً</span>
+            </div><div class="tbl-comment">📝 المدارس</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمدرسة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم المدرسة بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>اسم المدرسة بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>reference_code</code></td>
+                <td>VARCHAR(5)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>الرمز المرجعي للمدرسة</td>
+            </tr><tr class="">
+                <td><code>address</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>عنوان المدرسة</td>
+            </tr><tr class="">
+                <td><code>governorate</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>المحافظة (نص، ليس FK)</td>
+            </tr><tr class="">
+                <td><code>district</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>المنطقة (نص، ليس FK)</td>
+            </tr><tr class="">
+                <td><code>school_type</code></td>
+                <td>ENUM(basic,secondary,combined)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع المدرسة</td>
+            </tr><tr class="">
+                <td><code>principal_name</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>اسم مدير المدرسة</td>
+            </tr><tr class="">
+                <td><code>phone</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>رقم هاتف المدرسة</td>
+            </tr><tr class="">
+                <td><code>email</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>البريد الإلكتروني للمدرسة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ آخر تحديث</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>reference_code</code>: (<code>reference_code</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">academic_years</code>
+                    <span class="tbl-meta">🗄️ TABLE — 4 صف</span>
+                </span>
+                <span class="tbl-meta">8 عموداً</span>
+            </div><div class="tbl-comment">📝 السنوات الدراسية</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>name</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>start_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ البداية</td>
+            </tr><tr class="">
+                <td><code>end_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ النهاية</td>
+            </tr><tr class="">
+                <td><code>is_current</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>هل هي السنة الحالية</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(planning,active,evaluation,closed)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>حالة السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">semesters</code>
+                    <span class="tbl-meta">🗄️ TABLE — 7 صف</span>
+                </span>
+                <span class="tbl-meta">10 عموداً</span>
+            </div><div class="tbl-comment">📝 الفصول الدراسية</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للفصل الدراسي</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية التابعة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم الفصل بالعربية</td>
+            </tr><tr class="">
+                <td><code>start_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ البداية</td>
+            </tr><tr class="">
+                <td><code>end_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ النهاية</td>
+            </tr><tr class="">
+                <td><code>is_current</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>هل هو الفصل الحالي</td>
+            </tr><tr class="">
+                <td><code>lock_level</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>مستوى القفل (مفتوح، مغلق للتعديل، مغلق بالكامل)</td>
+            </tr><tr class="">
+                <td><code>locked_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تاريخ القفل</td>
+            </tr><tr class="row-fk">
+                <td><code>locked_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>من قام بالقفل</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_semester</code>: (<code>academic_year_id</code>, <code>name_ar</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>5. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">grade_levels</code>
+                    <span class="tbl-meta">🗄️ TABLE — 12 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 المستويات الدراسية</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمستوى</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(50)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>الاسم بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>level_number</code></td>
+                <td>TINYINT(3)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>رقم المستوى (1-12)</td>
+            </tr><tr class="">
+                <td><code>stage</code></td>
+                <td>ENUM(basic,secondary)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>المرحلة (أساسي/ثانوي)</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>level_number</code>: (<code>level_number</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>6. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">classes</code>
+                    <span class="tbl-meta">🗄️ TABLE — 43 صف</span>
+                </span>
+                <span class="tbl-meta">8 عموداً</span>
+            </div><div class="tbl-comment">📝 الشعب الدراسية</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للشعبة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>grade_level_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المستوى الدراسي</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>معلم الصف (المشرف)</td>
+            </tr><tr class="">
+                <td><code>capacity</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الطاقة الاستيعابية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>7. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">subjects</code>
+                    <span class="tbl-meta">🗄️ TABLE — 12 صف</span>
+                </span>
+                <span class="tbl-meta">5 عموداً</span>
+            </div><div class="tbl-comment">📝 المواد الدراسية</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمادة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم المادة بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>اسم المادة بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>code</code></td>
+                <td>VARCHAR(20)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>رمز المادة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>code</code>: (<code>code</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>8. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">subject_grade_years</code>
+                    <span class="tbl-meta">🗄️ TABLE — 97 صف</span>
+                </span>
+                <span class="tbl-meta">7 عموداً</span>
+            </div><div class="tbl-comment">📝 ربط المواد بالمستويات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المادة</td>
+            </tr><tr class="row-fk">
+                <td><code>grade_level_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المستوى الدراسي</td>
+            </tr><tr class="">
+                <td><code>hours_per_week</code></td>
+                <td>TINYINT(3)</td>
+                <td></td>
+                <td>عدد الحصص الأسبوعية</td>
+            </tr><tr class="">
+                <td><code>passing_grade</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>درجة النجاح</td>
+            </tr><tr class="">
+                <td><code>weights_json</code></td>
+                <td>JSON</td>
+                <td></td>
+                <td>أوزان التقويم بصيغة JSON</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_sgy</code>: (<code>subject_id</code>, <code>grade_level_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>9. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">subject_weight_distribution</code>
+                    <span class="tbl-meta">🗄️ TABLE — 15 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 توزيع أوزان المواد</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_grade_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>رابط المادة-المستوى</td>
+            </tr><tr class="row-fk">
+                <td><code>assessment_type_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>نوع التقييم</td>
+            </tr><tr class="">
+                <td><code>weight</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الوزن النسبي</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_swd</code>: (<code>subject_grade_year_id</code>, <code>assessment_type_id</code>, <code>academic_year_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>10. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">subject_teachers</code>
+                    <span class="tbl-meta">🗄️ TABLE — 98 صف</span>
+                </span>
+                <span class="tbl-meta">8 عموداً</span>
+            </div><div class="tbl-comment">📝 تعيينات المعلمين للمواد</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المادة</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المعلم</td>
+            </tr><tr class="row-fk">
+                <td><code>classroom_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_subject_teacher</code>: (<code>subject_id</code>, <code>teacher_id</code>, <code>classroom_id</code>, <code>semester_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>11. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">teacher_assignments</code>
+                    <span class="tbl-meta">🗄️ TABLE — 3 صف</span>
+                </span>
+                <span class="tbl-meta">7 عموداً</span>
+            </div><div class="tbl-comment">📝 تعيينات مبسطة للمعلمين</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المعلم</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المادة</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=1</span></td>
+                <td>الحالة</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-df">=CURRENT_TIMESTAMP</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_teacher_asgn</code>: (<code>teacher_id</code>, <code>subject_id</code>, <code>class_id</code>, <code>academic_year_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>12. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">students</code>
+                    <span class="tbl-meta">🗄️ TABLE — 549 صف</span>
+                </span>
+                <span class="tbl-meta">11 عموداً</span>
+            </div><div class="tbl-comment">📝 الطلاب</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للطالب</td>
+            </tr><tr class="">
+                <td><code>student_number</code></td>
+                <td>VARCHAR(20)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge" style="background:#17a2b8;color:#fff;">UNIQUE</span></td>
+                <td>رقم الطالب الفريد</td>
+            </tr><tr class="">
+                <td><code>full_name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الاسم الكامل بالعربية</td>
+            </tr><tr class="">
+                <td><code>full_name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم الكامل بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>guardian_name</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>اسم ولي الأمر</td>
+            </tr><tr class="">
+                <td><code>guardian_phone</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>رقم هاتف ولي الأمر</td>
+            </tr><tr class="">
+                <td><code>guardian_email</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>بريد ولي الأمر الإلكتروني</td>
+            </tr><tr class="row-fk">
+                <td><code>grade_level_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المستوى الدراسي</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="">
+                <td><code>enrollment_date</code></td>
+                <td>DATE</td>
+                <td></td>
+                <td>تاريخ التسجيل</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>student_number</code>: (<code>student_number</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>13. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">student_enrollments</code>
+                    <span class="tbl-meta">🗄️ TABLE — 551 صف</span>
+                </span>
+                <span class="tbl-meta">7 عموداً</span>
+            </div><div class="tbl-comment">📝 تسجيلات الطلاب في الشعب</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للتسجيل</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>enrollment_date</code></td>
+                <td>DATE</td>
+                <td></td>
+                <td>تاريخ التسجيل</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(enrolled,transferred,dropped)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>حالة التسجيل</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_enrollment</code>: (<code>student_id</code>, <code>class_id</code>, <code>academic_year_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>14. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">student_notes</code>
+                    <span class="tbl-meta">🗄️ TABLE — 1 صف</span>
+                </span>
+                <span class="tbl-meta">16 عموداً</span>
+            </div><div class="tbl-comment">📝 ملاحظات الطلاب</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للملاحظة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>note_type</code></td>
+                <td>ENUM(general,academic,behavioral,attendance)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع الملاحظة</td>
+            </tr><tr class="">
+                <td><code>title_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>عنوان الملاحظة</td>
+            </tr><tr class="">
+                <td><code>content_ar</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>محتوى الملاحظة</td>
+            </tr><tr class="">
+                <td><code>priority</code></td>
+                <td>ENUM(low,medium,high,urgent)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الأولوية</td>
+            </tr><tr class="">
+                <td><code>is_pinned</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>مثبتة</td>
+            </tr><tr class="">
+                <td><code>is_draft</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>مسودة</td>
+            </tr><tr class="">
+                <td><code>attachment_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>معرف المرفق (ليس FK)</td>
+            </tr><tr class="row-fk">
+                <td><code>created_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>منشئ الملاحظة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ آخر تحديث</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#3498db;">
+                <span>15. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">attachments</code>
+                    <span class="tbl-meta">🗄️ TABLE — 0 صف</span>
+                </span>
+                <span class="tbl-meta">9 عموداً</span>
+            </div><div class="tbl-comment">📝 الملفات المرفقة</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للمرفق</td>
+            </tr><tr class="">
+                <td><code>file_name</code></td>
+                <td>VARCHAR(255)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم الملف</td>
+            </tr><tr class="">
+                <td><code>file_type</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>نوع الملف</td>
+            </tr><tr class="">
+                <td><code>file_path</code></td>
+                <td>VARCHAR(500)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>مسار الملف</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="">
+                <td><code>file_size</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>حجم الملف بالبايت</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ آخر تحديث</td>
+            </tr></tbody></table></div></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#2ecc71;">
+            <span>📂 BFD 3 — إدارة الحضور والسلوك والمهارات</span>
+            <span class="bfd-count">4 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#2ecc71;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">attendance_daily</code>
+                    <span class="tbl-meta">🗄️ TABLE — 10,278 صف</span>
+                </span>
+                <span class="tbl-meta">13 عموداً</span>
+            </div><div class="tbl-comment">📝 سجلات الحضور اليومي</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>التاريخ</td>
+            </tr><tr class="">
+                <td><code>period_number</code></td>
+                <td>TINYINT(3) UNSIGNED</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>رقم الحصة (NULL = يومي)</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(present,absent,late,excused)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>حالة الحضور</td>
+            </tr><tr class="">
+                <td><code>notes</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>ملاحظات</td>
+            </tr><tr class="">
+                <td><code>amendment_log</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>سجل التعديلات</td>
+            </tr><tr class="row-fk">
+                <td><code>recorded_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المسجل</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_attendance</code>: (<code>student_id</code>, <code>class_id</code>, <code>date</code>, <code>period_number</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#2ecc71;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">behavior_categories</code>
+                    <span class="tbl-meta">🗄️ TABLE — 16 صف</span>
+                </span>
+                <span class="tbl-meta">7 عموداً</span>
+            </div><div class="tbl-comment">📝 فئات السلوك</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للفئة</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>اسم الفئة بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>اسم الفئة بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>type</code></td>
+                <td>ENUM(positive,negative)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع السلوك (إيجابي/سلبي)</td>
+            </tr><tr class="">
+                <td><code>points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>النقاط المقابلة</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المدرسة (NULL = عام)</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#2ecc71;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">behavior_incidents</code>
+                    <span class="tbl-meta">🗄️ TABLE — 210 صف</span>
+                </span>
+                <span class="tbl-meta">12 عموداً</span>
+            </div><div class="tbl-comment">📝 حوادث السلوك</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للحادثة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>category_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>فئة السلوك</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>incident_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الحادثة</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>وصف الحادثة</td>
+            </tr><tr class="">
+                <td><code>points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>النقاط</td>
+            </tr><tr class="row-fk">
+                <td><code>reported_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المبلغ</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#2ecc71;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">behavior_scores</code>
+                    <span class="tbl-meta">🗄️ TABLE — 0 صف</span>
+                </span>
+                <span class="tbl-meta">12 عموداً</span>
+            </div><div class="tbl-comment">📝 نتائج السلوك المحتسبة</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للسجل</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>starting_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=100</span></td>
+                <td>نقطة البداية</td>
+            </tr><tr class="">
+                <td><code>earned_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>النقاط المكتسبة</td>
+            </tr><tr class="">
+                <td><code>deducted_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>النقاط المخصومة</td>
+            </tr><tr class="">
+                <td><code>current_percentage</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=100</span></td>
+                <td>النسبة الحالية</td>
+            </tr><tr class="">
+                <td><code>is_passing</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>هل اجتاز</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ آخر تحديث</td>
+            </tr></tbody></table></div></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#9b59b6;">
+            <span>📂 BFD 4 — التقييم الشامل وجودة التعليم</span>
+            <span class="bfd-count">17 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">assessment_types</code>
+                    <span class="tbl-meta">🗄️ TABLE — 5 صف</span>
+                </span>
+                <span class="tbl-meta">5 عموداً</span>
+            </div><div class="tbl-comment">📝 أنواع التقييم</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد لنوع التقييم</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(100)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>الاسم بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الوصف</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">assessment_forms</code>
+                    <span class="tbl-meta">🗄️ TABLE — 8 صف</span>
+                </span>
+                <span class="tbl-meta">11 عموداً</span>
+            </div><div class="tbl-comment">📝 استمارات التقييم</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للاستمارة</td>
+            </tr><tr class="">
+                <td><code>form_key</code></td>
+                <td>ENUM(...)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>المفتاح (behavior_eval, skills_checklist, teaching_self, إلخ)</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>category</code></td>
+                <td>ENUM(behavior,skills,teaching,climate)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الفئة</td>
+            </tr><tr class="">
+                <td><code>target</code></td>
+                <td>ENUM(student,teacher,school)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الهدف</td>
+            </tr><tr class="">
+                <td><code>description</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الوصف</td>
+            </tr><tr class="">
+                <td><code>is_system</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>هل هي استمارة نظامية</td>
+            </tr><tr class="">
+                <td><code>is_default</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>هل هي الاستمارة الافتراضية</td>
+            </tr><tr class="">
+                <td><code>version</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>الإصدار</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">assessment_structure</code>
+                    <span class="tbl-meta">🗄️ TABLE — 237 صف</span>
+                </span>
+                <span class="tbl-meta">14 عموداً</span>
+            </div><div class="tbl-comment">📝 هيكل التقييم (معايير وفقرات)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>form_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الاستمارة</td>
+            </tr><tr class="row-fk">
+                <td><code>parent_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المعيار الأب (Self-ref: NULL = معيار)</td>
+            </tr><tr class="">
+                <td><code>type</code></td>
+                <td>ENUM(criteria,item)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>النوع (معيار/فقرة)</td>
+            </tr><tr class="">
+                <td><code>name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>text_ar</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>النص بالعربية</td>
+            </tr><tr class="">
+                <td><code>text_en</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>النص بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>tool_type</code></td>
+                <td>ENUM</td>
+                <td></td>
+                <td>نوع الأداة</td>
+            </tr><tr class="">
+                <td><code>weight</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>الوزن</td>
+            </tr><tr class="">
+                <td><code>is_inverse</code></td>
+                <td>TINYINT(1)</td>
+                <td></td>
+                <td>عكسي (كلما زادت القيمة سلباً)</td>
+            </tr><tr class="">
+                <td><code>max_value</code></td>
+                <td>DECIMAL(10,2)</td>
+                <td></td>
+                <td>القيمة القصوى</td>
+            </tr><tr class="">
+                <td><code>sort_order</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>ترتيب العرض</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">assessment_responses</code>
+                    <span class="tbl-meta">🗄️ TABLE — 116 صف</span>
+                </span>
+                <span class="tbl-meta">14 عموداً</span>
+            </div><div class="tbl-comment">📝 إجابات التقييم (الجدول المركزي)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>form_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الاستمارة</td>
+            </tr><tr class="row-fk">
+                <td><code>item_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفقرة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المعلم</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>numeric_value</code></td>
+                <td>DECIMAL(10,4)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة الرقمية</td>
+            </tr><tr class="">
+                <td><code>text_value</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة النصية</td>
+            </tr><tr class="row-fk">
+                <td><code>responded_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المجيب</td>
+            </tr><tr class="">
+                <td><code>response_date</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإجابة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>5. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">tests</code>
+                    <span class="tbl-meta">🗄️ TABLE — 106 صف</span>
+                </span>
+                <span class="tbl-meta">11 عموداً</span>
+            </div><div class="tbl-comment">📝 الاختبارات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للاختبار</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المادة</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>assessment_type_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>نوع التقييم</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>title_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>عنوان الاختبار</td>
+            </tr><tr class="">
+                <td><code>max_grade</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الدرجة العظمى</td>
+            </tr><tr class="">
+                <td><code>test_date</code></td>
+                <td>DATE</td>
+                <td></td>
+                <td>تاريخ الاختبار</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(draft,published,locked)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الحالة</td>
+            </tr><tr class="row-fk">
+                <td><code>created_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>منشئ الاختبار</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>6. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">grades</code>
+                    <span class="tbl-meta">🗄️ TABLE — 2,076 صف</span>
+                </span>
+                <span class="tbl-meta">11 عموداً</span>
+            </div><div class="tbl-comment">📝 درجات الطلاب</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد للدرجة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>test_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الاختبار</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>grade_value</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>قيمة الدرجة</td>
+            </tr><tr class="">
+                <td><code>max_value</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الدرجة العظمى</td>
+            </tr><tr class="">
+                <td><code>percentage</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td></td>
+                <td>النسبة المئوية</td>
+            </tr><tr class="">
+                <td><code>letter_grade</code></td>
+                <td>VARCHAR(3)</td>
+                <td></td>
+                <td>الدرجة الحرفية</td>
+            </tr><tr class="">
+                <td><code>notes</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>ملاحظات</td>
+            </tr><tr class="row-fk">
+                <td><code>graded_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المصحح</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_grade</code>: (<code>student_id</code>, <code>test_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>7. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">learning_outcomes</code>
+                    <span class="tbl-meta">🗄️ TABLE — 37 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 مخرجات التعلم</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المادة</td>
+            </tr><tr class="">
+                <td><code>code</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>رمز المخرج</td>
+            </tr><tr class="">
+                <td><code>description_ar</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الوصف بالعربية</td>
+            </tr><tr class="">
+                <td><code>description_en</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الوصف بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>8. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">evaluations</code>
+                    <span class="tbl-meta">🗄️ TABLE — 539 صف</span>
+                </span>
+                <span class="tbl-meta">18 عموداً</span>
+            </div><div class="tbl-comment">📝 نتائج التقييم الموحدة</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="">
+                <td><code>eval_type</code></td>
+                <td>ENUM(teaching_summary,behavior_score)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع التقييم</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المعلم</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الشعبة</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>self_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة التقييم الذاتي</td>
+            </tr><tr class="">
+                <td><code>peer_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة تقييم الأقران</td>
+            </tr><tr class="">
+                <td><code>admin_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة التقييم الإداري</td>
+            </tr><tr class="">
+                <td><code>combined_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الدرجة المركبة</td>
+            </tr><tr class="">
+                <td><code>adjusted_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الدرجة المعدلة</td>
+            </tr><tr class="">
+                <td><code>starting_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>نقطة البداية (للسلوك)</td>
+            </tr><tr class="">
+                <td><code>earned_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>النقاط المكتسبة</td>
+            </tr><tr class="">
+                <td><code>deducted_points</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>النقاط المخصومة</td>
+            </tr><tr class="">
+                <td><code>current_percentage</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>النسبة الحالية</td>
+            </tr><tr class="">
+                <td><code>is_passing</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>هل اجتاز</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>9. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">surveys</code>
+                    <span class="tbl-meta">🗄️ TABLE — 7 صف</span>
+                </span>
+                <span class="tbl-meta">13 عموداً</span>
+            </div><div class="tbl-comment">📝 الاستبيانات (مناخ + مرافق)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="">
+                <td><code>survey_type</code></td>
+                <td>ENUM(climate,facility)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع الاستبيان</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>respondent_type</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع المستجيب</td>
+            </tr><tr class="row-fk">
+                <td><code>respondent_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المستجيب</td>
+            </tr><tr class="row-fk">
+                <td><code>evaluator_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المقيم</td>
+            </tr><tr class="">
+                <td><code>survey_date</code></td>
+                <td>DATE</td>
+                <td></td>
+                <td>تاريخ الاستبيان</td>
+            </tr><tr class="">
+                <td><code>overall_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الدرجة الكلية</td>
+            </tr><tr class="">
+                <td><code>notes</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>ملاحظات</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(draft,active,closed)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الحالة</td>
+            </tr><tr class="row-fk">
+                <td><code>created_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المنشئ</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>10. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">survey_items</code>
+                    <span class="tbl-meta">🗄️ TABLE — 13 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 إجابات فقرات الاستبيان</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>survey_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الاستبيان</td>
+            </tr><tr class="row-fk">
+                <td><code>item_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفقرة</td>
+            </tr><tr class="">
+                <td><code>numeric_value</code></td>
+                <td>DECIMAL(10,4)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة الرقمية</td>
+            </tr><tr class="">
+                <td><code>normalized_value</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة المعيارية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>11. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">climate_items</code>
+                    <span class="tbl-meta">🗄️ TABLE — 48 صف</span>
+                </span>
+                <span class="tbl-meta">6 عموداً</span>
+            </div><div class="tbl-comment">📝 فقرات المناخ المدرسي (قديم)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>survey_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الاستبيان</td>
+            </tr><tr class="row-fk">
+                <td><code>item_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفقرة</td>
+            </tr><tr class="">
+                <td><code>numeric_value</code></td>
+                <td>DECIMAL(10,4)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة الرقمية</td>
+            </tr><tr class="">
+                <td><code>normalized_value</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة المعيارية</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>12. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">facility_items</code>
+                    <span class="tbl-meta">🗄️ TABLE — 0 صف</span>
+                </span>
+                <span class="tbl-meta">7 عموداً</span>
+            </div><div class="tbl-comment">📝 فقرات تقييم المرافق (قديم)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>checklist_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>قائمة التحقق</td>
+            </tr><tr class="row-fk">
+                <td><code>item_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفقرة</td>
+            </tr><tr class="">
+                <td><code>numeric_value</code></td>
+                <td>DECIMAL(10,4)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة الرقمية</td>
+            </tr><tr class="">
+                <td><code>normalized_value</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>القيمة المعيارية</td>
+            </tr><tr class="">
+                <td><code>notes</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>ملاحظات</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>13. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">eqi_results</code>
+                    <span class="tbl-meta">🗄️ TABLE — 7 صف</span>
+                </span>
+                <span class="tbl-meta">17 عموداً</span>
+            </div><div class="tbl-comment">📝 نتائج مؤشر جودة التعليم EQI</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>academic_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة الأداء الأكاديمي</td>
+            </tr><tr class="">
+                <td><code>teaching_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة جودة التدريس</td>
+            </tr><tr class="">
+                <td><code>climate_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة المناخ المدرسي</td>
+            </tr><tr class="">
+                <td><code>behavior_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة السلوك</td>
+            </tr><tr class="">
+                <td><code>skills_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة المهارات</td>
+            </tr><tr class="">
+                <td><code>attendance_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة الحضور</td>
+            </tr><tr class="">
+                <td><code>overall_eqi</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>مؤشر EQI الكلي</td>
+            </tr><tr class="">
+                <td><code>weights_json</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الأوزان المستخدمة</td>
+            </tr><tr class="">
+                <td><code>context_json</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>السياق</td>
+            </tr><tr class="">
+                <td><code>challenge_index</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>مؤشر التحدي</td>
+            </tr><tr class="">
+                <td><code>adjusted_eqi</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>EQI المعدّل سياقياً</td>
+            </tr><tr class="">
+                <td><code>missing_dimensions</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الأبعاد المفقودة</td>
+            </tr><tr class="row-fk">
+                <td><code>calculated_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>محسوب بواسطة</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_eqi</code>: (<code>school_id</code>, <code>academic_year_id</code>, <code>semester_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>14. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">improvement_plans</code>
+                    <span class="tbl-meta">🗄️ TABLE — 3 صف</span>
+                </span>
+                <span class="tbl-meta">17 عموداً</span>
+            </div><div class="tbl-comment">📝 خطط التحسين الموحدة</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="">
+                <td><code>plan_type</code></td>
+                <td>ENUM(student,school,teacher)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع الخطة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>teacher_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المعلم</td>
+            </tr><tr class="">
+                <td><code>trigger_type</code></td>
+                <td>ENUM</td>
+                <td></td>
+                <td>نوع المحفز</td>
+            </tr><tr class="">
+                <td><code>weaknesses</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>مواطن الضعف</td>
+            </tr><tr class="">
+                <td><code>goals</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الأهداف</td>
+            </tr><tr class="">
+                <td><code>strategies</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الاستراتيجيات</td>
+            </tr><tr class="">
+                <td><code>timeline</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الجدول الزمني</td>
+            </tr><tr class="row-fk">
+                <td><code>responsible_user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المسؤول</td>
+            </tr><tr class="">
+                <td><code>parent_involvement</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>مشاركة ولي الأمر</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(active,completed,cancelled)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الحالة</td>
+            </tr><tr class="">
+                <td><code>progress</code></td>
+                <td>INT</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>نسبة التقدم</td>
+            </tr><tr class="">
+                <td><code>follow_up_date</code></td>
+                <td>DATE</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تاريخ المتابعة</td>
+            </tr><tr class="row-fk">
+                <td><code>created_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المنشئ</td>
+            </tr><tr class="row-fk">
+                <td><code>updated_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معدّل الخطة</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>15. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">school_improvement_plans</code>
+                    <span class="tbl-meta">🗄️ TABLE — 2 صف</span>
+                </span>
+                <span class="tbl-meta">13 عموداً</span>
+            </div><div class="tbl-comment">📝 خطط تحسين المدارس (قديم)</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>weaknesses</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>مواطن الضعف</td>
+            </tr><tr class="">
+                <td><code>goals</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الأهداف</td>
+            </tr><tr class="">
+                <td><code>strategies</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الاستراتيجيات</td>
+            </tr><tr class="">
+                <td><code>timeline</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الجدول الزمني</td>
+            </tr><tr class="row-fk">
+                <td><code>responsible_user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المسؤول</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الحالة</td>
+            </tr><tr class="">
+                <td><code>progress</code></td>
+                <td>INT</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>نسبة التقدم</td>
+            </tr><tr class="row-fk">
+                <td><code>created_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المنشئ</td>
+            </tr><tr class="row-fk">
+                <td><code>updated_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>معدّل الخطة</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>16. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">promotions</code>
+                    <span class="tbl-meta">🗄️ TABLE — 519 صف</span>
+                </span>
+                <span class="tbl-meta">15 عموداً</span>
+            </div><div class="tbl-comment">📝 قرارات الترفيع</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>academic_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>الدرجة الأكاديمية</td>
+            </tr><tr class="">
+                <td><code>behavior_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة السلوك</td>
+            </tr><tr class="">
+                <td><code>attendance_score</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>درجة الحضور</td>
+            </tr><tr class="">
+                <td><code>academic_pass</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>نجاح أكاديمي</td>
+            </tr><tr class="">
+                <td><code>behavior_pass</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>نجاح سلوكي</td>
+            </tr><tr class="">
+                <td><code>attendance_pass</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>نجاح حضور</td>
+            </tr><tr class="">
+                <td><code>decision</code></td>
+                <td>ENUM(promoted,repeated,conditional,under_review)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>القرار</td>
+            </tr><tr class="">
+                <td><code>status</code></td>
+                <td>ENUM(proposed,approved,rejected)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الحالة</td>
+            </tr><tr class="">
+                <td><code>override_json</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>بيانات التجاوز</td>
+            </tr><tr class="row-fk">
+                <td><code>approved_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المعتمد</td>
+            </tr><tr class="row-fk">
+                <td><code>decided_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>مصدر القرار</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_promotion</code>: (<code>student_id</code>, <code>academic_year_id</code>, <code>semester_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#9b59b6;">
+                <span>17. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">promotion_overrides</code>
+                    <span class="tbl-meta">🗄️ TABLE — 0 صف</span>
+                </span>
+                <span class="tbl-meta">9 عموداً</span>
+            </div><div class="tbl-comment">📝 تجاوزات الترفيع</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="row-fk">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>override_type</code></td>
+                <td>ENUM</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع التجاوز</td>
+            </tr><tr class="">
+                <td><code>override_value</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>قيمة التجاوز</td>
+            </tr><tr class="">
+                <td><code>reason</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>السبب</td>
+            </tr><tr class="row-fk">
+                <td><code>approved_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المعتمد</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#f39c12;">
+            <span>📂 BFD 5 — التقارير والتحليلات (المشاهد)</span>
+            <span class="bfd-count">5 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#f39c12;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">v_student_current</code>
+                    <span class="tbl-meta">🔍 VIEW — 0 صف</span>
+                </span>
+                <span class="tbl-meta">17 عموداً (مشهد)</span>
+            </div><div class="tbl-comment">📝 الطلاب الحاليون (مشهد)</div><div class="view-box">🔍 هذا الكائن هو VIEW (مشهد) — لا يخزن بيانات بل يُشتق من استعلام SQL على جداول أخرى.</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>معرف الطالب</td>
+            </tr><tr class="">
+                <td><code>student_number</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>رقم الطالب</td>
+            </tr><tr class="">
+                <td><code>full_name_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالعربية</td>
+            </tr><tr class="">
+                <td><code>full_name_en</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>الاسم بالإنجليزية</td>
+            </tr><tr class="">
+                <td><code>guardian_name</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>اسم ولي الأمر</td>
+            </tr><tr class="">
+                <td><code>guardian_phone</code></td>
+                <td>VARCHAR(20)</td>
+                <td></td>
+                <td>هاتف ولي الأمر</td>
+            </tr><tr class="">
+                <td><code>grade_level_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>المستوى</td>
+            </tr><tr class="">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>المدرسة</td>
+            </tr><tr class="">
+                <td><code>grade_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>سنة التسجيل</td>
+            </tr><tr class="">
+                <td><code>enrollment_status</code></td>
+                <td>ENUM</td>
+                <td></td>
+                <td>حالة التسجيل</td>
+            </tr><tr class="">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الشعبة</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>class_name</code></td>
+                <td>VARCHAR(100)</td>
+                <td></td>
+                <td>اسم الشعبة</td>
+            </tr><tr class="">
+                <td><code>grade_name</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>اسم المستوى</td>
+            </tr><tr class="">
+                <td><code>stage</code></td>
+                <td>ENUM</td>
+                <td></td>
+                <td>المرحلة</td>
+            </tr><tr class="">
+                <td><code>school_name</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>اسم المدرسة</td>
+            </tr><tr class="">
+                <td><code>academic_year_name</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>اسم السنة</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#f39c12;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">v_student_subject_summary</code>
+                    <span class="tbl-meta">🔍 VIEW — 0 صف</span>
+                </span>
+                <span class="tbl-meta">8 عموداً (مشهد)</span>
+            </div><div class="tbl-comment">📝 ملخص درجات الطالب لكل مادة (مشهد)</div><div class="view-box">🔍 هذا الكائن هو VIEW (مشهد) — لا يخزن بيانات بل يُشتق من استعلام SQL على جداول أخرى.</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>المادة</td>
+            </tr><tr class="">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الشعبة</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>total_grade</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td></td>
+                <td>مجموع الدرجات</td>
+            </tr><tr class="">
+                <td><code>max_grade</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td></td>
+                <td>مجموع الدرجات العظمى</td>
+            </tr><tr class="">
+                <td><code>percentage</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>النسبة المئوية</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#f39c12;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">student_subject_summary</code>
+                    <span class="tbl-meta">🔍 VIEW — 0 صف</span>
+                </span>
+                <span class="tbl-meta">14 عموداً (مشهد)</span>
+            </div><div class="tbl-comment">📝 ملخص الطالب-المادة مع GPA (مشهد)</div><div class="view-box">🔍 هذا الكائن هو VIEW (مشهد) — لا يخزن بيانات بل يُشتق من استعلام SQL على جداول أخرى.</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span></td>
+                <td>المعرف (row_number)</td>
+            </tr><tr class="">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>subject_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>المادة</td>
+            </tr><tr class="">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الشعبة</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>total_grade</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td></td>
+                <td>المجموع</td>
+            </tr><tr class="">
+                <td><code>max_grade</code></td>
+                <td>DECIMAL(7,2)</td>
+                <td></td>
+                <td>الدرجة العظمى</td>
+            </tr><tr class="">
+                <td><code>percentage</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>النسبة</td>
+            </tr><tr class="">
+                <td><code>letter_grade</code></td>
+                <td>VARCHAR(3)</td>
+                <td></td>
+                <td>الدرجة الحرفية</td>
+            </tr><tr class="">
+                <td><code>grade_point</code></td>
+                <td>DECIMAL(3,2)</td>
+                <td></td>
+                <td>نقطة GPA</td>
+            </tr><tr class="">
+                <td><code>rank_in_class</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الترتيب في الشعبة</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td></td>
+                <td>نشط</td>
+            </tr><tr class="">
+                <td><code>updated_at</code></td>
+                <td>DATETIME</td>
+                <td></td>
+                <td>آخر تحديث</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#f39c12;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">v_semester_scores</code>
+                    <span class="tbl-meta">🔍 VIEW — 0 صف</span>
+                </span>
+                <span class="tbl-meta">5 عموداً (مشهد)</span>
+            </div><div class="tbl-comment">📝 معدلات الفصل الدراسي (مشهد)</div><div class="view-box">🔍 هذا الكائن هو VIEW (مشهد) — لا يخزن بيانات بل يُشتق من استعلام SQL على جداول أخرى.</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>gpa</code></td>
+                <td>DECIMAL(3,2)</td>
+                <td></td>
+                <td>المعدل التراكمي</td>
+            </tr><tr class="">
+                <td><code>total_percentage</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>النسبة المئوية الكلية</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#f39c12;">
+                <span>5. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">v_attendance_summary</code>
+                    <span class="tbl-meta">🔍 VIEW — 0 صف</span>
+                </span>
+                <span class="tbl-meta">12 عموداً (مشهد)</span>
+            </div><div class="tbl-comment">📝 ملخص الحضور (مشهد)</div><div class="view-box">🔍 هذا الكائن هو VIEW (مشهد) — لا يخزن بيانات بل يُشتق من استعلام SQL على جداول أخرى.</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>class_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الشعبة</td>
+            </tr><tr class="">
+                <td><code>academic_year_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>السنة الدراسية</td>
+            </tr><tr class="">
+                <td><code>semester_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>الفصل الدراسي</td>
+            </tr><tr class="">
+                <td><code>total_days</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>إجمالي الأيام</td>
+            </tr><tr class="">
+                <td><code>present_days</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>أيام الحضور</td>
+            </tr><tr class="">
+                <td><code>absent_days</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>أيام الغياب</td>
+            </tr><tr class="">
+                <td><code>late_days</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>أيام التأخير</td>
+            </tr><tr class="">
+                <td><code>excused_days</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>أيام بعذر</td>
+            </tr><tr class="">
+                <td><code>attendance_rate</code></td>
+                <td>DECIMAL(5,2)</td>
+                <td></td>
+                <td>نسبة الحضور</td>
+            </tr><tr class="">
+                <td><code>is_below_threshold</code></td>
+                <td>TINYINT(1)</td>
+                <td></td>
+                <td>أقل من الحد الأدنى</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td></td>
+                <td>نشط</td>
+            </tr></tbody></table></div></div><div class="bfd-section">
+        <div class="bfd-header" style="background:#1abc9c;">
+            <span>📂 BFD 6 — التواصل وبوابة المستفيدين</span>
+            <span class="bfd-count">4 جدولاً</span>
+        </div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#1abc9c;">
+                <span>1. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">alerts</code>
+                    <span class="tbl-meta">🗄️ TABLE — 120 صف</span>
+                </span>
+                <span class="tbl-meta">16 عموداً</span>
+            </div><div class="tbl-comment">📝 التنبيهات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>school_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المدرسة</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>الطالب</td>
+            </tr><tr class="row-fk">
+                <td><code>user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>المستخدم</td>
+            </tr><tr class="">
+                <td><code>alert_type</code></td>
+                <td>ENUM(...)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>نوع التنبيه</td>
+            </tr><tr class="">
+                <td><code>severity</code></td>
+                <td>ENUM(info,warning,danger,critical)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الخطورة</td>
+            </tr><tr class="">
+                <td><code>title_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>العنوان</td>
+            </tr><tr class="">
+                <td><code>message_ar</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>الرسالة</td>
+            </tr><tr class="">
+                <td><code>threshold_json</code></td>
+                <td>JSON</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>معايير التنبيه</td>
+            </tr><tr class="">
+                <td><code>is_read</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>مقروء</td>
+            </tr><tr class="">
+                <td><code>read_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تاريخ القراءة</td>
+            </tr><tr class="">
+                <td><code>is_resolved</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>محلول</td>
+            </tr><tr class="row-fk">
+                <td><code>resolved_by</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span> <span class="badge ba-nu">NULL</span></td>
+                <td>حل بواسطة</td>
+            </tr><tr class="">
+                <td><code>resolved_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تاريخ الحل</td>
+            </tr><tr class="">
+                <td><code>notes</code></td>
+                <td>TEXT</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>ملاحظات</td>
+            </tr><tr class="">
+                <td><code>created_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>تاريخ الإنشاء</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#1abc9c;">
+                <span>2. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">notifications</code>
+                    <span class="tbl-meta">🗄️ TABLE — 253 صف</span>
+                </span>
+                <span class="tbl-meta">9 عموداً</span>
+            </div><div class="tbl-comment">📝 الإشعارات</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>user_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>المستخدم</td>
+            </tr><tr class="">
+                <td><code>type</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>نوع الإشعار</td>
+            </tr><tr class="">
+                <td><code>title_ar</code></td>
+                <td>VARCHAR(200)</td>
+                <td></td>
+                <td>العنوان</td>
+            </tr><tr class="">
+                <td><code>message_ar</code></td>
+                <td>TEXT</td>
+                <td></td>
+                <td>الرسالة</td>
+            </tr><tr class="">
+                <td><code>related_entity_type</code></td>
+                <td>VARCHAR(50)</td>
+                <td></td>
+                <td>نوع الكيان المرتبط</td>
+            </tr><tr class="">
+                <td><code>related_entity_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td></td>
+                <td>معرف الكيان المرتبط</td>
+            </tr><tr class="">
+                <td><code>is_read</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=0</span></td>
+                <td>مقروء</td>
+            </tr><tr class="">
+                <td><code>read_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>تاريخ القراءة</td>
+            </tr></tbody></table></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#1abc9c;">
+                <span>3. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">parent_students</code>
+                    <span class="tbl-meta">🗄️ TABLE — 3 صف</span>
+                </span>
+                <span class="tbl-meta">9 عموداً</span>
+            </div><div class="tbl-comment">📝 ربط ولي الأمر بالطالب</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>parent_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>ولي الأمر</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>relationship</code></td>
+                <td>ENUM(father,mother,guardian,other)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>صلة القرابة</td>
+            </tr><tr class="">
+                <td><code>ack_grade</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الدرجات</td>
+            </tr><tr class="">
+                <td><code>ack_behavior</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار السلوك</td>
+            </tr><tr class="">
+                <td><code>ack_attendance</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الحضور</td>
+            </tr><tr class="">
+                <td><code>ack_promotion</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الترفيع</td>
+            </tr><tr class="">
+                <td><code>last_ack_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>آخر إقرار</td>
+            </tr></tbody></table><div class="unique-box">🔑 <strong>القيود الفريدة (UNIQUE):</strong><br>🔹 <code>uk_parent_student</code>: (<code>parent_id</code>, <code>student_id</code>)<br></div></div><div class="tbl-card">
+            <div class="tbl-header" style="border-bottom-color:#1abc9c;">
+                <span>4. <code style="font-size:1.05em;background:transparent;color:#2c3e50;">parent_acknowledgments</code>
+                    <span class="tbl-meta">🗄️ TABLE — 0 صف</span>
+                </span>
+                <span class="tbl-meta">10 عموداً</span>
+            </div><div class="tbl-comment">📝 إقرارات ولي الأمر</div><table>
+            <thead><tr>
+                <th style="width:22%;">العمود</th>
+                <th style="width:22%;">نوع البيانات</th>
+                <th style="width:22%;">القيود</th>
+                <th style="width:34%;">الوصف</th>
+            </tr></thead>
+            <tbody><tr class="row-pk">
+                <td><code>id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-pk">PK</span> <span class="badge ba-ai">AI</span></td>
+                <td>المعرف الفريد</td>
+            </tr><tr class="row-fk">
+                <td><code>parent_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>ولي الأمر</td>
+            </tr><tr class="row-fk">
+                <td><code>student_id</code></td>
+                <td>INT UNSIGNED</td>
+                <td><span class="badge ba-fk">FK</span></td>
+                <td>الطالب</td>
+            </tr><tr class="">
+                <td><code>relationship</code></td>
+                <td>ENUM(father,mother,guardian,other)</td>
+                <td><span class="badge ba-nn">NOT NULL</span></td>
+                <td>صلة القرابة</td>
+            </tr><tr class="">
+                <td><code>ack_grade</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الدرجات</td>
+            </tr><tr class="">
+                <td><code>ack_behavior</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار السلوك</td>
+            </tr><tr class="">
+                <td><code>ack_attendance</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الحضور</td>
+            </tr><tr class="">
+                <td><code>ack_promotion</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-df">=0</span></td>
+                <td>إقرار الترفيع</td>
+            </tr><tr class="">
+                <td><code>last_ack_at</code></td>
+                <td>DATETIME</td>
+                <td><span class="badge ba-nu">NULL</span></td>
+                <td>آخر إقرار</td>
+            </tr><tr class="">
+                <td><code>is_active</code></td>
+                <td>TINYINT(1)</td>
+                <td><span class="badge ba-nn">NOT NULL</span> <span class="badge ba-df">=1</span></td>
+                <td>الحالة: نشط/غير نشط</td>
+            </tr></tbody></table></div></div><div class="footer">
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.2);margin:20px 0;">
+    تم توليد قاموس البيانات هذا تلقائياً من قاعدة البيانات — نظام CQASSE v4.0.0
+</div>
+</div>
+</body>
+</html>

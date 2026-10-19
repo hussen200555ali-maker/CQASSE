@@ -19,7 +19,7 @@ $userId = $_SESSION['user']['id'];
 if (!$dateStr || !$teacherId) { setFlash('معرف التقييم غير صالح', 'danger'); redirect('admin_index.php'); }
 
 $formId = 0;
-$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 LIMIT 1");
+$stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_admin' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
 $stmt->execute();
 $formId = $stmt->fetchColumn();
 if (!$formId) { setFlash('نموذج التقييم غير موجود', 'danger'); redirect('admin_index.php'); }
@@ -78,7 +78,7 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
 $selfScore = null;
 $peerScore = null;
 try {
-    $selfFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 LIMIT 1");
+    $selfFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_self' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
     $selfFormId->execute();
     $sfid = $selfFormId->fetchColumn();
     if ($sfid) {
@@ -90,7 +90,7 @@ try {
         $selfScore = $stmt->fetchColumn() ?: null;
     }
 
-    $peerFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 LIMIT 1");
+    $peerFormId = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'teaching_peer' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
     $peerFormId->execute();
     $pfid = $peerFormId->fetchColumn();
     if ($pfid) {

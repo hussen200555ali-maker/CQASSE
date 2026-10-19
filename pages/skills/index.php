@@ -27,22 +27,128 @@ $schoolId = $_SESSION['user']['school_id'] ?? null;
 
 $filterClass = $_GET['class_id'] ?? '';
 $filterStudent = $_GET['student_id'] ?? '';
-// الفصول للفلتر
-$classes = [];
-try {
-    $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
-    $p = [];
-    if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND c.school_id = ?"; $p[] = $schoolId; }
-    $sql .= " ORDER BY gl.level_number, c.name_ar";
-    $stmt = $db->prepare($sql); $stmt->execute($p); $classes = $stmt->fetchAll();
-} catch (Exception $e) {}
-
 $filterSemester = $_GET['semester_id'] ?? '0';
 
-// الطلاب المميزون (خبير)
-$topStudents = array_filter($evaluations, function($e) { return ($e['overall_score'] ?? 0) >= 75; });
-usort($topStudents, function($a, $b) { return ($b['overall_score'] ?? 0) - ($a['overall_score'] ?? 0); });
+// الفصول للفلتر — للمعلم: فقط فصوله المسندة إليه
+$classes = [];
+try {
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY gl.level_number, c.name_ar";
+            $stmt = $db->prepare($sql); $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $sql = "SELECT c.id, c.name_ar, gl.name_ar as grade_name FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.is_active = 1";
+        $p = [];
+        if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND c.school_id = ?"; $p[] = $schoolId; }
+        $sql .= " ORDER BY gl.level_number, c.name_ar";
+        $stmt = $db->prepare($sql); $stmt->execute($p);
+        $classes = $stmt->fetchAll();
+    }
+} catch (Exception $e) {}
+
+// جلب التقييمات — للمعلم: فقط تقييماته أو تقييمات طلاب فصوله
+$sql = "SELECT e.*, s.full_name_ar as student_name, s.student_number,
+        c.name_ar as class_name, u.full_name_ar as evaluator_name,
+        sem.name_ar as semester_name
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        JOIN classes c ON e.class_id = c.id
+        JOIN users u ON e.evaluated_by = u.id
+        JOIN semesters sem ON e.semester_id = sem.id
+        WHERE e.eval_type = 'skills_checklist' AND e.is_active = 1";
+$params = [];
+
+if ($userRole === 'teacher') {
+    $allowedClassIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!empty($allowedClassIds)) {
+        $ph = implode(',', array_fill(0, count($allowedClassIds), '?'));
+        $sql .= " AND (e.evaluated_by = ? OR e.class_id IN ($ph))";
+        $params[] = $userId;
+        $params = array_merge($params, $allowedClassIds);
+    } else {
+        $sql .= " AND e.evaluated_by = ?";
+        $params[] = $userId;
+    }
+} elseif ($schoolId && $userRole !== 'group_admin') {
+    $sql .= " AND c.school_id = ?";
+    $params[] = $schoolId;
+}
+if ($filterClass) {
+    $sql .= " AND e.class_id = ?";
+    $params[] = $filterClass;
+}
+if ($filterStudent) {
+    $sql .= " AND e.student_id = ?";
+    $params[] = $filterStudent;
+}
+if ($filterSemester && $filterSemester !== '0') {
+    $sq = buildSemesterSubquery($filterSemester, 'e');
+    $sql .= $sq['sql'];
+    $params = array_merge($params, $sq['params']);
+}
+
+$sql .= " ORDER BY e.created_at DESC";
+
+try {
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    $evaluations = $stmt->fetchAll();
+} catch (Exception $e) {
+    $evaluations = [];
+}
+
+// الإحصائيات
+$totalEvaluations = count($evaluations);
+$scores = array_filter(array_column($evaluations, 'combined_score'), function($v) { return $v !== null; });
+$avgScore = count($scores) > 0 ? round(array_sum($scores) / count($scores), 1) : 0;
+$highScore = count($scores) > 0 ? max($scores) : 0;
+$lowScore = count($scores) > 0 ? min($scores) : 0;
+
+// الطلاب المتميزون (خبير)
+function getSkillLevelInfo($score) {
+    if ($score >= 80) return ['label' => 'متقن', 'color' => '#28a745', 'icon' => '🌟', 'level' => 4];
+    if ($score >= 60) return ['label' => 'جيد', 'color' => '#17a2b8', 'icon' => '✅', 'level' => 3];
+    if ($score >= 40) return ['label' => 'مبتدئ', 'color' => '#ffc107', 'icon' => '🔸', 'level' => 2];
+    return ['label' => 'يحتاج تطوير', 'color' => '#dc3545', 'icon' => '⚠️', 'level' => 1];
+}
+$topStudents = array_filter($evaluations, function($e) { return ($e['combined_score'] ?? 0) >= 75; });
+usort($topStudents, function($a, $b) { return ($b['combined_score'] ?? 0) - ($a['combined_score'] ?? 0); });
 $topStudents = array_slice($topStudents, 0, 5);
+
+// بيانات الرسوم البيانية
+$chartLabels = []; $chartData = []; $chartColors = [];
+$levels = ['يحتاج تطوير', 'مبتدئ', 'جيد', 'متقن'];
+$levelColors = ['#dc3545', '#ffc107', '#17a2b8', '#28a745'];
+$levelCounts = array_fill(0, 4, 0);
+foreach ($evaluations as $e) {
+    $info = getSkillLevelInfo($e['combined_score'] ?? 0);
+    $levelCounts[$info['level'] - 1]++;
+}
+foreach ($levels as $i => $lbl) {
+    if ($levelCounts[$i] > 0) {
+        $chartLabels[] = $lbl;
+        $chartData[] = $levelCounts[$i];
+        $chartColors[] = $levelColors[$i];
+    }
+}
+
+$classAvgLabels = []; $classAvgData = [];
+$classSums = []; $classCounts = [];
+foreach ($evaluations as $e) {
+    $cn = $e['class_name'] ?? '—';
+    if (!isset($classSums[$cn])) { $classSums[$cn] = 0; $classCounts[$cn] = 0; }
+    $classSums[$cn] += $e['combined_score'] ?? 0;
+    $classCounts[$cn]++;
+}
+foreach ($classSums as $cn => $sum) {
+    $classAvgLabels[] = $cn;
+    $classAvgData[] = round($sum / $classCounts[$cn], 1);
+}
 ?>
 
 <!-- بطاقات الإحصائيات -->
@@ -137,13 +243,13 @@ $topStudents = array_slice($topStudents, 0, 5);
         <div class="card-body">
             <div class="grid grid-auto-lg">
                 <?php foreach ($topStudents as $top): 
-                    $topLevel = getSkillLevelInfo($top['overall_score']);
+                    $topLevel = getSkillLevelInfo($top['combined_score']);
                 ?>
                 <div style="text-align:center; padding:12px; border-radius:var(--radius-md); background:rgba(40,167,69,0.05); border:1px solid rgba(40,167,69,0.2);">
                     <div style="font-size:28px;">🟢</div>
                     <div style="font-weight:700; font-size:14px; margin-top:4px;"><?php echo e($top['student_name']); ?></div>
                     <div style="font-size:13px; color:var(--text-muted);"><?php echo e($top['class_name']); ?></div>
-                    <div style="font-size:22px; font-weight:700; color:#28a745; margin-top:4px;"><?php echo number_format($top['overall_score'], 1); ?>%</div>
+                    <div style="font-size:22px; font-weight:700; color:#28a745; margin-top:4px;"><?php echo number_format($top['combined_score'], 1); ?>%</div>
                     <div style="font-size:12px; color:#28a745;"><?php echo $topLevel['label']; ?></div>
                 </div>
                 <?php endforeach; ?>
@@ -187,8 +293,8 @@ $topStudents = array_slice($topStudents, 0, 5);
                         </thead>
                         <tbody>
                             <?php foreach ($evaluations as $i => $eval): 
-                                $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
-                                $level = $eval['overall_score'] !== null ? getSkillLevelInfo($eval['overall_score']) : null;
+                                $rating = $eval['combined_score'] !== null ? $engine->getScoreRating($eval['combined_score']) : null;
+                                $level = $eval['combined_score'] !== null ? getSkillLevelInfo($eval['combined_score']) : null;
                             ?>
                             <tr>
                                 <td><?php echo $i + 1; ?></td>
@@ -196,10 +302,10 @@ $topStudents = array_slice($topStudents, 0, 5);
                                 <td><?php echo e($eval['class_name']); ?></td>
                                 <td><?php echo e($eval['semester_name']); ?></td>
                                 <td><?php echo e($eval['evaluator_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
+                                <td><?php echo formatDateAr($eval['created_at'], 'short'); ?></td>
                                 <td>
                                     <?php if ($rating): ?>
-                                        <span style="font-weight:700; color:<?php echo $rating['color']; ?>;"><?php echo number_format($eval['overall_score'], 1); ?>%</span>
+                                        <span style="font-weight:700; color:<?php echo $rating['color']; ?>;"><?php echo number_format($eval['combined_score'], 1); ?>%</span>
                                         <div style="font-size:11px; color:<?php echo $rating['color']; ?>;"><?php echo $rating['label']; ?></div>
                                     <?php else: ?>—<?php endif; ?>
                                 </td>

@@ -1,41 +1,41 @@
-﻿<?php
+<?php
 /**
  * ============================================================
- * EQAS - ظ„ظˆط­ط© طھط­ظƒظ… ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©
- * ظ†ط¸ط§ظ… ط§ظ„طھظ‚ظٹظٹظ… ط§ظ„ط´ط§ظ…ظ„ - School Admin Dashboard
+ * EQAS - لوحة تحكم مدير المدرسة
+ * نظام التقييم الشامل - School Admin Dashboard
  * ============================================================
- * ظ„ظˆط­ط© طھط­ظƒظ… ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط© ظ…ط¹:
- * - ظ…ظ‚ظٹط§ط³ ظ…ط¤ط´ط± ط¬ظˆط¯ط© ط§ظ„طھط¹ظ„ظٹظ… + ط±ط§ط¯ط§ط±
- * - ط¥ط­طµط§ط¦ظٹط§طھ ط³ط±ظٹط¹ط© (ط·ظ„ط§ط¨طŒ ط­ط¶ظˆط±طŒ ظ…ط¹ط¯ظ„طŒ ط³ظ„ظˆظƒ)
- * - طھظ‚ط¯ظ… ط¥ظƒظ…ط§ظ„ ط§ظ„طھظ‚ظٹظٹظ…ط§طھ
- * - ظ…ظ„ط®طµ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ
- * - ظ†ط¸ط±ط© ط¹ط§ظ…ط© ط¹ظ„ظ‰ ط§ظ„طھط±ظپظٹط¹
- * - ط±ط³ظ… ط¨ظٹط§ظ†ظٹ ظ„ظ„ط­ط¶ظˆط± ط§ظ„ط£ط³ط¨ظˆط¹ظٹ
- * - طھظˆط²ظٹط¹ ط§ظ„ط­ظˆط§ط¯ط« ط§ظ„ط³ظ„ظˆظƒظٹط©
- * - طھظˆط²ظٹط¹ ط§ظ„ط¯ط±ط¬ط§طھ
- * - ط§ظ„ظ…ظ‡ط§ظ… ط§ظ„ظ…ط¹ظ„ظ‚ط©
- * - ظ…ظ‚ط§ط±ظ†ط© ط£ط¯ط§ط، ط§ظ„ظپطµظˆظ„
- * - ط®ط· ط²ظ…ظ†ظٹ ظ„ظ„ظ†ط´ط§ط·ط§طھ ط§ظ„ط£ط®ظٹط±ط©
- * - ط¥ط¬ط±ط§ط،ط§طھ ط³ط±ظٹط¹ط©
+ * لوحة تحكم مدير المدرسة مع:
+ * - مقياس مؤشر جودة التعليم + رادار
+ * - إحصائيات سريعة (طلاب، حضور، معدل، سلوك)
+ * - تقدم إكمال التقييمات
+ * - ملخص التنبيهات
+ * - نظرة عامة على الترفيع
+ * - رسم بياني للحضور الأسبوعي
+ * - توزيع الحوادث السلوكية
+ * - توزيع الدرجات
+ * - المهام المعلقة
+ * - مقارنة أداء الفصول
+ * - خط زمني للنشاطات الأخيرة
+ * - إجراءات سريعة
  * ============================================================
  */
 
-$pageTitle = 'ظ„ظˆط­ط© طھط­ظƒظ… ظ…ط¯ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©';
-$breadcrumb = ['ط§ظ„ط±ط¦ظٹط³ظٹط©' => null];
+$pageTitle = 'لوحة تحكم مدير المدرسة';
+$breadcrumb = ['الرئيسية' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
 
 if (!hasPermission('school_admin')) {
-    setFlash('ظ‡ط°ظ‡ ط§ظ„طµظپط­ط© ظ„ظ…ط¯ظٹط±ظٹ ط§ظ„ظ…ط¯ط§ط±ط³ ظپظ‚ط·.', 'danger');
+    setFlash('هذه الصفحة لمديري المدارس فقط.', 'danger');
     redirect(baseUrl('index.php'));
 }
 
 $schoolId = currentSchoolId();
 $academicYearId = currentAcademicYearId();
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¥ط­طµط§ط¦ظٹط§طھ ط£ط³ط§ط³ظٹط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// إحصائيات أساسية
+// ═══════════════════════════════════════════
 $counts = ['students' => 0, 'teachers' => 0, 'classes' => 0, 'subjects' => 0];
 try {
     $counts['students'] = $db->prepare("SELECT COUNT(*) FROM students WHERE school_id = ? AND is_active = 1");
@@ -50,12 +50,12 @@ try {
     $counts['subjects'] = $db->query("SELECT COUNT(*) FROM subjects WHERE is_active = 1")->fetchColumn();
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¥ط­طµط§ط¦ظٹط§طھ ط³ط±ظٹط¹ط© ط¥ط¶ط§ظپظٹط© (ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±طŒ ط§ظ„ظ…ط¹ط¯ظ„طŒ ط§ظ„ط³ظ„ظˆظƒ)
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// إحصائيات سريعة إضافية (نسبة الحضور، المعدل، السلوك)
+// ═══════════════════════════════════════════
 $quickStats = ['attendanceRate' => null, 'avgGpa' => null, 'behaviorScore' => null];
 try {
-    $stmt = $db->prepare("SELECT AVG(attendance_rate) as avg_rate FROM v_attendance_summary WHERE academic_year_id = ? AND class_id IN (SELECT id FROM classes WHERE school_id = ? AND is_active = 1)");
+    $stmt = $db->prepare("SELECT AVG(attendance_rate) as avg_rate FROM v_attendance_summary WHERE is_active = 1 AND academic_year_id = ? AND class_id IN (SELECT id FROM classes WHERE school_id = ? AND is_active = 1)");
     $stmt->execute([$academicYearId, $schoolId]);
     $r = $stmt->fetch();
     if ($r && $r['avg_rate'] !== null) $quickStats['attendanceRate'] = round($r['avg_rate'], 1);
@@ -69,19 +69,19 @@ try {
 } catch (Exception $e) { }
 
 try {
-    $stmt = $db->prepare("SELECT AVG(e.current_percentage) as avg_pct FROM evaluations e WHERE e.eval_type = 'behavior_score' AND e.academic_year_id = ? AND e.class_id IN (SELECT id FROM classes WHERE school_id = ? AND is_active = 1)");
+    $stmt = $db->prepare("SELECT AVG(current_percentage) as avg_pct FROM behavior_scores WHERE is_active = 1 AND academic_year_id = ? AND class_id IN (SELECT id FROM classes WHERE school_id = ? AND is_active = 1)");
     $stmt->execute([$academicYearId, $schoolId]);
     $r = $stmt->fetch();
     if ($r && $r['avg_pct'] !== null) $quickStats['behaviorScore'] = round($r['avg_pct'], 1);
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ظ…ط¤ط´ط± ط¬ظˆط¯ط© ط§ظ„طھط¹ظ„ظٹظ…
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// مؤشر جودة التعليم
+// ═══════════════════════════════════════════
 $eqiScore = null;
 $eqiDimensions = [];
 try {
-    $stmt = $db->prepare("SELECT * FROM eqi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
+    $stmt = $db->prepare("SELECT * FROM equi_results WHERE school_id = ? AND is_active = 1 ORDER BY calculated_at DESC LIMIT 1");
     $stmt->execute([$schoolId]);
     $eqiRow = $stmt->fetch();
     if ($eqiRow && isset($eqiRow['overall_eqi']) && $eqiRow['overall_eqi'] !== null) {
@@ -89,9 +89,9 @@ try {
     }
 } catch (Exception $e) { }
 
-// ط£ط¨ط¹ط§ط¯ EQI (ظ…ط­ط§ظƒط§ط© ظ…ظ† ط¨ظٹط§ظ†ط§طھ ط§ظ„طھظ‚ظٹظٹظ…ط§طھ)
+// أبعاد EQI (محاكاة من بيانات التقييمات)
 $dimensionScores = [];
-$dimensionNames = ['ط§ظ„ظ…ظ†ط§ط® ط§ظ„ظ…ط¯ط±ط³ظٹ' => 'climate', 'ط§ظ„ظ…ط±ط§ظپظ‚' => 'facility', 'ط£ط¯ط§ط، ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†' => 'teaching', 'ط§ظ„طھط­طµظٹظ„ ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹ' => 'academic', 'ط§ظ„ط³ظ„ظˆظƒ' => 'behavior', 'ط§ظ„ط­ط¶ظˆط±' => 'attendance'];
+$dimensionNames = ['المناخ المدرسي' => 'climate', 'المرافق' => 'facility', 'أداء المعلمين' => 'teaching', 'التحصيل الأكاديمي' => 'academic', 'السلوك' => 'behavior', 'الحضور' => 'attendance'];
 foreach ($dimensionNames as $label => $key) {
     $dimensionScores[$key] = null;
 }
@@ -110,15 +110,15 @@ try {
     $stmt->execute([$schoolId]); $r = $stmt->fetch(); $dimensionScores['academic'] = ($r && $r['avg'] !== null) ? round($r['avg'], 1) : null;
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// طھظ‚ط¯ظ… ط§ظ„طھظ‚ظٹظٹظ…ط§طھ
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// تقدم التقييمات
+// ═══════════════════════════════════════════
 $assessmentProgress = [
-    'climate' => ['label' => 'ط§ظ„ظ…ظ†ط§ط® ط§ظ„ظ…ط¯ط±ط³ظٹ', 'done' => false],
-    'facility' => ['label' => 'ط§ظ„ظ…ط±ط§ظپظ‚', 'done' => false],
-    'teaching' => ['label' => 'طھظ‚ظٹظٹظ… ط§ظ„ظ…ط¹ظ„ظ…ظٹظ†', 'done' => false],
-    'behavior' => ['label' => 'ط§ظ„ط³ظ„ظˆظƒ', 'done' => false],
-    'skills' => ['label' => 'ط§ظ„ظ…ظ‡ط§ط±ط§طھ', 'done' => false],
+    'climate' => ['label' => 'المناخ المدرسي', 'done' => false],
+    'facility' => ['label' => 'المرافق', 'done' => false],
+    'teaching' => ['label' => 'تقييم المعلمين', 'done' => false],
+    'behavior' => ['label' => 'السلوك', 'done' => false],
+    'skills' => ['label' => 'المهارات', 'done' => false],
 ];
 foreach ($dimensionScores as $key => $val) {
     if ($val !== null && isset($assessmentProgress[$key])) {
@@ -129,9 +129,9 @@ $completedAssessments = count(array_filter($assessmentProgress, function($a) { r
 $totalAssessments = count($assessmentProgress);
 $assessmentPercent = $totalAssessments > 0 ? round(($completedAssessments / $totalAssessments) * 100) : 0;
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// التنبيهات
+// ═══════════════════════════════════════════
 $alertSummary = ['critical' => 0, 'warning' => 0, 'info' => 0, 'total' => 0];
 try {
     $stmt = $db->prepare("SELECT severity, COUNT(*) as cnt FROM alerts WHERE school_id = ? AND is_active = 1 AND status = 'open' GROUP BY severity");
@@ -143,12 +143,12 @@ try {
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„طھط±ظپظٹط¹
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// الترفيع
+// ═══════════════════════════════════════════
 $promoStats = ['proposed' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0];
 try {
-    $stmt = $db->prepare("SELECT status, COUNT(*) as cnt FROM promotions WHERE school_id = ? AND is_active = 1 GROUP BY status");
+    $stmt = $db->prepare("SELECT pd.status, COUNT(*) as cnt FROM promotions pd JOIN students s ON pd.student_id = s.id WHERE s.school_id = ? AND pd.is_active = 1 GROUP BY pd.status");
     $stmt->execute([$schoolId]);
     while ($row = $stmt->fetch()) {
         if (isset($promoStats[$row['status']])) $promoStats[$row['status']] = $row['cnt'];
@@ -156,9 +156,9 @@ try {
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¨ظٹط§ظ†ط§طھ ط§ظ„ط­ط¶ظˆط± ط§ظ„ط£ط³ط¨ظˆط¹ظٹ (ط¢ط®ط± 7 ط£ظٹط§ظ…)
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// بيانات الحضور الأسبوعي (آخر 7 أيام)
+// ═══════════════════════════════════════════
 $weeklyAttendance = ['labels' => [], 'present' => [], 'absent' => [], 'late' => []];
 try {
     for ($i = 6; $i >= 0; $i--) {
@@ -178,9 +178,9 @@ try {
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// طھظˆط²ظٹط¹ ط§ظ„ط­ظˆط§ط¯ط« ط§ظ„ط³ظ„ظˆظƒظٹط© ط­ط³ط¨ ط§ظ„ظپط¦ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// توزيع الحوادث السلوكية حسب الفئة
+// ═══════════════════════════════════════════
 $behaviorByCategory = ['labels' => [], 'counts' => [], 'colors' => []];
 try {
     $stmt = $db->prepare("SELECT bc.name_ar, bc.type, COUNT(bi.id) as cnt FROM behavior_incidents bi JOIN behavior_categories bc ON bi.category_id = bc.id JOIN classes c ON bi.class_id = c.id WHERE c.school_id = ? AND bi.is_active = 1 AND bi.academic_year_id = ? GROUP BY bi.category_id ORDER BY cnt DESC LIMIT 8");
@@ -193,9 +193,9 @@ try {
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// طھظˆط²ظٹط¹ ط§ظ„ط¯ط±ط¬ط§طھ (ظ…ط¬ظ…ظˆط¹ط§طھ ط§ظ„ظ†ط³ط¨ ط§ظ„ظ…ط¦ظˆظٹط©)
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// توزيع الدرجات (مجموعات النسب المئوية)
+// ═══════════════════════════════════════════
 $gradeDistribution = ['labels' => ['0-19%', '20-39%', '40-49%', '50-59%', '60-69%', '70-79%', '80-89%', '90-100%'], 'counts' => [0,0,0,0,0,0,0,0]];
 try {
     $stmt = $db->prepare("SELECT g.percentage FROM grades g JOIN tests t ON g.test_id = t.id JOIN classes c ON t.class_id = c.id WHERE c.school_id = ? AND g.is_active = 1 AND t.academic_year_id = ?");
@@ -213,48 +213,48 @@ try {
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„ظ…ظ‡ط§ظ… ط§ظ„ظ…ط¹ظ„ظ‚ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// المهام المعلقة
+// ═══════════════════════════════════════════
 $pendingTasks = [];
-// ظ‚ط±ط§ط±ط§طھ ط§ظ„طھط±ظپظٹط¹ ط§ظ„ظ…ط¹ظ„ظ‚ط©
+// قرارات الترفيع المعلقة
 if ($promoStats['proposed'] > 0) {
-    $pendingTasks[] = ['icon' => 'ًںژ“', 'label' => 'ظ‚ط±ط§ط±ط§طھ طھط±ظپظٹط¹ ظ…ط¹ظ„ظ‚ط©', 'count' => $promoStats['proposed'], 'link' => '../promotion/index.php', 'color' => 'var(--warning)'];
+    $pendingTasks[] = ['icon' => '🎓', 'label' => 'قرارات ترفيع معلقة', 'count' => $promoStats['proposed'], 'link' => '../promotion/index.php', 'color' => 'var(--warning)'];
 }
-// طھظ†ط¨ظٹظ‡ط§طھ ط؛ظٹط± ظ…ط¹طھط±ظپ ط¨ظ‡ط§
+// تنبيهات غير معترف بها
 if ($alertSummary['critical'] > 0) {
-    $pendingTasks[] = ['icon' => 'ًںڑ¨', 'label' => 'طھظ†ط¨ظٹظ‡ط§طھ ط­ط±ط¬ط©', 'count' => $alertSummary['critical'], 'link' => '../alerts/index.php', 'color' => 'var(--danger)'];
+    $pendingTasks[] = ['icon' => '🚨', 'label' => 'تنبيهات حرجة', 'count' => $alertSummary['critical'], 'link' => '../alerts/index.php', 'color' => 'var(--danger)'];
 }
-// ط¥ظ‚ط±ط§ط±ط§طھ ط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط± ط§ظ„ظ…ط¹ظ„ظ‚ط©
+// إقرارات أولياء الأمور المعلقة
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM parent_acknowledgments pa JOIN students s ON pa.student_id = s.id WHERE s.school_id = ? AND pa.is_acknowledged = 0 AND pa.is_active = 1");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM parent_students ps JOIN students s ON ps.student_id = s.id WHERE s.school_id = ? AND ps.is_active = 1 AND s.is_active = 1 AND (ps.ack_grade = 0 OR ps.ack_behavior = 0 OR ps.ack_attendance = 0 OR ps.ack_promotion = 0)");
     $stmt->execute([$schoolId]);
     $unacked = (int)$stmt->fetchColumn();
     if ($unacked > 0) {
-        $pendingTasks[] = ['icon' => 'ًں“‌', 'label' => 'ط¥ظ‚ط±ط§ط±ط§طھ ظ…ط¹ظ„ظ‚ط©', 'count' => $unacked, 'link' => '../parent_ack/index.php', 'color' => 'var(--info)'];
+        $pendingTasks[] = ['icon' => '📝', 'label' => 'إقرارات معلقة', 'count' => $unacked, 'link' => '../parent_ack/index.php', 'color' => 'var(--info)'];
     }
 } catch (Exception $e) { }
-// ط§ط®طھط¨ط§ط±ط§طھ ط¨ط¯ظˆظ† ط¯ط±ط¬ط§طھ
+// اختبارات بدون درجات
 try {
     $stmt = $db->prepare("SELECT COUNT(*) FROM tests t JOIN classes c ON t.class_id = c.id WHERE c.school_id = ? AND t.is_active = 1 AND t.academic_year_id = ? AND t.status = 'draft'");
     $stmt->execute([$schoolId, $academicYearId]);
     $draftTests = (int)$stmt->fetchColumn();
     if ($draftTests > 0) {
-        $pendingTasks[] = ['icon' => 'ًں“‌', 'label' => 'ط§ط®طھط¨ط§ط±ط§طھ ظ…ط³ظˆط¯ط©', 'count' => $draftTests, 'link' => '../academic_assessment/index.php', 'color' => 'var(--secondary)'];
+        $pendingTasks[] = ['icon' => '📝', 'label' => 'اختبارات مسودة', 'count' => $draftTests, 'link' => '../academic_assessment/index.php', 'color' => 'var(--secondary)'];
     }
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ظ…ظ‚ط§ط±ظ†ط© ط£ط¯ط§ط، ط§ظ„ظپطµظˆظ„
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// مقارنة أداء الفصول
+// ═══════════════════════════════════════════
 $classComparison = [];
 try {
     $stmt = $db->prepare("
         SELECT c.id, c.name_ar, gl.name_ar as grade_name,
                (SELECT COUNT(*) FROM student_enrollments se WHERE se.class_id = c.id AND se.is_active = 1 AND se.status = 'enrolled') as student_count,
                (SELECT AVG(g.percentage) FROM grades g JOIN tests t ON g.test_id = t.id WHERE t.class_id = c.id AND g.is_active = 1) as avg_grade,
-               (SELECT AVG(v.attendance_rate) FROM v_attendance_summary v WHERE v.class_id = c.id) as avg_attendance,
-               (SELECT AVG(e.current_percentage) FROM evaluations e WHERE e.eval_type = 'behavior_score' AND e.class_id = c.id) as avg_behavior
+               (SELECT AVG(ats.attendance_rate) FROM v_attendance_summary ats WHERE ats.class_id = c.id AND ats.is_active = 1) as avg_attendance,
+               (SELECT AVG(bs.current_percentage) FROM behavior_scores bs WHERE bs.class_id = c.id AND bs.is_active = 1) as avg_behavior
         FROM classes c
         JOIN grade_levels gl ON c.grade_level_id = gl.id
         WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
@@ -265,9 +265,9 @@ try {
     $classComparison = $stmt->fetchAll();
 } catch (Exception $e) { }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„ظ†ط´ط§ط·ط§طھ ط§ظ„ط£ط®ظٹط±ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// النشاطات الأخيرة
+// ═══════════════════════════════════════════
 $recentActivities = [];
 try {
     $stmt = $db->prepare("
@@ -282,7 +282,7 @@ try {
     $recentActivities = $stmt->fetchAll();
 } catch (Exception $e) { }
 
-// ط§ط³ظ… ط§ظ„ظ…ط¯ط±ط³ط©
+// اسم المدرسة
 $schoolName = '';
 try {
     $stmt = $db->prepare("SELECT name_ar FROM schools WHERE id = ?");
@@ -292,6 +292,7 @@ try {
 ?>
 
 <style>
+/* ── Base dashboard components ── */
 .dashboard-stat {
     text-align: center; padding: 20px 16px; border-radius: var(--radius-lg);
     background: var(--surface); border: 1px solid var(--border-light);
@@ -303,6 +304,7 @@ try {
 .dashboard-stat .stat-label { font-size: 13px; color: var(--text-secondary); }
 .eqi-gauge { position: relative; width: 180px; height: 180px; margin: 0 auto; }
 .eqi-gauge-value { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.eqi-score-value { font-size: clamp(32px, 8vw, 64px); }
 .progress-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
 .progress-item:last-child { border-bottom: none; }
 .task-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
@@ -312,82 +314,126 @@ try {
 .timeline-item:last-child { border-bottom: none; }
 .timeline-dot { width: 10px; height: 10px; border-radius: var(--radius-full); margin-top: 5px; flex-shrink: 0; }
 .class-perf-cell { padding: 6px 8px; text-align: center; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; }
+
+/* ── Fluid chart body ── */
+.chart-card-body { min-height: 280px; max-height: 320px; }
+
+/* ── Responsive ── */
+
+/* lg (max-width: 1199px) — tighten spacing */
+@media (max-width: 1199px) {
+    .dashboard-stat { padding: 16px 12px; }
+    .dashboard-stat .stat-value { font-size: 24px; }
+}
+
+/* md (max-width: 991px) — tablet adjustments */
+@media (max-width: 991px) {
+    .school-header { flex-wrap: wrap; gap: 8px; }
+    .school-header .school-date { width: 100%; text-align: right; }
+    .quick-actions-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .chart-card-body { min-height: 240px; max-height: 280px; }
+}
+
+/* sm (max-width: 767px) — large phone */
+@media (max-width: 767px) {
+    .dashboard-stat { padding: 14px 10px; }
+    .dashboard-stat .stat-icon { font-size: 22px; margin-bottom: 6px; }
+    .dashboard-stat .stat-value { font-size: 20px; }
+    .dashboard-stat .stat-label { font-size: 11px; }
+    .eqi-gauge { width: 150px; height: 150px; }
+    .chart-card-body { min-height: 200px; max-height: 250px; }
+    .quick-actions-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .quick-actions-grid .btn { padding: 12px 8px; }
+    .quick-actions-grid .btn div:first-child { font-size: 20px !important; }
+    .quick-actions-grid .btn div:last-child { font-size: 11px !important; }
+}
+
+/* xs (max-width: 575px) — phone */
+@media (max-width: 575px) {
+    .dashboard-stat { padding: 12px 8px; }
+    .dashboard-stat .stat-icon { font-size: 20px; }
+    .dashboard-stat .stat-value { font-size: 18px; }
+    .eqi-gauge { width: 130px; height: 130px; }
+    .chart-card-body { min-height: 180px; max-height: 220px; }
+    .school-header { padding: 10px 16px !important; }
+    .school-header h2 { font-size: 16px !important; }
+}
 </style>
 
 <div class="section">
-    <!-- ط¹ظ†ظˆط§ظ† ط§ظ„ظ…ط¯ط±ط³ط© -->
+    <!-- عنوان المدرسة -->
     <div class="card mb-6">
-        <div class="card-body" style="padding:12px 24px;display:flex;justify-content:space-between;align-items:center;">
+        <div class="card-body school-header" style="padding:12px 24px;display:flex;justify-content:space-between;align-items:center;">
             <div>
-                <h2 style="margin:0;font-size:20px;">ًںڈ« <?= e($schoolName) ?></h2>
+                <h2 style="margin:0;font-size:20px;">🏫 <?= e($schoolName) ?></h2>
             </div>
-            <div style="font-size:12px;color:var(--text-muted);">
+            <div class="school-date" style="font-size:12px;color:var(--text-muted);">
                 <?= formatDateAr(date('Y-m-d'), 'full') ?>
             </div>
         </div>
     </div>
 
-    <!-- ط¨ط·ط§ظ‚ط§طھ ط§ظ„ط¥ط­طµط§ط¦ظٹط§طھ ط§ظ„ط³ط±ظٹط¹ط© -->
-    <div class="grid grid-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
+    <!-- بطاقات الإحصائيات السريعة -->
+    <div class="grid grid-4 mb-6">
         <div class="dashboard-stat" style="border-top:3px solid var(--primary);">
-            <div class="stat-icon">ًں‘¥</div>
+            <div class="stat-icon">👥</div>
             <div class="stat-value" style="color:var(--primary);"><?= number_format($counts['students']) ?></div>
-            <div class="stat-label">ط§ظ„ط·ظ„ط§ط¨</div>
+            <div class="stat-label">الطلاب</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--success);">
-            <div class="stat-icon">ًں“…</div>
+            <div class="stat-icon">📅</div>
             <div class="stat-value" style="color:var(--success);"><?= $quickStats['attendanceRate'] !== null ? $quickStats['attendanceRate'] . '%' : '-' ?></div>
-            <div class="stat-label">ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±</div>
+            <div class="stat-label">نسبة الحضور</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--info);">
-            <div class="stat-icon">ًں“ٹ</div>
+            <div class="stat-icon">📊</div>
             <div class="stat-value" style="color:var(--info);"><?= $quickStats['avgGpa'] !== null ? $quickStats['avgGpa'] . '%' : '-' ?></div>
-            <div class="stat-label">ظ…طھظˆط³ط· ط§ظ„ط¯ط±ط¬ط§طھ</div>
+            <div class="stat-label">متوسط الدرجات</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--secondary);">
-            <div class="stat-icon">ًں“‹</div>
+            <div class="stat-icon">📋</div>
             <div class="stat-value" style="color:var(--secondary);"><?= $quickStats['behaviorScore'] !== null ? $quickStats['behaviorScore'] . '%' : '-' ?></div>
-            <div class="stat-label">ظ…ط¹ط¯ظ„ ط§ظ„ط³ظ„ظˆظƒ</div>
+            <div class="stat-label">معدل السلوك</div>
         </div>
     </div>
 
-    <!-- ط¥ط­طµط§ط¦ظٹط§طھ ط«ط§ظ†ظˆظٹط© -->
-    <div class="grid grid-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));">
+    <!-- إحصائيات ثانوية -->
+    <div class="grid grid-4 mb-6">
         <div class="dashboard-stat" style="border-top:3px solid var(--success);">
-            <div class="stat-icon">ًں‘¨â€چًںڈ«</div>
+            <div class="stat-icon">👨‍🏫</div>
             <div class="stat-value" style="color:var(--success);"><?= number_format($counts['teachers']) ?></div>
-            <div class="stat-label">ط§ظ„ظ…ط¹ظ„ظ…ظˆظ†</div>
+            <div class="stat-label">المعلمون</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--info);">
-            <div class="stat-icon">ًں“ڑ</div>
+            <div class="stat-icon">📚</div>
             <div class="stat-value" style="color:var(--info);"><?= number_format($counts['classes']) ?></div>
-            <div class="stat-label">ط§ظ„ظپطµظˆظ„</div>
+            <div class="stat-label">الفصول</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--secondary);">
-            <div class="stat-icon">ًں“–</div>
+            <div class="stat-icon">📖</div>
             <div class="stat-value" style="color:var(--secondary);"><?= number_format($counts['subjects']) ?></div>
-            <div class="stat-label">ط§ظ„ظ…ظˆط§ط¯</div>
+            <div class="stat-label">المواد</div>
         </div>
         <div class="dashboard-stat" style="border-top:3px solid var(--danger);">
-            <div class="stat-icon">ًںڑ¨</div>
+            <div class="stat-icon">🚨</div>
             <div class="stat-value" style="color:var(--danger);"><?= $alertSummary['total'] ?></div>
-            <div class="stat-label">طھظ†ط¨ظٹظ‡ط§طھ ظ†ط´ط·ط©</div>
+            <div class="stat-label">تنبيهات نشطة</div>
         </div>
     </div>
 
-    <div class="grid grid-2" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
-        <!-- ظ…ظ‚ظٹط§ط³ ظ…ط¤ط´ط± ط¬ظˆط¯ط© ط§ظ„طھط¹ظ„ظٹظ… -->
+    <div class="grid grid-2">
+        <!-- مقياس مؤشر جودة التعليم -->
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-                <h3 class="card-title">ًں“ٹ ظ…ط¤ط´ط± ط¬ظˆط¯ط© ط§ظ„طھط¹ظ„ظٹظ…</h3>
-                <a href="../eqi/report.php" class="btn btn-sm btn-light">ط§ظ„طھظ‚ط±ظٹط±</a>
+                <h3 class="card-title">📊 مؤشر جودة التعليم</h3>
+                <a href="../eqi/report.php" class="btn btn-sm btn-light">التقرير</a>
             </div>
             <div class="card-body" style="text-align:center;">
                 <?php if ($eqiScore !== null):
                     $rating = getEqiRating($eqiScore);
                 ?>
                 <div style="margin-bottom:16px;">
-                    <div style="font-size:64px;font-weight:bold;color:var(--<?= $rating[2] ?>);"><?= $eqiScore ?>%</div>
+                    <div class="eqi-score-value" style="font-weight:bold;color:var(--<?= $rating[2] ?>);"><?= $eqiScore ?>%</div>
                     <span class="badge badge-<?= $rating[1] ?>" style="font-size:14px;"><?= $rating[0] ?></span>
                 </div>
                 <div style="width:100%;height:12px;background:var(--border-light);border-radius:var(--radius-full);">
@@ -395,102 +441,102 @@ try {
                 </div>
                 <?php else: ?>
                 <div style="padding:30px;color:var(--text-muted);">
-                    <div style="font-size:48px;margin-bottom:12px;">ًں“ٹ</div>
-                    <p>ظ„ظ… ظٹطھظ… ط­ط³ط§ط¨ ط§ظ„ظ…ط¤ط´ط± ط¨ط¹ط¯</p>
-                    <a href="../eqi/calculate.php" class="btn btn-primary btn-sm">ط¨ط¯ط، ط§ظ„ط­ط³ط§ط¨</a>
+                    <div style="font-size:48px;margin-bottom:12px;">📊</div>
+                    <p>لم يتم حساب المؤشر بعد</p>
+                    <a href="../eqi/calculate.php" class="btn btn-primary btn-sm">بدء الحساب</a>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- طھظ‚ط¯ظ… ط§ظ„طھظ‚ظٹظٹظ…ط§طھ -->
+        <!-- تقدم التقييمات -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“‹ طھظ‚ط¯ظ… ط§ظ„طھظ‚ظٹظٹظ…ط§طھ</h3>
+                <h3 class="card-title">📋 تقدم التقييمات</h3>
             </div>
             <div class="card-body">
                 <div style="text-align:center;margin-bottom:16px;">
                     <div style="font-size:36px;font-weight:bold;color:var(--primary);"><?= $assessmentPercent ?>%</div>
-                    <div style="color:var(--text-secondary);font-size:13px;"><?= $completedAssessments ?> ظ…ظ† <?= $totalAssessments ?> ظ…ظƒطھظ…ظ„</div>
+                    <div style="color:var(--text-secondary);font-size:13px;"><?= $completedAssessments ?> من <?= $totalAssessments ?> مكتمل</div>
                 </div>
                 <div style="width:100%;height:8px;background:var(--border-light);border-radius:var(--radius-full);margin-bottom:16px;">
                     <div style="width:<?= $assessmentPercent ?>%;height:100%;background:var(--primary);border-radius:var(--radius-full);"></div>
                 </div>
                 <?php foreach ($assessmentProgress as $key => $ap): ?>
                 <div class="progress-item">
-                    <span style="width:20px;"><?= $ap['done'] ? 'âœ…' : 'âڈ³' ?></span>
+                    <span style="width:20px;"><?= $ap['done'] ? '✅' : '⏳' ?></span>
                     <span style="flex:1;"><?= $ap['label'] ?></span>
                     <span style="font-size:12px;color:<?= $ap['done'] ? 'var(--success)' : 'var(--text-muted)' ?>;">
-                        <?= $ap['done'] ? 'ظ…ظƒطھظ…ظ„' : 'ط¨ط§ظ†طھط¸ط§ط±' ?>
+                        <?= $ap['done'] ? 'مكتمل' : 'بانتظار' ?>
                     </span>
                 </div>
                 <?php endforeach; ?>
             </div>
         </div>
 
-        <!-- ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ -->
+        <!-- التنبيهات -->
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-                <h3 class="card-title">ًںڑ¨ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ</h3>
-                <a href="../alerts/index.php" class="btn btn-sm btn-light">ط§ظ„ظƒظ„</a>
+                <h3 class="card-title">🚨 التنبيهات</h3>
+                <a href="../alerts/index.php" class="btn btn-sm btn-light">الكل</a>
             </div>
             <div class="card-body">
                 <div class="grid grid-3" style="gap:12px;margin-bottom:16px;">
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(220,53,69,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--danger);"><?= $alertSummary['critical'] ?></div>
-                        <div style="font-size:11px;color:var(--danger);">ط­ط±ط¬</div>
+                        <div style="font-size:11px;color:var(--danger);">حرج</div>
                     </div>
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(255,193,7,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--warning);"><?= $alertSummary['warning'] ?></div>
-                        <div style="font-size:11px;color:var(--warning);">طھط­ط°ظٹط±</div>
+                        <div style="font-size:11px;color:var(--warning);">تحذير</div>
                     </div>
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(23,162,184,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--info);"><?= $alertSummary['info'] ?></div>
-                        <div style="font-size:11px;color:var(--info);">ظ…ط¹ظ„ظˆظ…ط§طھ</div>
+                        <div style="font-size:11px;color:var(--info);">معلومات</div>
                     </div>
                 </div>
                 <?php if ($alertSummary['total'] === 0): ?>
-                <div style="text-align:center;color:var(--success);padding:12px;">âœ… ظ„ط§ طھظˆط¬ط¯ طھظ†ط¨ظٹظ‡ط§طھ ظ†ط´ط·ط©</div>
+                <div style="text-align:center;color:var(--success);padding:12px;">✅ لا توجد تنبيهات نشطة</div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- ط§ظ„طھط±ظپظٹط¹ -->
+        <!-- الترفيع -->
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-                <h3 class="card-title">ًںژ“ ط§ظ„طھط±ظپظٹط¹</h3>
-                <a href="../promotion/index.php" class="btn btn-sm btn-light">ط§ظ„طھظپط§طµظٹظ„</a>
+                <h3 class="card-title">🎓 الترفيع</h3>
+                <a href="../promotion/index.php" class="btn btn-sm btn-light">التفاصيل</a>
             </div>
             <div class="card-body">
                 <div class="grid grid-3" style="gap:12px;margin-bottom:16px;">
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(23,162,184,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--info);"><?= $promoStats['proposed'] ?></div>
-                        <div style="font-size:11px;">ظ…ظ‚طھط±ط­</div>
+                        <div style="font-size:11px;">مقترح</div>
                     </div>
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(40,167,69,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--success);"><?= $promoStats['approved'] ?></div>
-                        <div style="font-size:11px;">ظ…ط¹طھظ…ط¯</div>
+                        <div style="font-size:11px;">معتمد</div>
                     </div>
                     <div style="text-align:center;padding:8px;border-radius:var(--radius-md);background:rgba(220,53,69,0.1);">
                         <div style="font-size:24px;font-weight:bold;color:var(--danger);"><?= $promoStats['rejected'] ?></div>
-                        <div style="font-size:11px;">ظ…ط±ظپظˆط¶</div>
+                        <div style="font-size:11px;">مرفوض</div>
                     </div>
                 </div>
                 <?php if ($promoStats['proposed'] > 0): ?>
-                <a href="../promotion/batch_approve.php" class="btn btn-warning btn-sm" style="width:100%;">âڑ، ط§ط¹طھظ…ط§ط¯ ط§ظ„ظ‚ط±ط§ط±ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© (<?= $promoStats['proposed'] ?>)</a>
+                <a href="../promotion/batch_approve.php" class="btn btn-warning btn-sm" style="width:100%;">⚡ اعتماد القرارات المعلقة (<?= $promoStats['proposed'] ?>)</a>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- ط§ظ„ظ…ظ‡ط§ظ… ط§ظ„ظ…ط¹ظ„ظ‚ط© -->
+        <!-- المهام المعلقة -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“Œ ط§ظ„ظ…ظ‡ط§ظ… ط§ظ„ظ…ط¹ظ„ظ‚ط© <span style="background:var(--danger);color:white;padding:1px 8px;border-radius:var(--radius-full);font-size:11px;"><?= count($pendingTasks) ?></span></h3>
+                <h3 class="card-title">📌 المهام المعلقة <span style="background:var(--danger);color:white;padding:1px 8px;border-radius:var(--radius-full);font-size:11px;"><?= count($pendingTasks) ?></span></h3>
             </div>
             <div class="card-body">
                 <?php if (empty($pendingTasks)): ?>
                 <div style="text-align:center;padding:20px;color:var(--success);">
-                    âœ… ظ„ط§ طھظˆط¬ط¯ ظ…ظ‡ط§ظ… ظ…ط¹ظ„ظ‚ط©
+                    ✅ لا توجد مهام معلقة
                 </div>
                 <?php else: ?>
                 <?php foreach ($pendingTasks as $task): ?>
@@ -506,79 +552,79 @@ try {
             </div>
         </div>
 
-        <!-- ط£ط¨ط¹ط§ط¯ ظ…ط¤ط´ط± ط§ظ„ط¬ظˆط¯ط© (ط£ظپظ‚ظٹ) -->
+        <!-- أبعاد مؤشر الجودة (أفقي) -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“گ طھظپطµظٹظ„ ط£ط¨ط¹ط§ط¯ ط§ظ„ظ…ط¤ط´ط±</h3>
+                <h3 class="card-title">📐 تفصيل أبعاد المؤشر</h3>
             </div>
-            <div class="card-body" style="height:300px;">
+            <div class="card-body chart-card-body">
                 <canvas id="eqiDimBarChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- ط±ط³ظˆظ… ط¨ظٹط§ظ†ظٹط© - ط§ظ„طµظپ ط§ظ„ط£ظˆظ„ -->
-    <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
+    <!-- رسوم بيانية - الصف الأول -->
+    <div class="grid grid-2 mt-6">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“ٹ ط£ط¨ط¹ط§ط¯ ظ…ط¤ط´ط± ط§ظ„ط¬ظˆط¯ط©</h3>
+                <h3 class="card-title">📊 أبعاد مؤشر الجودة</h3>
             </div>
-            <div class="card-body" style="height:320px;">
+            <div class="card-body chart-card-body">
                 <canvas id="eqiRadarChart"></canvas>
             </div>
         </div>
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًںڑ¨ طھظˆط²ظٹط¹ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ</h3>
+                <h3 class="card-title">🚨 توزيع التنبيهات</h3>
             </div>
-            <div class="card-body" style="height:320px;">
+            <div class="card-body chart-card-body">
                 <canvas id="alertsChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- ط±ط³ظˆظ… ط¨ظٹط§ظ†ظٹط© - ط§ظ„طµظپ ط§ظ„ط«ط§ظ†ظٹ -->
-    <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
-        <!-- ط§ظ„ط­ط¶ظˆط± ط§ظ„ط£ط³ط¨ظˆط¹ظٹ -->
+    <!-- رسوم بيانية - الصف الثاني -->
+    <div class="grid grid-2 mt-6">
+        <!-- الحضور الأسبوعي -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“… ظ†ط¸ط±ط© ط¹ط§ظ…ط© ط¹ظ„ظ‰ ط§ظ„ط­ط¶ظˆط± (ط¢ط®ط± 7 ط£ظٹط§ظ…)</h3>
+                <h3 class="card-title">📅 نظرة عامة على الحضور (آخر 7 أيام)</h3>
             </div>
-            <div class="card-body" style="height:320px;">
+            <div class="card-body chart-card-body">
                 <canvas id="weeklyAttendanceChart"></canvas>
             </div>
         </div>
-        <!-- طھظˆط²ظٹط¹ ط§ظ„ط­ظˆط§ط¯ط« ط§ظ„ط³ظ„ظˆظƒظٹط© -->
+        <!-- توزيع الحوادث السلوكية -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“‹ ظ…ظ„ط®طµ ط§ظ„ط­ظˆط§ط¯ط« ط§ظ„ط³ظ„ظˆظƒظٹط©</h3>
+                <h3 class="card-title">📋 ملخص الحوادث السلوكية</h3>
             </div>
-            <div class="card-body" style="height:320px;">
+            <div class="card-body chart-card-body">
                 <canvas id="behaviorCategoryChart"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- ط±ط³ظˆظ… ط¨ظٹط§ظ†ظٹط© - ط§ظ„طµظپ ط§ظ„ط«ط§ظ„ط« -->
-    <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
-        <!-- طھظˆط²ظٹط¹ ط§ظ„ط¯ط±ط¬ط§طھ -->
+    <!-- رسوم بيانية - الصف الثالث -->
+    <div class="grid grid-2 mt-6">
+        <!-- توزيع الدرجات -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“ٹ طھظˆط²ظٹط¹ ط§ظ„ط¯ط±ط¬ط§طھ</h3>
+                <h3 class="card-title">📊 توزيع الدرجات</h3>
             </div>
-            <div class="card-body" style="height:320px;">
+            <div class="card-body chart-card-body">
                 <canvas id="gradeDistChart"></canvas>
             </div>
         </div>
-        <!-- ط§ظ„ظ†ط´ط§ط·ط§طھ ط§ظ„ط£ط®ظٹط±ط© -->
+        <!-- النشاطات الأخيرة -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں•گ ط¢ط®ط± ط§ظ„ظ†ط´ط§ط·ط§طھ</h3>
+                <h3 class="card-title">🕐 آخر النشاطات</h3>
             </div>
             <div class="card-body" style="padding:0;">
                 <div style="max-height:300px;overflow-y:auto;">
                     <?php if (empty($recentActivities)): ?>
-                    <div style="text-align:center;padding:30px;color:var(--text-muted);">ظ„ط§ طھظˆط¬ط¯ ظ†ط´ط§ط·ط§طھ ظ…ط³ط¬ظ„ط©</div>
+                    <div style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد نشاطات مسجلة</div>
                     <?php else: ?>
                     <?php foreach ($recentActivities as $act):
                         $actColors = ['create' => 'var(--success)', 'update' => 'var(--info)', 'delete' => 'var(--danger)', 'login' => 'var(--primary)', 'default' => 'var(--secondary)'];
@@ -588,7 +634,7 @@ try {
                         <div class="timeline-dot" style="background:<?= $dotColor ?>;"></div>
                         <div style="flex:1;">
                             <div style="display:flex;justify-content:space-between;">
-                                <strong style="font-size:12px;"><?= e($act['user_name'] ?? 'ظ†ط¸ط§ظ…') ?></strong>
+                                <strong style="font-size:12px;"><?= e($act['user_name'] ?? 'نظام') ?></strong>
                                 <span style="font-size:10px;color:var(--text-muted);"><?= formatDateAr($act['created_at'], 'short') ?></span>
                             </div>
                             <div style="color:var(--text-secondary);font-size:12px;margin-top:2px;"><?= e($act['description'] ?? $act['action']) ?></div>
@@ -601,22 +647,22 @@ try {
         </div>
     </div>
 
-    <!-- ظ…ظ‚ط§ط±ظ†ط© ط£ط¯ط§ط، ط§ظ„ظپطµظˆظ„ -->
+    <!-- مقارنة أداء الفصول -->
     <?php if (!empty($classComparison)): ?>
     <div class="card mt-6">
         <div class="card-header">
-            <h3 class="card-title">ًں“ڑ ظ…ظ‚ط§ط±ظ†ط© ط£ط¯ط§ط، ط§ظ„ظپطµظˆظ„</h3>
+            <h3 class="card-title">📚 مقارنة أداء الفصول</h3>
         </div>
         <div class="card-body" style="overflow-x:auto;">
             <table class="data-table" style="width:100%;min-width:600px;">
                 <thead>
                     <tr>
-                        <th>ط§ظ„طµظپ</th>
-                        <th>ط§ظ„ظپطµظ„</th>
-                        <th>ط§ظ„ط·ظ„ط§ط¨</th>
-                        <th>ظ…طھظˆط³ط· ط§ظ„ط¯ط±ط¬ط§طھ</th>
-                        <th>ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±</th>
-                        <th>ظ…ط¹ط¯ظ„ ط§ظ„ط³ظ„ظˆظƒ</th>
+                        <th>الصف</th>
+                        <th>الفصل</th>
+                        <th>الطلاب</th>
+                        <th>متوسط الدرجات</th>
+                        <th>نسبة الحضور</th>
+                        <th>معدل السلوك</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -645,21 +691,21 @@ try {
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-    // ط±ط§ط¯ط§ط± ط£ط¨ط¹ط§ط¯ ط§ظ„ظ…ط¤ط´ط±
+    // رادار أبعاد المؤشر
     var dimData = {
         dimensions: <?= json_encode($dimensionScores, JSON_UNESCAPED_UNICODE) ?>,
         overall: <?= $eqiScore ?: 0 ?>
     };
     eqasEqiRadar('eqiRadarChart', dimData);
 
-    // طھظˆط²ظٹط¹ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ
+    // توزيع التنبيهات
     eqasPieChart('alertsChart', '',
-        ['ط­ط±ط¬', 'طھط­ط°ظٹط±', 'ظ…ط¹ظ„ظˆظ…ط§طھ'],
+        ['حرج', 'تحذير', 'معلومات'],
         [<?= $alertSummary['critical'] ?>, <?= $alertSummary['warning'] ?>, <?= $alertSummary['info'] ?>],
         ['#dc3545', '#ffc107', '#17a2b8']
     );
 
-    // ط£ط¨ط¹ط§ط¯ ط§ظ„ظ…ط¤ط´ط± - ط´ط±ظٹط· ط£ظپظ‚ظٹ
+    // أبعاد المؤشر - شريط أفقي
     var dimLabels = <?= json_encode(array_keys($dimensionNames), JSON_UNESCAPED_UNICODE) ?>;
     var dimValues = [];
     <?php foreach ($dimensionNames as $label => $key): ?>
@@ -667,21 +713,21 @@ try {
     <?php endforeach; ?>
     eqasBarChart('eqiDimBarChart', '',
         dimLabels,
-        [{label: 'ط§ظ„ط¯ط±ط¬ط©', data: dimValues, backgroundColor: ['#1a5632','#c8a951','#17a2b8','#28a745','#fd7e14','#6f42c1']}],
+        [{label: 'الدرجة', data: dimValues, backgroundColor: ['#1a5632','#c8a951','#17a2b8','#28a745','#fd7e14','#6f42c1']}],
         {indexAxis: 'y'}
     );
 
-    // ط§ظ„ط­ط¶ظˆط± ط§ظ„ط£ط³ط¨ظˆط¹ظٹ
+    // الحضور الأسبوعي
     eqasBarChart('weeklyAttendanceChart', '',
         <?= json_encode($weeklyAttendance['labels'], JSON_UNESCAPED_UNICODE) ?>,
         [
-            {label: 'ط­ط§ط¶ط±', data: <?= json_encode($weeklyAttendance['present']) ?>, backgroundColor: '#28a745'},
-            {label: 'ط؛ط§ط¦ط¨', data: <?= json_encode($weeklyAttendance['absent']) ?>, backgroundColor: '#dc3545'},
-            {label: 'ظ…طھط£ط®ط±', data: <?= json_encode($weeklyAttendance['late']) ?>, backgroundColor: '#ffc107'}
+            {label: 'حاضر', data: <?= json_encode($weeklyAttendance['present']) ?>, backgroundColor: '#28a745'},
+            {label: 'غائب', data: <?= json_encode($weeklyAttendance['absent']) ?>, backgroundColor: '#dc3545'},
+            {label: 'متأخر', data: <?= json_encode($weeklyAttendance['late']) ?>, backgroundColor: '#ffc107'}
         ]
     );
 
-    // ط§ظ„ط­ظˆط§ط¯ط« ط§ظ„ط³ظ„ظˆظƒظٹط© ط­ط³ط¨ ط§ظ„ظپط¦ط©
+    // الحوادث السلوكية حسب الفئة
     eqasPieChart('behaviorCategoryChart', '',
         <?= json_encode($behaviorByCategory['labels'], JSON_UNESCAPED_UNICODE) ?>,
         <?= json_encode($behaviorByCategory['counts']) ?>,
@@ -689,11 +735,11 @@ try {
         false
     );
 
-    // طھظˆط²ظٹط¹ ط§ظ„ط¯ط±ط¬ط§طھ
+    // توزيع الدرجات
     eqasBarChart('gradeDistChart', '',
         <?= json_encode($gradeDistribution['labels']) ?>,
         [{
-            label: 'ط¹ط¯ط¯ ط§ظ„ط·ظ„ط§ط¨',
+            label: 'عدد الطلاب',
             data: <?= json_encode($gradeDistribution['counts']) ?>,
             backgroundColor: ['#dc3545','#dc3545','#fd7e14','#ffc107','#ffc107','#17a2b8','#28a745','#1a5632']
         }]
@@ -701,36 +747,36 @@ try {
     });
     </script>
 
-    <!-- ط¥ط¬ط±ط§ط،ط§طھ ط³ط±ظٹط¹ط© -->
+    <!-- إجراءات سريعة -->
     <div class="card mt-6">
         <div class="card-header">
-            <h3 class="card-title">âڑ، ط¥ط¬ط±ط§ط،ط§طھ ط³ط±ظٹط¹ط©</h3>
+            <h3 class="card-title">⚡ إجراءات سريعة</h3>
         </div>
         <div class="card-body">
-            <div class="grid grid-auto" style="gap:12px;">
+            <div class="grid grid-auto quick-actions-grid">
                 <a href="../setup/index.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">âڑ™ï¸ڈ</div><div style="font-size:13px;">ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ظ‡ظٹظƒظ„ظٹط©</div>
+                    <div style="font-size:24px;">⚙️</div><div style="font-size:13px;">الإعدادات الهيكلية</div>
                 </a>
                 <a href="../supervision/index.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًں“‹</div><div style="font-size:13px;">ط§ظ„طھظ‚ظٹظٹظ…ط§طھ ط§ظ„ط¥ط´ط±ط§ظپظٹط©</div>
+                    <div style="font-size:24px;">📋</div><div style="font-size:13px;">التقييمات الإشرافية</div>
                 </a>
                 <a href="../academic_assessment/index.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًں“ٹ</div><div style="font-size:13px;">ط§ظ„طھظ‚ظٹظٹظ… ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹ</div>
+                    <div style="font-size:24px;">📊</div><div style="font-size:13px;">التقييم الأكاديمي</div>
                 </a>
                 <a href="../attendance/daily.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًں“…</div><div style="font-size:13px;">ط§ظ„ط­ط¶ظˆط± ط§ظ„ظٹظˆظ…ظٹ</div>
+                    <div style="font-size:24px;">📅</div><div style="font-size:13px;">الحضور اليومي</div>
                 </a>
                 <a href="../behavior/evaluate.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًں“‹</div><div style="font-size:13px;">طھظ‚ظٹظٹظ… ط§ظ„ط³ظ„ظˆظƒ</div>
+                    <div style="font-size:24px;">📋</div><div style="font-size:13px;">تقييم السلوك</div>
                 </a>
                 <a href="../alerts/run_checks.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًںڑ¨</div><div style="font-size:13px;">ظپط­طµ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ</div>
+                    <div style="font-size:24px;">🚨</div><div style="font-size:13px;">فحص التنبيهات</div>
                 </a>
                 <a href="../reports/school_report.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًں“„</div><div style="font-size:13px;">طھظ‚ط±ظٹط± ط§ظ„ظ…ط¯ط±ط³ط©</div>
+                    <div style="font-size:24px;">📄</div><div style="font-size:13px;">تقرير المدرسة</div>
                 </a>
                 <a href="../promotion/index.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                    <div style="font-size:24px;">ًںژ“</div><div style="font-size:13px;">ط¥ط¯ط§ط±ط© ط§ظ„طھط±ظپظٹط¹</div>
+                    <div style="font-size:24px;">🎓</div><div style="font-size:13px;">إدارة الترفيع</div>
                 </a>
             </div>
         </div>

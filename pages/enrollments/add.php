@@ -359,8 +359,8 @@ $old['enrollment_mode']  = $old['enrollment_mode'] ?? $enrollmentMode;
 
         <!-- تبديل وضع التسجيل -->
         <div class="flex gap-2 mb-6">
-            <a href="add.php?mode=single" class="btn <?= ($old['enrollment_mode'] ?? 'single') === 'single' ? 'btn-primary' : 'btn-light' ?>">👤 تسجيل فردي</a>
-            <a href="add.php?mode=bulk" class="btn <?= ($old['enrollment_mode'] ?? 'single') === 'bulk' ? 'btn-primary' : 'btn-light' ?>">👥 تسجيل جماعي</a>
+            <a href="add.php?mode=single<?= $selectedAcademicYear > 0 ? '&amp;academic_year_id=' . $selectedAcademicYear : '' ?>" class="btn <?= ($old['enrollment_mode'] ?? 'single') === 'single' ? 'btn-primary' : 'btn-light' ?>">👤 تسجيل فردي</a>
+            <a href="add.php?mode=bulk<?= $selectedAcademicYear > 0 ? '&amp;academic_year_id=' . $selectedAcademicYear : '' ?>" class="btn <?= ($old['enrollment_mode'] ?? 'single') === 'bulk' ? 'btn-primary' : 'btn-light' ?>">👥 تسجيل جماعي</a>
         </div>
 
         <form method="POST" action="" id="enrollment-form" data-validate>
@@ -507,10 +507,8 @@ $pageJs = <<<JS
                 return;
             }
 
-            // إعادة تحميل الصفحة مع العام المحدد
             const mode = document.querySelector('input[name="enrollment_mode"]').value;
-            const currentClassId = classSelect.value;
-            window.location.href = 'add.php?mode=' + mode + '&academic_year_id=' + yearId + (currentClassId ? '&class_id=' + currentClassId : '');
+            window.location.href = 'add.php?mode=' + mode + '&academic_year_id=' + yearId;
         });
     }
 
@@ -526,11 +524,9 @@ $pageJs = <<<JS
                 classInfo.textContent = '';
             }
 
-            // في الوضع الجماعي: تحميل قائمة الطلاب
             const mode = document.querySelector('input[name="enrollment_mode"]')?.value;
             if (mode === 'bulk' && this.value) {
-                const yearId = academicYearSelect ? academicYearSelect.value : '';
-                window.location.href = 'add.php?mode=bulk&academic_year_id=' + yearId + '&class_id=' + this.value;
+                loadBulkStudents(this.value);
             }
         });
     }
@@ -653,6 +649,39 @@ $pageJs = <<<JS
     document.querySelectorAll('.student-checkbox').forEach(cb => {
         cb.addEventListener('change', updateSelectedCount);
     });
+
+    // ============================================================
+    // تحميل الطلاب عبر AJAX (الوضع الجماعي)
+    // ============================================================
+    async function loadBulkStudents(classId) {
+        const container = document.getElementById('students-checkbox-list');
+        if (!container) return;
+
+        const yearId = academicYearSelect ? academicYearSelect.value : '';
+        if (!yearId || !classId) return;
+
+        container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">⏳ جاري التحميل...</div>';
+
+        try {
+            const resp = await fetch('../../api/enrollment_students.php?class_id=' + classId + '&academic_year_id=' + yearId, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await resp.json();
+
+            if (data.html) {
+                container.innerHTML = data.html;
+            } else {
+                container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);">📭 لا يوجد طلاب متاحون</div>';
+            }
+
+            document.querySelectorAll('.student-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSelectedCount);
+            });
+            updateSelectedCount();
+        } catch (err) {
+            container.innerHTML = '<div style="text-align:center;padding:30px;color:var(--danger);">⚠️ حدث خطأ في تحميل الطلاب</div>';
+        }
+    }
 
     // تحديث العداد عند التحميل
     updateSelectedCount();

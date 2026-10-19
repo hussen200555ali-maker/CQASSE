@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-19T15:00:00Z" agent="CQASSE" version="24.2.5" type="device">
+  <diagram id="CQASSE-DFD-L0" name="DFD Level 0 - CQASSE">
+    <mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="&lt;b&gt;مدير النظام&lt;/b&gt;&lt;br&gt;&lt;i&gt;Group Admin&lt;/i&gt;" style="rounded=1;fillColor=#e74c3c;fontColor=#ffffff;fontSize=12;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="50" y="240" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="&lt;b&gt;مدير المدرسة&lt;/b&gt;&lt;br&gt;&lt;i&gt;School Admin&lt;/i&gt;" style="rounded=1;fillColor=#3498db;fontColor=#ffffff;fontSize=12;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1970" y="240" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="&lt;b&gt;معلم&lt;/b&gt;&lt;br&gt;&lt;i&gt;Teacher&lt;/i&gt;" style="rounded=1;fillColor=#2ecc71;fontColor=#ffffff;fontSize=12;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1970" y="900" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="&lt;b&gt;ولي أمر&lt;/b&gt;&lt;br&gt;&lt;i&gt;Parent&lt;/i&gt;" style="rounded=1;fillColor=#f39c12;fontColor=#ffffff;fontSize=12;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="50" y="900" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="&lt;b&gt;P1&lt;/b&gt;&lt;br&gt;إدارة المستخدمين&lt;br&gt;والصلاحيات والنظام" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="340" y="120" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="&lt;b&gt;P2&lt;/b&gt;&lt;br&gt;البيانات الأساسية&lt;br&gt;والتسجيل" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="920" y="120" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="&lt;b&gt;P3&lt;/b&gt;&lt;br&gt;إدارة الحضور&lt;br&gt;والسلوك والمهارات" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="340" y="460" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="&lt;b&gt;P4&lt;/b&gt;&lt;br&gt;التقييم الشامل&lt;br&gt;وجودة التعليم" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="920" y="460" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="&lt;b&gt;P5&lt;/b&gt;&lt;br&gt;التقارير&lt;br&gt;والتحليلات" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1540" y="460" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="&lt;b&gt;P6&lt;/b&gt;&lt;br&gt;التواصل وبوابة&lt;br&gt;المستفيدين" style="rounded=1;fillColor=#e8f4fd;strokeColor=#2980b9;strokeWidth=2;fontSize=11;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1540" y="120" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="&lt;b&gt;DS1&lt;/b&gt;&lt;br&gt;بيانات النظام&lt;br&gt;والمستخدمين" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="100" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="&lt;b&gt;DS2&lt;/b&gt;&lt;br&gt;البيانات الأكاديمية&lt;br&gt;والتسجيل" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="420" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="&lt;b&gt;DS3&lt;/b&gt;&lt;br&gt;سجلات الأداء&lt;br&gt;(حضور، سلوك، مهارات)" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="740" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="&lt;b&gt;DS4&lt;/b&gt;&lt;br&gt;التقييمات الإشرافية&lt;br&gt;ومؤشرات EQI" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1060" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="&lt;b&gt;DS5&lt;/b&gt;&lt;br&gt;المناخ المدرسي&lt;br&gt;والاستبيانات" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1380" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="&lt;b&gt;DS6&lt;/b&gt;&lt;br&gt;الإشعارات والتنبيهات&lt;br&gt;وخطط التحسين" style="shape=cylinder3;fillColor=#fef9e7;strokeColor=#f39c12;strokeWidth=1.5;fontSize=10;verticalAlign=middle;align=center;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1700" y="840" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="100" value="بيانات المستخدمين
+والصلاحيات" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.3;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="2" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="101" value="إعدادات النظام" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="2" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="102" value="سياسات المجموعة" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.7;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="2" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="103" value="طلبات التقارير
+والتحليلات" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.3;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="2" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="104" value="طلبات التصدير" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.7;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="2" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="105" value="بيانات الطلاب
+وأولياء الأمور" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="106" value="بيانات الشعب والمواد" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.35;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="107" value="تعيينات المعلمين" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.5;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="108" value="تسجيل الطلاب
+في الشعب" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.65;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="109" value="الفصول والسنوات
+الدراسية" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="إعدادات الحضور" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.3;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="111" value="معايير السلوك" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.7;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="112" value="نتائج التقييم
+الإشرافي" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="113" value="ردود استبيانات
+المناخ" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="114" value="نتائج تقييم
+المرافق" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="115" value="قرارات الترفيع" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="3" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="116" value="سجلات الحضور" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="117" value="سجلات السلوك" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="118" value="تقارير المهارات" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="119" value="بيانات الاختبارات
+والدرجات" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="120" value="التقييم الذاتي" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="121" value="تقييم الأقران" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.5;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="122" value="تقييم المعلم
+للمدير" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="4" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="123" value="استعلامات ولي
+الأمر" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.3;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="5" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="124" value="إقرارات ولي الأمر" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.7;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="5" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="125" value="سجل النشاطات" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.3;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="10" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="126" value="حالة النظام" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="10" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="127" value="سجل عمليات
+النسخ الاحتياطي" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.7;entryX=1;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="10" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="128" value="التقارير السنوية" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.3;entryX=1;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="14" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="129" value="مؤشرات EQI
+وKPIs" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;entryX=1;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="14" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="130" value="التنبيهات الذكية" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.7;entryX=1;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="14" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="131" value="نتائج التحليلات
+والمقارنات" style="edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.85;entryX=1;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="14" target="2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="132" value="تأكيد التسجيل" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.3;entryX=0;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="11" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="133" value="إحصائيات المدرسة" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="11" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="134" value="تقارير الصف" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.7;entryX=0;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="11" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="135" value="مؤشرات EQI
+للمدرسة" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.3;entryX=0;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="13" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="136" value="نتائج التقييمات" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.4;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="13" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="137" value="تقرير المدرسة PDF" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.7;entryX=0;entryY=0.6;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="13" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="138" value="بيانات الطلاب
+للصف" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.25;entryX=0;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="12" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="139" value="إشعارات الغياب" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="12" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="140" value="خطط تطوير
+المعلم" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.75;entryX=0;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="12" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="141" value="بيانات الأبناء
+(درجات، سلوك، حضور)" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.25;entryX=0;entryY=0.2;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="15" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="142" value="نتائج الترفيع" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="15" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="143" value="الإشعارات" style="edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.75;entryX=0;entryY=0.8;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;" edge="1" parent="1" source="15" target="5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="200" value="طلبات التحقق من الصلاحيات" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="11" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="201" value="صلاحيات المستخدمين
+وأدوارهم" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="202" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="203" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="204" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="205" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" parent="1" source="10" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="206" value="بيانات تسجيل الطلاب
+والشعب" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0;exitY=0.5;entryX=1;entryY=0.3;" edge="1" parent="1" source="11" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="207" value="الهيكل الأكاديمي
+(مواد، شعب، معلمين)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=1;entryY=0.15;" edge="1" parent="1" source="11" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="208" value="بيانات الأداء
+اليومي (حضور، سلوك، مهارات، درجات)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;" edge="1" parent="1" source="12" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="209" value="نتائج EQI
+ومؤشرات الجودة" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;" edge="1" parent="1" source="13" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="210" value="نتائج الطلاب
+للمستفيدين" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="13" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="211" value="التنبيهات والإشعارات
+للإرسال" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" parent="1" source="14" target="15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="212" value="طلب بيانات للتقارير" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0;exitY=0.3;entryX=1;entryY=0.5;" edge="1" parent="1" source="14" target="13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="213" value="طلب بيانات للتقارير" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0;exitY=0.7;entryX=1;entryY=0.7;" edge="1" parent="1" source="14" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="214" value="مراسلات أولياء
+الأمور" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=0;entryX=1;entryY=0.5;" edge="1" parent="1" source="15" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="300" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="10" target="20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="301" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="11" target="21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="302" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="12" target="22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="303" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="13" target="23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="304" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="13" target="24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="305" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="14" target="23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="306" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.2;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="14" target="21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="307" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.8;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="14" target="22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="308" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="15" target="25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="309" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=blockThin;endFill=1;strokeWidth=1.5;fontSize=9;labelBackgroundColor=#ffffff;curved=0;strokeColor=#7f8c8d;dashed=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="10" target="25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="&lt;b&gt;حدود النظام — CQASSE&lt;/b&gt;" style="rounded=1;dashed=1;fillColor=none;strokeColor=#bdc3c7;strokeWidth=2;fontSize=14;fontColor=#7f8c8d;verticalAlign=top;align=left;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="260" y="60" width="1940" height="920" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

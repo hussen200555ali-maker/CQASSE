@@ -67,6 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['calculate'])) {
         $yearId = (int)($_POST['academic_year_id'] ?? 0);
         $semesterId = (int)($_POST['semester_id'] ?? 0);
         
+        // منع school_admin من استخدام school_id مختلف عن مدرسته
+        if ($userRole !== 'group_admin' && $schoolId > 0 && $schoolId != $userSchoolId) {
+            setFlash('طلب غير صالح — لا يمكنك حساب مؤشر لمدرسة أخرى.', 'danger');
+            redirect('calculate.php');
+        }
         // منع school_admin من استخدام قيمة 0 (جميع المدارس) في الطلب المُزيف
         if ($schoolId === 0 && $userRole !== 'group_admin') {
             setFlash('طلب غير صالح.', 'danger');

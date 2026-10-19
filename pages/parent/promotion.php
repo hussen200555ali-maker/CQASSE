@@ -5,17 +5,17 @@
  * نظام التقييم الشامل - عرض قرارات الترفيع لجميع الأبناء
  * ============================================================
  * يعرض قرارات الترفيع لجميع الأبناء:
- * - آخر قرار لكل عام دراسي من promotion_decisions
+ * - آخر قرار لكل عام دراسي من promotions
  * - عرض: academic_score, behavior_score, attendance_rate, final_decision
  * - تلوين: promoted=أخضر, repeated=أحمر, conditional=أصفر
  * - خطة التحسين إذا كان القرار مشروط
  * ============================================================
  */
 
+require_once __DIR__ . '/../../includes/header.php';
+
 $pageTitle = 'قرارات الترفيع';
 $breadcrumb = ['لوحة ولي الأمر' => baseUrl('pages/dashboard/parent.php'), 'قرارات الترفيع' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
 
 // التحقق من الصلاحية
 if (!hasPermission('parent')) {
@@ -81,7 +81,7 @@ foreach ($children as $child) {
                    pd.academic_score, pd.behavior_score, pd.attendance_score,
                    pd.academic_pass, pd.behavior_pass, pd.attendance_pass,
                    pd.decision, pd.status, pd.notes,
-                   pd.approved_by, pd.approved_at, pd.decided_at,
+                   pd.approved_by, pd.approved_at, pd.created_at,
                    ay.name as academic_year_name,
                    sem.name_ar as semester_name
             FROM promotions pd
@@ -533,7 +533,7 @@ $statusColors = [
                 <div>
                     <div style="font-size:13px;font-weight:600;"><?php echo e($dec['academic_year_name'] ?? ''); ?> - <?php echo e($dec['semester_name'] ?? ''); ?></div>
                     <div style="font-size:11px;color:var(--text-muted,#999);margin-top:2px;">
-                        <?php echo formatDateAr($dec['decided_at'], 'short'); ?>
+                        <?php echo formatDateAr($dec['created_at'], 'short'); ?>
                         <?php if ($dec['notes']): ?> | <?php echo e(truncate($dec['notes'], 50)); ?><?php endif; ?>
                     </div>
                 </div>

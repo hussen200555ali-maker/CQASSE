@@ -12,10 +12,10 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../includes/header.php';
+
 $pageTitle = 'درجات الأبناء';
 $breadcrumb = ['لوحة ولي الأمر' => baseUrl('pages/dashboard/parent.php'), 'درجات الأبناء' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
 
 // التحقق من الصلاحية
 if (!hasPermission('parent')) {

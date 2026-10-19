@@ -315,7 +315,7 @@ function getClassEnrollmentCount($db, $classId) {
                             <tr>
                                 <td><?= $rowNumber++ ?></td>
                                 <td>
-                                    <a href="<?= baseUrl('pages/users/view.php?id=') ?><?= $en['student_id'] ?>" style="font-weight:600;">
+                                    <a href="<?= baseUrl('pages/students/view.php?id=') ?><?= $en['student_id'] ?>" style="font-weight:600;">
                                         <?= e($en['student_name']) ?>
                                     </a>
                                     <div style="font-size:11px; color:var(--text-muted);">
@@ -336,7 +336,7 @@ function getClassEnrollmentCount($db, $classId) {
                                     <?php if ($en['status'] === 'enrolled'): ?>
                                         <a href="edit.php?id=<?= $en['id'] ?>&action=transfer" class="btn btn-sm btn-info" title="نقل إلى فصل آخر">🔄</a>
                                     <?php endif; ?>
-                                    <a href="<?= baseUrl('pages/users/view.php?id=') ?><?= $en['student_id'] ?>" class="btn btn-sm btn-secondary" title="عرض بيانات الطالب">👁️</a>
+                                    <a href="<?= baseUrl('pages/students/view.php?id=') ?><?= $en['student_id'] ?>" class="btn btn-sm btn-secondary" title="عرض بيانات الطالب">👁️</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

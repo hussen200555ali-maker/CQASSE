@@ -67,6 +67,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
 }
 
 // ============================================================
+// معالجة إعادة الإعدادات إلى الافتراضي
+// ============================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_settings'])) {
+    if (!verifyCsrf()) {
+        setFlash('خطأ في التحقق من الأمان.', 'danger');
+    } else {
+        $targetSchool = (int)($_POST['school_id'] ?? $schoolId);
+        try {
+            $stmt = $db->prepare("UPDATE attendance_settings SET is_active = 0 WHERE school_id = ?");
+            $stmt->execute([$targetSchool]);
+            logActivity($db, $userId, 'attendance_settings_reset', 'إعادة إعدادات الحضور للافتراضي', 'schools', $targetSchool);
+            setFlash('تم إعادة تعيين الإعدادات إلى القيم الافتراضية', 'success');
+        } catch (Exception $e) {
+            setFlash('حدث خطأ أثناء إعادة التعيين: ' . $e->getMessage(), 'danger');
+        }
+    }
+}
+
+// ============================================================
 // جلب الإعدادات الحالية
 // ============================================================
 $currentSettings = [
@@ -188,9 +207,13 @@ if ($userRole === 'group_admin') {
                     </div>
                 </div>
 
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <button type="submit" name="save_settings" class="btn btn-primary btn-lg">
                         💾 حفظ الإعدادات
+                    </button>
+                    <button type="submit" name="reset_settings" class="btn btn-danger btn-lg"
+                            onclick="return confirm('هل أنت متأكد من إعادة تعيين الإعدادات إلى القيم الافتراضية؟');">
+                        🔄 إعادة افتراضي
                     </button>
                     <a href="index.php" class="btn btn-light">رجوع</a>
                 </div>

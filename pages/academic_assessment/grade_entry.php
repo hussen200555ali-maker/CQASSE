@@ -27,6 +27,34 @@ if (!hasPermission('teacher')) {
 
 $calculator = new AcademicCalculator($db);
 $academicYearId = getCurrentAcademicYearId($db);
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
+$schoolId = $_SESSION['user']['school_id'] ?? 0;
+$currentSemesterId = currentSemesterId($academicYearId);
+// Debug: Show session and computed values on screen (temporary)
+if (isset($_GET['debug']) && $_GET['debug'] === '1') {
+    echo "<div style='background:#fff3cd; border:1px solid #ffeaa7; padding:10px; margin:10px 0;'>";
+    echo "<strong>DEBUG grade_entry.php:</strong> ";
+    echo "userId={$userId}, role={$userRole}, schoolId={$schoolId}, academicYearId={$academicYearId}";
+    echo "</div>";
+    
+    // Show session contents
+    echo "<div style='background:#e2f3ff; border:1px solid #bee3f8; padding:10px; margin:10px 0;'>";
+    echo "<strong>SESSION Contents:</strong><br>";
+    if (isset($_SESSION['user'])) {
+        echo "user: ".htmlspecialchars(print_r($_SESSION['user'], true))."<br>";
+    }
+    if (isset($_SESSION['academic_year_id'])) {
+        echo "academic_year_id: ".$_SESSION['academic_year_id']."<br>";
+    }
+    if (isset($_SESSION['current_semester_id'])) {
+        echo "current_semester_id: ".$_SESSION['current_semester_id']."<br>";
+    }
+    echo "</div>";
+}
+
+// Always show basic debug info in comments for inspection
+// DEBUG: userId={$userId}, role={$userRole}, schoolId={$schoolId}, academicYearId={$academicYearId}
 
 // ============================================================
 // معالجة إنشاء اختبار جديد
@@ -57,6 +85,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($assessmentTypeId <= 0) $errors[] = 'يرجى اختيار نوع التقييم';
         if ($maxGrade <= 0) $errors[] = 'الدرجة القصوى يجب أن تكون أكبر من صفر';
         if ($semesterId <= 0) $errors[] = 'يرجى اختيار الفصل الدراسي';
+
+        // التحقق من أن المعلم يملك صلاحية لهذه المادة والفصل
+        if ($userRole === 'teacher' && empty($errors)) {
+            $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!in_array($classId, $allowedIds)) {
+                $errors[] = 'ليس لديك صلاحية لإنشاء اختبار في هذا الفصل';
+            }
+        }
+
+        // المعلم: يسمح فقط بإنشاء اختبار في الفصل الحالي
+        if ($userRole === 'teacher' && empty($errors)) {
+            $currentSemesterId = currentSemesterId($academicYearId);
+            if ($currentSemesterId && $semesterId !== (int)$currentSemesterId) {
+                $errors[] = 'يمكنك إنشاء اختبار فقط في الفصل الدراسي الحالي';
+            }
+        }
 
         if (empty($errors)) {
             try {
@@ -106,10 +150,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             redirect('grade_entry.php');
         }
 
+        // التحقق من أن المعلم يملك صلاحية لهذا الفصل والمادة
+        if ($userRole === 'teacher') {
+            $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!in_array((int)$test['class_id'], $allowedIds)) {
+                setFlash('ليس لديك صلاحية لتسجيل درجات لهذا الاختبار', 'danger');
+                redirect('grade_entry.php');
+            }
+        }
+
         // التحقق من أن الاختبار غير مقفل
         if ($test['status'] === 'locked') {
             setFlash('لا يمكن تعديل الدرجات لاختبار مقفل', 'danger');
             redirect('grade_entry.php?test_id=' . $testId);
+        }
+
+        // المعلم: يسمح فقط بتسجيل درجات في الفصل الحالي
+        if ($userRole === 'teacher') {
+            $currentSemesterId = currentSemesterId($academicYearId);
+            if ($currentSemesterId && (int)$test['semester_id'] !== (int)$currentSemesterId) {
+                setFlash('يمكنك تسجيل الدرجات فقط في الفصل الدراسي الحالي', 'danger');
+                redirect('grade_entry.php?test_id=' . $testId);
+            }
         }
 
         try {
@@ -182,18 +244,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 // جلب البيانات للعرض
 // ============================================================
 
-// جلب الفصول المتاحة
-$schoolId = $_SESSION['user']['school_id'] ?? 0;
+// جلب الفصول المتاحة — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT c.id, c.name_ar, gl.name_ar AS grade_name, gl.stage
-        FROM classes c
-        INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
-        WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
-        ORDER BY gl.level_number, c.name_ar
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    if ($userRole === 'teacher') {
+        $stmt = $db->prepare("
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name, gl.stage
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            UNION
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name, gl.stage
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+            ORDER BY grade_name, name_ar
+        ");
+        $stmt->execute([$userId, $schoolId, $academicYearId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT c.id, c.name_ar, gl.name_ar AS grade_name, gl.stage
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            ORDER BY gl.level_number, c.name_ar
+        ");
+        $stmt->execute([$schoolId, $academicYearId]);
+    }
     $classes = $stmt->fetchAll();
 }
 
@@ -212,10 +290,34 @@ $assessmentTypes = $db->query("
     SELECT id, name_ar, code, weight_default FROM assessment_types WHERE is_active = 1 ORDER BY sort_order
 ")->fetchAll();
 
-// جلب المواد
-$subjects = $db->query("
-    SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar
-")->fetchAll();
+// جلب المواد — للمعلم: فقط مواده في الفصل المختار
+$selectedClassId = (int)($_GET['class_id'] ?? 0);
+$selectedSubjectId = (int)($_GET['subject_id'] ?? 0);
+if ($userRole === 'teacher' && $selectedClassId > 0) {
+    $stmt = $db->prepare("
+        SELECT DISTINCT s.id, s.name_ar, s.code
+        FROM subjects s
+        JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.classroom_id = ? AND st.is_active = 1
+        WHERE s.is_active = 1
+        ORDER BY s.name_ar
+    ");
+    $stmt->execute([$userId, $selectedClassId]);
+    $subjects = $stmt->fetchAll();
+} elseif ($userRole === 'teacher') {
+    $stmt = $db->prepare("
+        SELECT DISTINCT s.id, s.name_ar, s.code
+        FROM subjects s
+        JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.is_active = 1
+        WHERE s.is_active = 1
+        ORDER BY s.name_ar
+    ");
+    $stmt->execute([$userId]);
+    $subjects = $stmt->fetchAll();
+} else {
+    $subjects = $db->query("
+        SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar
+    ")->fetchAll();
+}
 
 // إذا تم تحديد اختبار
 $selectedTest = null;
@@ -223,8 +325,6 @@ $testStudents = [];
 $existingGrades = [];
 
 $selectedTestId = (int)($_GET['test_id'] ?? 0);
-$selectedClassId = (int)($_GET['class_id'] ?? 0);
-$selectedSubjectId = (int)($_GET['subject_id'] ?? 0);
 
 if ($selectedTestId > 0) {
     // جلب بيانات الاختبار
@@ -303,7 +403,7 @@ if ($selectedClassId > 0 && $selectedSubjectId > 0) {
                     <select name="semester_id" class="form-control" id="semester_id">
                         <option value="">-- اختر الفصل الدراسي --</option>
                         <?php foreach ($semesters as $sem): ?>
-                            <option value="<?= $sem['id'] ?>" <?= ((int)($_GET['semester_id'] ?? 0) == $sem['id']) ? 'selected' : '' ?>>
+                            <option value="<?= $sem['id'] ?>" <?= ((int)($_GET['semester_id'] ?? ($userRole === 'teacher' ? $currentSemesterId : 0)) == $sem['id']) ? 'selected' : '' ?>>
                                 <?= e($sem['name_ar']) ?>
                             </option>
                         <?php endforeach; ?>
@@ -424,7 +524,7 @@ if ($selectedClassId > 0 && $selectedSubjectId > 0) {
                 <input type="hidden" name="action" value="create_test">
                 <input type="hidden" name="subject_id" value="<?= $selectedSubjectId ?>">
                 <input type="hidden" name="class_id" value="<?= $selectedClassId ?>">
-                <input type="hidden" name="semester_id" value="<?= (int)($_GET['semester_id'] ?? ($semesters[0]['id'] ?? '')) ?>">
+                <input type="hidden" name="semester_id" value="<?= $userRole === 'teacher' && $currentSemesterId ? (int)$currentSemesterId : (int)($_GET['semester_id'] ?? ($semesters[0]['id'] ?? '')) ?>">
 
                 <div class="form-row">
                     <div class="form-group">

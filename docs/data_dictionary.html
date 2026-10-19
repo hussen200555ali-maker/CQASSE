@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة بيانات نظام CQASSE</title>
+    <style>
+        body { font-family: "Traditional Arabic", "Arial", sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f9f9f9; color: #333; direction: rtl; }
+        h1, h2, h3, h4 { color: #2c3e50; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .bfd-section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px solid #eee; }
+        .bfd-title { color: white; padding: 10px; margin: -20px -20px 20px -20px; font-size: 1.5em; }
+        .bfd-1 { background-color: #e74c3c; }
+        .bfd-2 { background-color: #3498db; }
+        .bfd-3 { background-color: #2ecc71; }
+        .bfd-4 { background-color: #9b59b6; }
+        .bfd-5 { background-color: #f1c40f; color: #333 !important; }
+        .bfd-6 { background-color: #1abc9c; }
+        .note { font-size: 0.9em; color: #7f8c8d; font-style: italic; }
+        .tbl-name { font-weight: bold; color: #2c3e50; font-size: 1.2em; margin-bottom: 10px; display: block; }
+        .view-label { display: inline-block; background: #f1c40f; color: #333; padding: 2px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold; margin-right: 10px; }
+        .stats { text-align: center; margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+        .stats span { margin: 0 15px; font-size: 1.1em; }
+        .stats .num { font-weight: bold; color: #e74c3c; }
+        .bfd-desc { background: #f0f4ff; border-right: 4px solid #3498db; padding: 15px 20px; margin-bottom: 20px; border-radius: 6px; line-height: 1.8; font-size: 1.05em; }
+        .req-box { margin-bottom: 18px; }
+        .req-box h3 { font-size: 1.1em; margin: 15px 0 10px; color: #2c3e50; }
+        .req-box table { margin-bottom: 10px; }
+        .req-box table th { background: #e8eaf6; }
+        .req-box table td:first-child { font-weight: bold; white-space: nowrap; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>قائمة بيانات نظام CQASSE</h1>
+    <p>هذا المستند يحتوي على تفاصيل جميع الجداول والمشاهد في قاعدة بيانات نظام CQASSE (نظام التقييم الشامل لجودة التعليم المدرسي)، مصنفة حسب مجموعات الوظائف الست (BFD).</p>
+
+    <div class="stats">
+        <span>🗃️ <span class="num">48</span> جدول</span>
+        <span>🔍 <span class="num">5</span> مشهد (VIEW)</span>
+        <span>📊 <span class="num">534</span> عمود</span>
+    </div>
+    <!-- BFD 1 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-1">BFD 1: إدارة المستخدمين والصلاحيات والنظام (8)</div>
+
+        <div class="bfd-desc"><p>تمثل هذه المجموعة العمود الفقري لأمن النظام وإدارة الهويات. تدير جميع المستخدمين بأدوارهم الأربعة (group_admin, school_admin, teacher, parent) مع نظام صلاحيات دقيق (RBAC) عبر 36 صلاحية موزعة على 8 وحدات وظيفية. تشمل إعدادات النظام العامة والقابلة للتخصيص لكل مدرسة، وسجل النشاطات (94 سجلاً) الذي يوثق كل عملية حرجة مع عنوان IP وتفاصيل المتصفح، وتفضيلات المستخدمين، وسجل التصدير. جميع متطلبات الأمان العشرة (NFR-S01~S10) تُنفَّذ ضمن جداول هذه المجموعة، مما يجعلها الطبقة الأمنية الأولى والأكثر أهمية في النظام.</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-01</td><td>إدارة المستخدمين</td><td>إنشاء/تعديل/حذف المستخدمين بأدوار مختلفة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-33</td><td>إدارة الصلاحيات</td><td>مصفوفة صلاحيات تفاعلية (checkbox) لربط الأدوار بالصلاحيات</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-34</td><td>سياسات المجموعة</td><td>تحديد سياسات المجموعة (ترميز EQI لوني، نسب نجاح، إشعارات)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-31</td><td>تصدير البيانات</td><td>تصدير البيانات بصيغ XLSX وCSV مع تتبع سجل التصدير</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-37</td><td>سجل النشاط</td><td>تسجيل جميع العمليات الحرجة مع وقت وتفاصيل المستخدم وعنوان IP</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-38</td><td>إعدادات النظام</td><td>إعدادات عامة وفردية لكل مدرسة مع تصنيفات متعددة</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-S01~S10</td><td>جميع متطلبات الأمان العشرة</td><td>تشفير، CSRF، XSS، SQLi، جلسات، رؤوس أمان، RBAC، إلخ</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-M01</td><td>هيكلة MVC-like</td><td>21 ملف includes + 176 ملف pages</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-M02</td><td>نمط Singleton</td><td>اتصال موحد بقاعدة البيانات</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-M04</td><td>توثيق الدوال</td><td>PHPDoc في جميع ملفات includes</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>1. users (المستخدمون)</h2>
+        <div class="tbl-name">users <span class="note">— 21 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للمستخدم</td></tr>
+                <tr><td>username</td><td>VARCHAR(50)</td><td>UNIQUE, NOT NULL</td><td>اسم المستخدم الفريد</td></tr>
+                <tr><td>password_hash</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>كلمة المرور المشفرة</td></tr>
+                <tr><td>must_change_password</td><td>TINYINT(1)</td><td>NOT NULL</td><td>إجباري تغيير كلمة المرور عند تسجيل الدخول الأول</td></tr>
+                <tr><td>full_name_ar</td><td>VARCHAR(200)</td><td></td><td>الاسم الكامل بالعربية</td></tr>
+                <tr><td>full_name_en</td><td>VARCHAR(200)</td><td></td><td>الاسم الكامل بالإنجليزية</td></tr>
+                <tr><td>email</td><td>VARCHAR(100)</td><td></td><td>البريد الإلكتروني</td></tr>
+                <tr><td>phone</td><td>VARCHAR(20)</td><td></td><td>رقم الهاتف</td></tr>
+                <tr><td>role_id</td><td>INT UNSIGNED</td><td>FK → roles.id</td><td>معرف دور المستخدم</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>معرف المدرسة (يمكن أن يكون NULL للمستخدمين غير المرتبطين بمدرسة)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+                <tr><td>last_login_at</td><td>DATETIME</td><td>NULLABLE</td><td>آخر مرة تسجيل دخول</td></tr>
+                <tr><td>login_attempts</td><td>TINYINT(3)</td><td>NOT NULL, DEFAULT 0</td><td>عدد محاولات الدخول الفاشلة</td></tr>
+                <tr><td>lockout_until</td><td>DATETIME</td><td>NULLABLE</td><td>وقت انتهاء الحظر بسبب المحاولات الفاشلة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ آخر تحديث</td></tr>
+            </tbody>
+        </table>
+        <h2>2. roles (الأدوار)</h2>
+        <div class="tbl-name">roles <span class="note">— 4 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للدور</td></tr>
+                <tr><td>name</td><td>VARCHAR(50)</td><td>UNIQUE, NOT NULL</td><td>اسم الدور (مثال: group_admin, school_admin, teacher, parent)</td></tr>
+                <tr><td>display_name_ar</td><td>VARCHAR(100)</td><td></td><td>الاسم المعروض بالعربية</td></tr>
+                <tr><td>display_name_en</td><td>VARCHAR(100)</td><td></td><td>الاسم المعروض بالإنجليزية</td></tr>
+                <tr><td>rank</td><td>INT</td><td></td><td>ترتيب الدور (للأذونات)</td></tr>
+                <tr><td>description</td><td>TEXT</td><td></td><td>وصف الدور</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>3. permissions (الصلاحيات)</h2>
+        <div class="tbl-name">permissions <span class="note">— 36 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للصلاحية</td></tr>
+                <tr><td>name</td><td>VARCHAR(100)</td><td>UNIQUE, NOT NULL</td><td>اسم الصلاحية</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(200)</td><td></td><td>الاسم بالعربية</td></tr>
+                <tr><td>module</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>الوحدة (users, schools, eqi, إلخ)</td></tr>
+                <tr><td>description</td><td>TEXT</td><td></td><td>وصف الصلاحية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+            </tbody>
+        </table>
+        <h2>4. role_permissions (صلاحيات الأدوار (جسر M:N))</h2>
+        <div class="tbl-name">role_permissions <span class="note">— 87 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للسجل</td></tr>
+                <tr><td>role_id</td><td>INT UNSIGNED</td><td>FK → roles.id</td><td>معرف الدور</td></tr>
+                <tr><td>permission_id</td><td>INT UNSIGNED</td><td>FK → permissions.id</td><td>معرف الصلاحية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+            </tbody>
+        </table>
+        <h2>5. activity_logs (سجل النشاطات)</h2>
+        <div class="tbl-name">activity_logs <span class="note">— 94 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للسجل</td></tr>
+                <tr><td>user_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>معرف المستخدم (NULL للأنشطة النظامية)</td></tr>
+                <tr><td>action</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>نوع النشاط</td></tr>
+                <tr><td>entity_type</td><td>VARCHAR(50)</td><td></td><td>نوع الكيان المتأثر</td></tr>
+                <tr><td>entity_id</td><td>INT UNSIGNED</td><td></td><td>معرف الكيان المتأثر</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>حالة النشاط (success, failure, pending)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+                <tr><td>description</td><td>TEXT</td><td></td><td>وصف النشاط</td></tr>
+                <tr><td>details_json</td><td>JSON</td><td>NULLABLE</td><td>تفاصيل إضافية بصيغة JSON</td></tr>
+                <tr><td>ip_address</td><td>VARCHAR(45)</td><td></td><td>عنوان IP</td></tr>
+                <tr><td>user_agent</td><td>TEXT</td><td></td><td>معلومات المتصفح</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ النشاط</td></tr>
+            </tbody>
+        </table>
+        <h2>6. system_settings (إعدادات النظام)</h2>
+        <div class="tbl-name">system_settings <span class="note">— 138 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>category</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>فئة الإعداد</td></tr>
+                <tr><td>setting_key</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>مفتاح الإعداد</td></tr>
+                <tr><td>setting_value</td><td>TEXT</td><td></td><td>قيمة الإعداد</td></tr>
+                <tr><td>value_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع القيمة (string, integer, boolean, json)</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(200)</td><td></td><td>الاسم بالعربية</td></tr>
+                <tr><td>description_ar</td><td>TEXT</td><td></td><td>الوصف بالعربية</td></tr>
+                <tr><td>is_system</td><td>TINYINT(1)</td><td>NOT NULL</td><td>هل هو إعداد نظامي</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>المدرسة (NULL = عام)</td></tr>
+                <tr><td>sort_order</td><td>INT</td><td></td><td>ترتيب العرض</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+            </tbody>
+        </table>
+        <h2>7. user_preferences (تفضيلات المستخدم)</h2>
+        <div class="tbl-name">user_preferences <span class="note">— 20 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>user_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>معرف المستخدم</td></tr>
+                <tr><td>pref_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع التفضيل (ui, notification, dashboard)</td></tr>
+                <tr><td>pref_key</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>مفتاح التفضيل</td></tr>
+                <tr><td>pref_value</td><td>JSON</td><td></td><td>قيمة التفضيل بصيغة JSON</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+            </tbody>
+        </table>
+        <h2>8. export_history (سجل التصدير)</h2>
+        <div class="tbl-name">export_history <span class="note">— 7 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>user_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المستخدم الذي طلب التصدير</td></tr>
+                <tr><td>export_type</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>نوع التصدير (excel, csv, pdf)</td></tr>
+                <tr><td>file_name</td><td>VARCHAR(255)</td><td></td><td>اسم الملف المصدَّر</td></tr>
+                <tr><td>file_path</td><td>VARCHAR(500)</td><td></td><td>مسار الملف</td></tr>
+                <tr><td>file_size</td><td>INT UNSIGNED</td><td></td><td>حجم الملف بالبايت</td></tr>
+                <tr><td>row_count</td><td>INT UNSIGNED</td><td></td><td>عدد السجلات</td></tr>
+                <tr><td>filters</td><td>JSON</td><td></td><td>معايير التصدير</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (pending, completed, failed)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- BFD 2 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-2">BFD 2: البيانات الأساسية والتسجيل (15)</div>
+
+        <div class="bfd-desc"><p>تحتوي هذه المجموعة على الهيكل التنظيمي الكامل للنظام: المدارس (4 مدارس) والمحافظات (22 محافظة) للبيانات الجغرافية، التقويم الأكاديمي (4 سنوات و7 فصول دراسية) مع الفصل الحالي ومستويات القفل الإداري، المستويات الدراسية (12 مستوى) والمواد (12 مادة) والشعب (43 شعبة) مع ربط المعلمين والمواد، وبيانات الطلاب (549 طالباً) وتسجيلهم في الشعب (551 تسجيلاً). تمثل هذه المجموعة العمود الفقري للبيانات التي تعتمد عليها جميع المجموعات الأخرى، وتضمن عزل البيانات حسب school_id (NFR-SC01).</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-02</td><td>إدارة المدارس</td><td>إضافة/تعديل/أرشفة بيانات المدارس مع إحصائيات شاملة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-03</td><td>الأعوام والفصول الدراسية</td><td>إنشاء أعوام وفصول مع is_current و lock_level</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-04</td><td>إدارة الشعب</td><td>إنشاء شعب وربطها بالصفوف والمعلمين والمواد</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-05</td><td>بيانات الطلاب</td><td>تسجيل/تعديل/استيراد الطلاب دفعة CSV/Excel مع بحث AJAX</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-06</td><td>التسجيل في الشعب</td><td>تسجيل الطلاب في الشعب مع التحقق من حالة العام الدراسي</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-P04</td><td>فهرسة شاملة</td><td>80+ فهرس على كل المفاتيح الخارجية</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-SC01</td><td>عزل البيانات حسب school_id</td><td>جميع الجداول الرئيسية تحتوي على school_id</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-C04</td><td>توافق MySQL 8.0</td><td>جميع الاستعلامات متوافقة مع MySQL 8.0</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>9. governorates (المحافظات)</h2>
+        <div class="tbl-name">governorates <span class="note">— 22 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للمحافظة</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>اسم المحافظة بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(100)</td><td></td><td>اسم المحافظة بالإنجليزية</td></tr>
+                <tr><td>code</td><td>VARCHAR(5)</td><td>UNIQUE, NOT NULL</td><td>رمز المحافظة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+            </tbody>
+        </table>
+        <h2>10. schools (المدارس)</h2>
+        <div class="tbl-name">schools <span class="note">— 4 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد للمدرسة</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>اسم المدرسة بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(200)</td><td></td><td>اسم المدرسة بالإنجليزية</td></tr>
+                <tr><td>reference_code</td><td>VARCHAR(5)</td><td>UNIQUE, NOT NULL</td><td>الرمز المرجعي للمدرسة</td></tr>
+                <tr><td>address</td><td>TEXT</td><td></td><td>عنوان المدرسة</td></tr>
+                <tr><td>governorate</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>المحافظة (نص، ليس FK)</td></tr>
+                <tr><td>district</td><td>VARCHAR(100)</td><td></td><td>المنطقة</td></tr>
+                <tr><td>school_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع المدرسة (basic, secondary, combined)</td></tr>
+                <tr><td>principal_name</td><td>VARCHAR(200)</td><td></td><td>اسم مدير المدرسة</td></tr>
+                <tr><td>phone</td><td>VARCHAR(20)</td><td></td><td>رقم الهاتف</td></tr>
+                <tr><td>email</td><td>VARCHAR(100)</td><td></td><td>البريد الإلكتروني</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ آخر تحديث</td></tr>
+            </tbody>
+        </table>
+        <h2>11. academic_years (السنوات الدراسية)</h2>
+        <div class="tbl-name">academic_years <span class="note">— 4 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>اسم السنة الدراسية</td></tr>
+                <tr><td>start_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ البداية</td></tr>
+                <tr><td>end_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ النهاية</td></tr>
+                <tr><td>is_current</td><td>TINYINT(1)</td><td>NOT NULL</td><td>هل هي السنة الحالية</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (planning, active, evaluation, closed)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة: نشط/غير نشط</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>12. semesters (الفصول الدراسية)</h2>
+        <div class="tbl-name">semesters <span class="note">— 7 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>اسم الفصل بالعربية</td></tr>
+                <tr><td>start_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ البداية</td></tr>
+                <tr><td>end_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ النهاية</td></tr>
+                <tr><td>is_current</td><td>TINYINT(1)</td><td>NOT NULL</td><td>هل هو الفصل الحالي</td></tr>
+                <tr><td>lock_level</td><td>ENUM</td><td>NOT NULL</td><td>مستوى القفل</td></tr>
+                <tr><td>locked_at</td><td>DATETIME</td><td>NULLABLE</td><td>تاريخ القفل</td></tr>
+                <tr><td>locked_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>من قام بالقفل</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>13. grade_levels (المستويات الدراسية)</h2>
+        <div class="tbl-name">grade_levels <span class="note">— 12 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>الاسم بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(50)</td><td></td><td>الاسم بالإنجليزية</td></tr>
+                <tr><td>level_number</td><td>TINYINT(3)</td><td>UNIQUE, NOT NULL</td><td>رقم المستوى (1-12)</td></tr>
+                <tr><td>stage</td><td>ENUM</td><td>NOT NULL</td><td>المرحلة (basic, secondary)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>14. classes (الشعب الدراسية)</h2>
+        <div class="tbl-name">classes <span class="note">— 43 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>اسم الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>grade_level_id</td><td>INT UNSIGNED</td><td>FK → grade_levels.id</td><td>المستوى الدراسي</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>معلم الصف (المشرف)</td></tr>
+                <tr><td>capacity</td><td>INT UNSIGNED</td><td></td><td>الطاقة الاستيعابية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>15. subjects (المواد الدراسية)</h2>
+        <div class="tbl-name">subjects <span class="note">— 12 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>اسم المادة بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(100)</td><td></td><td>اسم المادة بالإنجليزية</td></tr>
+                <tr><td>code</td><td>VARCHAR(20)</td><td>UNIQUE, NOT NULL</td><td>رمز المادة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>16. subject_grade_years (ربط المواد بالمستويات)</h2>
+        <div class="tbl-name">subject_grade_years <span class="note">— 97 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td>FK → subjects.id</td><td>المادة</td></tr>
+                <tr><td>grade_level_id</td><td>INT UNSIGNED</td><td>FK → grade_levels.id</td><td>المستوى</td></tr>
+                <tr><td>hours_per_week</td><td>TINYINT(3)</td><td></td><td>عدد الحصص الأسبوعية</td></tr>
+                <tr><td>passing_grade</td><td>DECIMAL(5,2)</td><td></td><td>درجة النجاح</td></tr>
+                <tr><td>weights_json</td><td>JSON</td><td></td><td>أوزان التقويم بصيغة JSON</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>17. subject_weight_distribution (توزيع أوزان المواد)</h2>
+        <div class="tbl-name">subject_weight_distribution <span class="note">— 15 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>subject_grade_year_id</td><td>INT UNSIGNED</td><td>FK → subject_grade_years.id</td><td>رابط المادة-المستوى</td></tr>
+                <tr><td>assessment_type_id</td><td>INT UNSIGNED</td><td>FK → assessment_types.id</td><td>نوع التقييم</td></tr>
+                <tr><td>weight</td><td>DECIMAL(5,2)</td><td>NOT NULL</td><td>الوزن النسبي</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>18. subject_teachers (تعيينات المعلمين للمواد)</h2>
+        <div class="tbl-name">subject_teachers <span class="note">— 98 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td>FK → subjects.id</td><td>المادة</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المعلم</td></tr>
+                <tr><td>classroom_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+            </tbody>
+        </table>
+        <h2>19. teacher_assignments (تعيينات مبسطة للمعلمين)</h2>
+        <div class="tbl-name">teacher_assignments <span class="note">— 3 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المعلم</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td>FK → subjects.id</td><td>المادة</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>20. students (الطلاب)</h2>
+        <div class="tbl-name">students <span class="note">— 549 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_number</td><td>VARCHAR(20)</td><td>UNIQUE, NOT NULL</td><td>رقم الطالب الفريد</td></tr>
+                <tr><td>full_name_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>الاسم الكامل بالعربية</td></tr>
+                <tr><td>full_name_en</td><td>VARCHAR(200)</td><td></td><td>الاسم الكامل بالإنجليزية</td></tr>
+                <tr><td>guardian_name</td><td>VARCHAR(200)</td><td></td><td>اسم ولي الأمر</td></tr>
+                <tr><td>guardian_phone</td><td>VARCHAR(20)</td><td></td><td>رقم هاتف ولي الأمر</td></tr>
+                <tr><td>guardian_email</td><td>VARCHAR(100)</td><td></td><td>بريد ولي الأمر الإلكتروني</td></tr>
+                <tr><td>grade_level_id</td><td>INT UNSIGNED</td><td>FK → grade_levels.id</td><td>المستوى الدراسي</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>enrollment_date</td><td>DATE</td><td></td><td>تاريخ التسجيل</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>21. student_enrollments (تسجيلات الطلاب في الشعب)</h2>
+        <div class="tbl-name">student_enrollments <span class="note">— 551 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>enrollment_date</td><td>DATE</td><td></td><td>تاريخ التسجيل</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (enrolled, transferred, dropped)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>22. student_notes (ملاحظات الطلاب)</h2>
+        <div class="tbl-name">student_notes <span class="note">— 1 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>note_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع الملاحظة (general, academic, behavioral, attendance)</td></tr>
+                <tr><td>title_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>عنوان الملاحظة</td></tr>
+                <tr><td>content_ar</td><td>TEXT</td><td>NOT NULL</td><td>محتوى الملاحظة</td></tr>
+                <tr><td>priority</td><td>ENUM</td><td>NOT NULL</td><td>الأولوية (low, medium, high, urgent)</td></tr>
+                <tr><td>is_pinned</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 0</td><td>مثبتة</td></tr>
+                <tr><td>is_draft</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 0</td><td>مسودة</td></tr>
+                <tr><td>attachment_id</td><td>INT UNSIGNED</td><td>NULLABLE</td><td>معرف المرفق (ليس FK)</td></tr>
+                <tr><td>created_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>منشئ الملاحظة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ آخر تحديث</td></tr>
+            </tbody>
+        </table>
+        <h2>23. attachments (الملفات المرفقة)</h2>
+        <div class="tbl-name">attachments <span class="note">— 0 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>file_name</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>اسم الملف</td></tr>
+                <tr><td>file_type</td><td>VARCHAR(100)</td><td></td><td>نوع الملف</td></tr>
+                <tr><td>file_path</td><td>VARCHAR(500)</td><td>NOT NULL</td><td>مسار الملف</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>المدرسة</td></tr>
+                <tr><td>file_size</td><td>INT UNSIGNED</td><td></td><td>حجم الملف بالبايت</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ آخر تحديث</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- BFD 3 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-3">BFD 3: إدارة الحضور والسلوك والمهارات (4)</div>
+
+        <div class="bfd-desc"><p>تتولى هذه المجموعة تتبع الأداء اليومي للطلاب في ثلاثة مجالات حيوية: الحضور (10278 سجل حضور يومي مع تسجيل حسب الحصة وسجل تعديلات amendment_log)، السلوك (16 فئة سلوك إيجابي/سلبي و210 حوادث مسجلة بنظام النقاط)، ونتائج السلوك المحتسبة (behavior_scores) التي تحسب الدرجة السلوكية لكل طالب من 100 نقطة. توفر هذه المجموعة البيانات اللازمة لحساب بُعدي السلوك (10%) والحضور (5%) في محرك EQI.</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-10</td><td>الحضور اليومي</td><td>تسجيل الحضور والغياب يومياً لكل طالب</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-11</td><td>الحضور حسب الحصة</td><td>تسجيل الحضور على مستوى كل حصة دراسية</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-12</td><td>تعديل الحضور</td><td>تعديل سجلات الحضور مع تسجيل سجل التعديل (amendment_log JSON)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-13</td><td>الحوادث السلوكية</td><td>تسجيل حوادث سلوكية إيجابية وسلبية مصنفة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-14</td><td>الدرجات السلوكية</td><td>حساب الدرجة السلوكية من 100 نقطة بناءً على الحوادث</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-15</td><td>تقييم المهارات</td><td>تقييم مهارات الطلاب عبر استمارات مخصصة</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-P04</td><td>فهرسة شاملة</td><td>فهارس على student_id, class_id, date لتسريع استعلامات الحضور</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>24. attendance_daily (سجلات الحضور اليومي)</h2>
+        <div class="tbl-name">attendance_daily <span class="note">— 10,278 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>date</td><td>DATE</td><td>NOT NULL</td><td>التاريخ</td></tr>
+                <tr><td>period_number</td><td>TINYINT(3)</td><td>NULLABLE</td><td>رقم الحصة (NULL = يومي)</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (present, absent, late, excused)</td></tr>
+                <tr><td>notes</td><td>TEXT</td><td>NULLABLE</td><td>ملاحظات</td></tr>
+                <tr><td>amendment_log</td><td>JSON</td><td>NULLABLE</td><td>سجل التعديلات</td></tr>
+                <tr><td>recorded_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المسجل</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>25. behavior_categories (فئات السلوك)</h2>
+        <div class="tbl-name">behavior_categories <span class="note">— 16 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>اسم الفئة بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(100)</td><td></td><td>اسم الفئة بالإنجليزية</td></tr>
+                <tr><td>type</td><td>ENUM</td><td>NOT NULL</td><td>النوع (positive, negative)</td></tr>
+                <tr><td>points</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 0</td><td>النقاط المقابلة</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>المدرسة (NULL = عام)</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>26. behavior_incidents (حوادث السلوك)</h2>
+        <div class="tbl-name">behavior_incidents <span class="note">— 210 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>category_id</td><td>INT UNSIGNED</td><td>FK → behavior_categories.id</td><td>فئة السلوك</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>incident_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ الحادثة</td></tr>
+                <tr><td>description</td><td>TEXT</td><td>NULLABLE</td><td>وصف الحادثة</td></tr>
+                <tr><td>points</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 0</td><td>النقاط</td></tr>
+                <tr><td>reported_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المبلغ</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>27. behavior_scores (نتائج السلوك المحتسبة)</h2>
+        <div class="tbl-name">behavior_scores <span class="note">— 0 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>starting_points</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 100</td><td>نقطة البداية</td></tr>
+                <tr><td>earned_points</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 0</td><td>النقاط المكتسبة</td></tr>
+                <tr><td>deducted_points</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 0</td><td>النقاط المخصومة</td></tr>
+                <tr><td>current_percentage</td><td>DECIMAL(5,2)</td><td>NOT NULL, DEFAULT 100</td><td>النسبة الحالية</td></tr>
+                <tr><td>is_passing</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>هل اجتاز</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ آخر تحديث</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- BFD 4 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-4">BFD 4: التقييم الشامل وجودة التعليم (17)</div>
+
+        <div class="bfd-desc"><p>تمثل هذه المجموعة قلب نظام الجودة — الأكبر حجماً بـ 17 جدولاً. تدير دورة التقييم الكاملة: أنواع التقييم (5 أنواع) والاستمارات (8 نماذج) وهياكل المعايير والفقرات (237 عنصراً في assessment_structure مع self-referencing parent_id)، الاختبارات (106 اختباراً) والدرجات (2076 درجة)، مخرجات التعلم (37 مخرجاً)، التقييمات الموحدة (539 تقييماً بثلاثة أبعاد: ذاتي/أقران/إداري)، استبيانات المناخ والمرافق، مؤشر EQI بستة أبعاد مرجّحة مع التعديل السياقي (7 عوامل) ومؤشر التحدي، خطط التحسين (5 خطط)، وقرارات الترفيع (519 قراراً). تعكس هذه المجموعة تعقيد نظام الجودة الشامل.</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-07</td><td>إدارة الاختبارات</td><td>إنشاء اختبارات بأنواعها مع الوزن والدرجة العظمى وحالة النشر</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-08</td><td>إدخال الدرجات</td><td>إدخال/تعديل درجات الطلاب مع حساب النسبة والتقدير الأبجدي</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-09</td><td>حساب المعدلات</td><td>حساب GPA بمقياس 4.00 مع التقديرات الأبجدية ونظام الترحيل</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-16</td><td>نماذج التقييم</td><td>إنشاء نماذج متعددة من نفس النوع مع is_default و version</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-17</td><td>التقييم الذاتي</td><td>تقييم المعلمين لأدائهم ذاتياً</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-18</td><td>تقييم الأقران</td><td>تقييم المعلمين لزملائهم</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-19</td><td>التقييم الإداري</td><td>تقييم الإدارة لأداء المعلمين</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-20</td><td>استبيانات المناخ</td><td>استبيانات مناخ بثلاثة أبعاد (البيئة، العلاقات، السلامة)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-21</td><td>تقييم المرافق</td><td>تقييم مرافق المدرسة عبر قوائم مراجعة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-22</td><td>محرك EQI</td><td>حساب EQI من 6 أبعاد مرجّحة (أكاديمي 35%، تدريس 25%، إلخ)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-23</td><td>التعديل السياقي</td><td>تعديل EQI تلقائي بـ 7 عوامل سياقية ومؤشر التحدي (0-100)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-24</td><td>مقارنة المدارس</td><td>مقارنة أداء مدرستين أو أكثر في EQI الخام والمعدّل</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-26</td><td>محرك الترقية</td><td>تحديد ترقية الطلاب بـ 3 معايير: أكاديمي 50%، سلوكي 60%، حضور 75%</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-27</td><td>خطط التحسين</td><td>إنشاء خطط تحسين فردية ومؤسسية مع تتبع التقدم</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-P02</td><td>حد 200 تركيبة</td><td>حد أقصى لعدد تركيبات حساب EQI الجماعي لكل طلب</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-P03</td><td>حد 5 ميجابايت</td><td>الحد الأقصى للملفات المرفوعة في الاستيراد</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-R03</td><td>معاملات قاعدة البيانات</td><td>استخدام transactions للعمليات الحرجة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-R05</td><td>مستويات القفل</td><td>4 مستويات قفل للفصول الدراسية (none/soft/hard/admin_handled)</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>28. assessment_types (أنواع التقييم)</h2>
+        <div class="tbl-name">assessment_types <span class="note">— 5 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>الاسم بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(100)</td><td></td><td>الاسم بالإنجليزية</td></tr>
+                <tr><td>description</td><td>TEXT</td><td></td><td>الوصف</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>29. assessment_forms (استمارات التقييم)</h2>
+        <div class="tbl-name">assessment_forms <span class="note">— 8 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>form_key</td><td>ENUM</td><td>NOT NULL</td><td>المفتاح (behavior_eval, skills_checklist, teaching_self, إلخ)</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>الاسم بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(200)</td><td></td><td>الاسم بالإنجليزية</td></tr>
+                <tr><td>category</td><td>ENUM</td><td>NOT NULL</td><td>الفئة (behavior, skills, teaching, climate)</td></tr>
+                <tr><td>target</td><td>ENUM</td><td>NOT NULL</td><td>الهدف (student, teacher, school)</td></tr>
+                <tr><td>description</td><td>TEXT</td><td></td><td>الوصف</td></tr>
+                <tr><td>is_system</td><td>TINYINT(1)</td><td>NOT NULL</td><td>هل هي استمارة نظامية</td></tr>
+                <tr><td>is_default</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>هل هي الاستمارة الافتراضية</td></tr>
+                <tr><td>version</td><td>VARCHAR(50)</td><td></td><td>الإصدار</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>30. assessment_structure (هيكل التقييم (معايير وفقرات))</h2>
+        <div class="tbl-name">assessment_structure <span class="note">— 237 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>form_id</td><td>INT UNSIGNED</td><td>FK → assessment_forms.id</td><td>الاستمارة</td></tr>
+                <tr><td>parent_id</td><td>INT UNSIGNED</td><td>FK → assessment_structure.id, NULLABLE</td><td>المعيار الأب (NULL = معيار رئيسي)</td></tr>
+                <tr><td>type</td><td>ENUM</td><td>NOT NULL</td><td>النوع (criteria, item)</td></tr>
+                <tr><td>name_ar</td><td>VARCHAR(200)</td><td></td><td>الاسم بالعربية</td></tr>
+                <tr><td>name_en</td><td>VARCHAR(200)</td><td></td><td>الاسم بالإنجليزية</td></tr>
+                <tr><td>text_ar</td><td>TEXT</td><td></td><td>النص بالعربية</td></tr>
+                <tr><td>text_en</td><td>TEXT</td><td></td><td>النص بالإنجليزية</td></tr>
+                <tr><td>tool_type</td><td>ENUM</td><td></td><td>نوع الأداة</td></tr>
+                <tr><td>weight</td><td>DECIMAL(5,2)</td><td></td><td>الوزن</td></tr>
+                <tr><td>is_inverse</td><td>TINYINT(1)</td><td></td><td>عكسي</td></tr>
+                <tr><td>max_value</td><td>DECIMAL(10,2)</td><td></td><td>القيمة القصوى</td></tr>
+                <tr><td>sort_order</td><td>INT UNSIGNED</td><td></td><td>ترتيب العرض</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>31. assessment_responses (إجابات التقييم (الجدول المركزي))</h2>
+        <div class="tbl-name">assessment_responses <span class="note">— 116 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>form_id</td><td>INT UNSIGNED</td><td>FK → assessment_forms.id</td><td>الاستمارة</td></tr>
+                <tr><td>item_id</td><td>INT UNSIGNED</td><td>FK → assessment_structure.id</td><td>الفقرة</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id, NULLABLE</td><td>الطالب</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المعلم</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>المدرسة</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id, NULLABLE</td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>numeric_value</td><td>DECIMAL(10,4)</td><td>NULLABLE</td><td>القيمة الرقمية</td></tr>
+                <tr><td>text_value</td><td>TEXT</td><td>NULLABLE</td><td>القيمة النصية</td></tr>
+                <tr><td>responded_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المجيب</td></tr>
+                <tr><td>response_date</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإجابة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>32. tests (الاختبارات)</h2>
+        <div class="tbl-name">tests <span class="note">— 106 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td>FK → subjects.id</td><td>المادة</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id</td><td>الشعبة</td></tr>
+                <tr><td>assessment_type_id</td><td>INT UNSIGNED</td><td>FK → assessment_types.id</td><td>نوع التقييم</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>title_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>عنوان الاختبار</td></tr>
+                <tr><td>max_grade</td><td>DECIMAL(5,2)</td><td>NOT NULL</td><td>الدرجة العظمى</td></tr>
+                <tr><td>test_date</td><td>DATE</td><td></td><td>تاريخ الاختبار</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (draft, published, locked)</td></tr>
+                <tr><td>created_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>منشئ الاختبار</td></tr>
+            </tbody>
+        </table>
+        <h2>33. grades (درجات الطلاب)</h2>
+        <div class="tbl-name">grades <span class="note">— 2,076 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>test_id</td><td>INT UNSIGNED</td><td>FK → tests.id</td><td>الاختبار</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td></td><td>الفصل الدراسي</td></tr>
+                <tr><td>grade_value</td><td>DECIMAL(7,2)</td><td>NOT NULL</td><td>قيمة الدرجة</td></tr>
+                <tr><td>max_value</td><td>DECIMAL(7,2)</td><td>NOT NULL</td><td>الدرجة العظمى</td></tr>
+                <tr><td>percentage</td><td>DECIMAL(7,2)</td><td></td><td>النسبة المئوية</td></tr>
+                <tr><td>letter_grade</td><td>VARCHAR(3)</td><td></td><td>الدرجة الحرفية</td></tr>
+                <tr><td>notes</td><td>TEXT</td><td>NULLABLE</td><td>ملاحظات</td></tr>
+                <tr><td>graded_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المصحح</td></tr>
+            </tbody>
+        </table>
+        <h2>34. learning_outcomes (مخرجات التعلم)</h2>
+        <div class="tbl-name">learning_outcomes <span class="note">— 37 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td>FK → subjects.id</td><td>المادة</td></tr>
+                <tr><td>code</td><td>VARCHAR(20)</td><td></td><td>رمز المخرج</td></tr>
+                <tr><td>description_ar</td><td>TEXT</td><td></td><td>الوصف بالعربية</td></tr>
+                <tr><td>description_en</td><td>TEXT</td><td></td><td>الوصف بالإنجليزية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>35. evaluations (نتائج التقييم الموحدة)</h2>
+        <div class="tbl-name">evaluations <span class="note">— 539 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>eval_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع التقييم (teaching_summary, behavior_score)</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المعلم</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id, NULLABLE</td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td>FK → classes.id, NULLABLE</td><td>الشعبة</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>self_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة التقييم الذاتي</td></tr>
+                <tr><td>peer_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة تقييم الأقران</td></tr>
+                <tr><td>admin_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة التقييم الإداري</td></tr>
+                <tr><td>combined_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>الدرجة المركبة</td></tr>
+                <tr><td>adjusted_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>الدرجة المعدلة</td></tr>
+                <tr><td>starting_points</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>نقطة البداية (للسلوك)</td></tr>
+                <tr><td>earned_points</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>النقاط المكتسبة</td></tr>
+                <tr><td>deducted_points</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>النقاط المخصومة</td></tr>
+                <tr><td>current_percentage</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>النسبة الحالية</td></tr>
+                <tr><td>is_passing</td><td>TINYINT(1)</td><td>NULLABLE</td><td>هل اجتاز</td></tr>
+            </tbody>
+        </table>
+        <h2>36. surveys (الاستبيانات (مناخ + مرافق))</h2>
+        <div class="tbl-name">surveys <span class="note">— 7 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>survey_type</td><td>ENUM</td><td>NOT NULL</td><td>النوع (climate, facility)</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>respondent_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع المستجيب</td></tr>
+                <tr><td>respondent_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المستجيب</td></tr>
+                <tr><td>evaluator_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المقيم</td></tr>
+                <tr><td>survey_date</td><td>DATE</td><td></td><td>تاريخ الاستبيان</td></tr>
+                <tr><td>overall_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>الدرجة الكلية</td></tr>
+                <tr><td>notes</td><td>TEXT</td><td>NULLABLE</td><td>ملاحظات</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (draft, active, closed)</td></tr>
+                <tr><td>created_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المنشئ</td></tr>
+            </tbody>
+        </table>
+        <h2>37. survey_items (إجابات فقرات الاستبيان)</h2>
+        <div class="tbl-name">survey_items <span class="note">— 13 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>survey_id</td><td>INT UNSIGNED</td><td>FK → surveys.id</td><td>الاستبيان</td></tr>
+                <tr><td>item_id</td><td>INT UNSIGNED</td><td>FK → assessment_structure.id</td><td>الفقرة</td></tr>
+                <tr><td>numeric_value</td><td>DECIMAL(10,4)</td><td>NULLABLE</td><td>القيمة الرقمية</td></tr>
+                <tr><td>normalized_value</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>القيمة المعيارية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>38. climate_items (فقرات المناخ المدرسي)</h2>
+        <div class="tbl-name">climate_items <span class="note">— 48 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>survey_id</td><td>INT UNSIGNED</td><td>FK → surveys.id</td><td>الاستبيان</td></tr>
+                <tr><td>item_id</td><td>INT UNSIGNED</td><td>FK → assessment_structure.id</td><td>الفقرة</td></tr>
+                <tr><td>numeric_value</td><td>DECIMAL(10,4)</td><td>NULLABLE</td><td>القيمة الرقمية</td></tr>
+                <tr><td>normalized_value</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>القيمة المعيارية</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>39. facility_items (فقرات تقييم المرافق)</h2>
+        <div class="tbl-name">facility_items <span class="note">— 0 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>checklist_id</td><td>INT UNSIGNED</td><td>FK → surveys.id</td><td>قائمة التحقق</td></tr>
+                <tr><td>item_id</td><td>INT UNSIGNED</td><td>FK → assessment_structure.id</td><td>الفقرة</td></tr>
+                <tr><td>numeric_value</td><td>DECIMAL(10,4)</td><td>NULLABLE</td><td>القيمة الرقمية</td></tr>
+                <tr><td>normalized_value</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>القيمة المعيارية</td></tr>
+                <tr><td>notes</td><td>TEXT</td><td>NULLABLE</td><td>ملاحظات</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+        <h2>40. eqi_results (نتائج مؤشر جودة التعليم EQI)</h2>
+        <div class="tbl-name">eqi_results <span class="note">— 7 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>academic_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة الأداء الأكاديمي</td></tr>
+                <tr><td>teaching_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة جودة التدريس</td></tr>
+                <tr><td>climate_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة المناخ المدرسي</td></tr>
+                <tr><td>behavior_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة السلوك</td></tr>
+                <tr><td>skills_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة المهارات</td></tr>
+                <tr><td>attendance_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة الحضور</td></tr>
+                <tr><td>overall_eqi</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>مؤشر EQI الكلي</td></tr>
+                <tr><td>weights_json</td><td>JSON</td><td>NULLABLE</td><td>الأوزان المستخدمة</td></tr>
+                <tr><td>context_json</td><td>JSON</td><td>NULLABLE</td><td>السياق</td></tr>
+                <tr><td>challenge_index</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>مؤشر التحدي</td></tr>
+                <tr><td>adjusted_eqi</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>EQI المعدّل سياقياً</td></tr>
+                <tr><td>missing_dimensions</td><td>JSON</td><td>NULLABLE</td><td>الأبعاد المفقودة</td></tr>
+                <tr><td>calculated_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>محسوب بواسطة</td></tr>
+            </tbody>
+        </table>
+        <h2>41. improvement_plans (خطط التحسين الموحدة)</h2>
+        <div class="tbl-name">improvement_plans <span class="note">— 3 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>plan_type</td><td>ENUM</td><td>NOT NULL</td><td>النوع (student, school, teacher)</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id, NULLABLE</td><td>الطالب</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id, NULLABLE</td><td>المدرسة</td></tr>
+                <tr><td>teacher_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المعلم</td></tr>
+                <tr><td>trigger_type</td><td>ENUM</td><td></td><td>نوع المحفز</td></tr>
+                <tr><td>weaknesses</td><td>TEXT</td><td></td><td>مواطن الضعف</td></tr>
+                <tr><td>goals</td><td>TEXT</td><td></td><td>الأهداف</td></tr>
+                <tr><td>strategies</td><td>TEXT</td><td></td><td>الاستراتيجيات</td></tr>
+                <tr><td>timeline</td><td>VARCHAR(200)</td><td></td><td>الجدول الزمني</td></tr>
+                <tr><td>responsible_user_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المسؤول</td></tr>
+                <tr><td>parent_involvement</td><td>TEXT</td><td>NULLABLE</td><td>مشاركة ولي الأمر</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (active, completed, cancelled)</td></tr>
+                <tr><td>progress</td><td>INT</td><td>DEFAULT 0</td><td>نسبة التقدم</td></tr>
+                <tr><td>follow_up_date</td><td>DATE</td><td>NULLABLE</td><td>تاريخ المتابعة</td></tr>
+                <tr><td>created_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المنشئ</td></tr>
+            </tbody>
+        </table>
+        <h2>42. school_improvement_plans (خطط تحسين المدارس (قديم))</h2>
+        <div class="tbl-name">school_improvement_plans <span class="note">— 2 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>weaknesses</td><td>TEXT</td><td></td><td>مواطن الضعف</td></tr>
+                <tr><td>goals</td><td>TEXT</td><td></td><td>الأهداف</td></tr>
+                <tr><td>strategies</td><td>TEXT</td><td></td><td>الاستراتيجيات</td></tr>
+                <tr><td>timeline</td><td>VARCHAR(200)</td><td></td><td>الجدول الزمني</td></tr>
+                <tr><td>responsible_user_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المسؤول</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة</td></tr>
+                <tr><td>progress</td><td>INT</td><td>DEFAULT 0</td><td>نسبة التقدم</td></tr>
+                <tr><td>created_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المنشئ</td></tr>
+            </tbody>
+        </table>
+        <h2>43. promotions (قرارات الترفيع)</h2>
+        <div class="tbl-name">promotions <span class="note">— 519 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>academic_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>الدرجة الأكاديمية</td></tr>
+                <tr><td>behavior_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة السلوك</td></tr>
+                <tr><td>attendance_score</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>درجة الحضور</td></tr>
+                <tr><td>academic_pass</td><td>TINYINT(1)</td><td>NULLABLE</td><td>نجاح أكاديمي</td></tr>
+                <tr><td>behavior_pass</td><td>TINYINT(1)</td><td>NULLABLE</td><td>نجاح سلوكي</td></tr>
+                <tr><td>attendance_pass</td><td>TINYINT(1)</td><td>NULLABLE</td><td>نجاح حضور</td></tr>
+                <tr><td>decision</td><td>ENUM</td><td>NOT NULL</td><td>القرار (promoted, repeated, conditional, under_review)</td></tr>
+                <tr><td>status</td><td>ENUM</td><td>NOT NULL</td><td>الحالة (proposed, approved, rejected)</td></tr>
+                <tr><td>override_json</td><td>JSON</td><td>NULLABLE</td><td>بيانات التجاوز</td></tr>
+                <tr><td>approved_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المعتمد</td></tr>
+                <tr><td>decided_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>مصدر القرار</td></tr>
+            </tbody>
+        </table>
+        <h2>44. promotion_overrides (تجاوزات الترفيع)</h2>
+        <div class="tbl-name">promotion_overrides <span class="note">— 0 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td>FK → academic_years.id</td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td>FK → semesters.id</td><td>الفصل الدراسي</td></tr>
+                <tr><td>override_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع التجاوز</td></tr>
+                <tr><td>override_value</td><td>DECIMAL(5,2)</td><td>NULLABLE</td><td>قيمة التجاوز</td></tr>
+                <tr><td>reason</td><td>TEXT</td><td>NOT NULL</td><td>السبب</td></tr>
+                <tr><td>approved_by</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المعتمد</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- BFD 5 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-5">BFD 5: التقارير والتحليلات (المشاهد) (5)</div>
+
+        <div class="bfd-desc"><p>توفر هذه المجموعة 5 مشاهد (Views) معدّة مسبقاً للاستعلامات التحليلية الشائعة: ملخص الطالب الحالي (v_student_current) الذي يجمع بيانات الطالب مع التسجيل والشعبة والمدرسة في مشهد واحد، ملخص درجات الطالب لكل مادة (v_student_subject_summary) مع إصدار موسع (student_subject_summary) يضيف GPA والترتيب، معدلات الفصل الدراسي (v_semester_scores)، وملخص الحضور (v_attendance_summary) بنسب واحتساب الحد الأدنى. لا تخزن المشاهد بيانات بل تُشتق ديناميكياً من جداول BFD 2 و BFD 3 و BFD 4، مما يحسّن الأداء ويوحّد الوصول للبيانات التحليلية.</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-28</td><td>لوحة القيادة</td><td>لوحة قيادة لمدير المجموعة تتضمن KPIs ورسوم بيانية واتجاهات EQI</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-29</td><td>لوحات التحليلات</td><td>6 أدوات تحليلية (مدرسة، شعبة، مادة، اتجاهات، مقارنة، شامل)</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-30</td><td>التقارير PDF</td><td>تقارير سنوية PDF بغلاف وملخص تنفيذي و KPI واتجاهات وتوصيات</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-P06</td><td>عروض قاعدة بيانات</td><td>4 مشاهد (views) للتجميعات الشائعة لتحسين الأداء</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-U06</td><td>مؤشرات اتجاه</td><td>مؤشرات (▲/▼/→) مع نسبة مئوية في لوحات التحليلات</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>45. v_student_current (الطلاب الحاليون (مشهد))</h2>
+        <div class="tbl-name">v_student_current <span class="view-label">VIEW</span> <span class="note">— 0 صف (لا يخزن بيانات)</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td></td><td>معرف الطالب</td></tr>
+                <tr><td>student_number</td><td>VARCHAR(20)</td><td></td><td>رقم الطالب</td></tr>
+                <tr><td>full_name_ar</td><td>VARCHAR(200)</td><td></td><td>الاسم بالعربية</td></tr>
+                <tr><td>full_name_en</td><td>VARCHAR(200)</td><td></td><td>الاسم بالإنجليزية</td></tr>
+                <tr><td>guardian_name</td><td>VARCHAR(200)</td><td></td><td>اسم ولي الأمر</td></tr>
+                <tr><td>guardian_phone</td><td>VARCHAR(20)</td><td></td><td>هاتف ولي الأمر</td></tr>
+                <tr><td>grade_level_id</td><td>INT UNSIGNED</td><td></td><td>المستوى</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td></td><td>المدرسة</td></tr>
+                <tr><td>grade_year_id</td><td>INT UNSIGNED</td><td></td><td>سنة التسجيل</td></tr>
+                <tr><td>enrollment_status</td><td>ENUM</td><td></td><td>حالة التسجيل</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td></td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>class_name</td><td>VARCHAR(100)</td><td></td><td>اسم الشعبة</td></tr>
+                <tr><td>grade_name</td><td>VARCHAR(50)</td><td></td><td>اسم المستوى</td></tr>
+                <tr><td>stage</td><td>ENUM</td><td></td><td>المرحلة</td></tr>
+                <tr><td>school_name</td><td>VARCHAR(200)</td><td></td><td>اسم المدرسة</td></tr>
+                <tr><td>academic_year_name</td><td>VARCHAR(50)</td><td></td><td>اسم السنة</td></tr>
+            </tbody>
+        </table>
+        <h2>46. v_student_subject_summary (ملخص درجات الطالب لكل مادة (مشهد))</h2>
+        <div class="tbl-name">v_student_subject_summary <span class="view-label">VIEW</span> <span class="note">— 0 صف (لا يخزن بيانات)</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td></td><td>الطالب</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td></td><td>المادة</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td></td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td></td><td>الفصل الدراسي</td></tr>
+                <tr><td>total_grade</td><td>DECIMAL(7,2)</td><td></td><td>مجموع الدرجات</td></tr>
+                <tr><td>max_grade</td><td>DECIMAL(7,2)</td><td></td><td>مجموع الدرجات العظمى</td></tr>
+                <tr><td>percentage</td><td>DECIMAL(5,2)</td><td></td><td>النسبة المئوية</td></tr>
+            </tbody>
+        </table>
+        <h2>47. student_subject_summary (ملخص الطالب-المادة مع GPA (مشهد))</h2>
+        <div class="tbl-name">student_subject_summary <span class="view-label">VIEW</span> <span class="note">— 0 صف (لا يخزن بيانات)</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK generated</td><td>المعرف (row_number)</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td></td><td>الطالب</td></tr>
+                <tr><td>subject_id</td><td>INT UNSIGNED</td><td></td><td>المادة</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td></td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td></td><td>الفصل الدراسي</td></tr>
+                <tr><td>total_grade</td><td>DECIMAL(7,2)</td><td></td><td>المجموع</td></tr>
+                <tr><td>max_grade</td><td>DECIMAL(7,2)</td><td></td><td>الدرجة العظمى</td></tr>
+                <tr><td>percentage</td><td>DECIMAL(5,2)</td><td></td><td>النسبة</td></tr>
+                <tr><td>letter_grade</td><td>VARCHAR(3)</td><td></td><td>الدرجة الحرفية</td></tr>
+                <tr><td>grade_point</td><td>DECIMAL(3,2)</td><td></td><td>نقطة GPA</td></tr>
+                <tr><td>rank_in_class</td><td>INT UNSIGNED</td><td></td><td>الترتيب في الشعبة</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td></td><td>نشط</td></tr>
+                <tr><td>updated_at</td><td>DATETIME</td><td></td><td>آخر تحديث</td></tr>
+            </tbody>
+        </table>
+        <h2>48. v_semester_scores (معدلات الفصل الدراسي (مشهد))</h2>
+        <div class="tbl-name">v_semester_scores <span class="view-label">VIEW</span> <span class="note">— 0 صف (لا يخزن بيانات)</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td></td><td>الطالب</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td></td><td>الفصل الدراسي</td></tr>
+                <tr><td>gpa</td><td>DECIMAL(3,2)</td><td></td><td>المعدل التراكمي</td></tr>
+                <tr><td>total_percentage</td><td>DECIMAL(5,2)</td><td></td><td>النسبة المئوية الكلية</td></tr>
+            </tbody>
+        </table>
+        <h2>49. v_attendance_summary (ملخص الحضور (مشهد))</h2>
+        <div class="tbl-name">v_attendance_summary <span class="view-label">VIEW</span> <span class="note">— 0 صف (لا يخزن بيانات)</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td></td><td>الطالب</td></tr>
+                <tr><td>class_id</td><td>INT UNSIGNED</td><td></td><td>الشعبة</td></tr>
+                <tr><td>academic_year_id</td><td>INT UNSIGNED</td><td></td><td>السنة الدراسية</td></tr>
+                <tr><td>semester_id</td><td>INT UNSIGNED</td><td></td><td>الفصل الدراسي</td></tr>
+                <tr><td>total_days</td><td>INT UNSIGNED</td><td></td><td>إجمالي الأيام</td></tr>
+                <tr><td>present_days</td><td>INT UNSIGNED</td><td></td><td>أيام الحضور</td></tr>
+                <tr><td>absent_days</td><td>INT UNSIGNED</td><td></td><td>أيام الغياب</td></tr>
+                <tr><td>late_days</td><td>INT UNSIGNED</td><td></td><td>أيام التأخير</td></tr>
+                <tr><td>excused_days</td><td>INT UNSIGNED</td><td></td><td>أيام بعذر</td></tr>
+                <tr><td>attendance_rate</td><td>DECIMAL(5,2)</td><td></td><td>نسبة الحضور</td></tr>
+                <tr><td>is_below_threshold</td><td>TINYINT(1)</td><td></td><td>أقل من الحد الأدنى</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td></td><td>نشط</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- BFD 6 -->
+    <div class="bfd-section">
+        <div class="bfd-title bfd-6">BFD 6: التواصل وبوابة المستفيدين (4)</div>
+
+        <div class="bfd-desc"><p>تدير هذه المجموعة قنوات التواصل بين النظام والمستفيدين. تشمل التنبيهات الذكية (120 تنبيهاً) التي تُكتشف تلقائياً عبر 3 قواعد EQI (أقل من 50، تراجع 15% سنوياً، تحسن 10+ نقاط) وقاعدتي مناخ (مناخ < 50%، مشاركة < 60%)، مع تصنيف الشدة (info/warning/danger/critical). الإشعارات الداخلية (253 إشعاراً) ترسل للمستخدمين مع تفضيلات قابلة للتخصيص. بوابة ولي الأمر تربط أولياء الأمور بأبنائهم (3 روابط) مع نظام إقرارات يشمل 4 أنواع (درجات، سلوك، حضور، ترفيع). تمثل هذه المجموعة واجهة التفاعل الحيوية بين المدرسة والمجتمع.</p></div>
+
+        <div class="req-box"><h3>📋 المتطلبات الوظيفية (FR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">FR-25</td><td>محرك التنبيهات</td><td>كشف تلقائي للمشكلات عند تجاوز العتبات مع تصنيف الشدة</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-32</td><td>نظام الإشعارات</td><td>إرسال إشعارات داخلية للمستخدمين مع تفضيلات قابلة للتخصيص</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">FR-35</td><td>بوابة ولي الأمر</td><td>عرض درجات وسلوك وحضور ومهارات الأبناء مع إمكانية الإقرار</td></tr></tbody></table></div>
+        <div class="req-box"><h3>🔒 المتطلبات غير الوظيفية (NFR) المرتبطة</h3><table><thead><tr><th>المعرف</th><th>المتطلب</th><th>الوصف / ملاحظات</th></tr></thead><tbody><tr><td style="white-space:nowrap;font-weight:bold;">NFR-R02</td><td>تسجيل العمليات</td><td>تسجيل جميع التنبيهات والإشعارات مع تفاصيل المستخدم والوقت</td></tr><tr><td style="white-space:nowrap;font-weight:bold;">NFR-U04</td><td>رسائل تنبيه</td><td>رسائل نجاح/خطأ/تحذير/معلومات بعد كل عملية</td></tr></tbody></table></div>
+        <h3 style="color:#2c3e50;border-bottom:2px solid #eee;padding-bottom:8px;margin-top:30px;">جداول المجموعة</h3>
+        <h2>50. alerts (التنبيهات)</h2>
+        <div class="tbl-name">alerts <span class="note">— 120 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>school_id</td><td>INT UNSIGNED</td><td>FK → schools.id</td><td>المدرسة</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id, NULLABLE</td><td>الطالب</td></tr>
+                <tr><td>user_id</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>المستخدم</td></tr>
+                <tr><td>alert_type</td><td>ENUM</td><td>NOT NULL</td><td>نوع التنبيه</td></tr>
+                <tr><td>severity</td><td>ENUM</td><td>NOT NULL</td><td>الخطورة (info, warning, danger, critical)</td></tr>
+                <tr><td>title_ar</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>العنوان</td></tr>
+                <tr><td>message_ar</td><td>TEXT</td><td>NOT NULL</td><td>الرسالة</td></tr>
+                <tr><td>threshold_json</td><td>JSON</td><td>NULLABLE</td><td>معايير التنبيه</td></tr>
+                <tr><td>is_read</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 0</td><td>مقروء</td></tr>
+                <tr><td>read_at</td><td>DATETIME</td><td>NULLABLE</td><td>تاريخ القراءة</td></tr>
+                <tr><td>is_resolved</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 0</td><td>محلول</td></tr>
+                <tr><td>resolved_by</td><td>INT UNSIGNED</td><td>FK → users.id, NULLABLE</td><td>حل بواسطة</td></tr>
+                <tr><td>resolved_at</td><td>DATETIME</td><td>NULLABLE</td><td>تاريخ الحل</td></tr>
+                <tr><td>notes</td><td>TEXT</td><td>NULLABLE</td><td>ملاحظات</td></tr>
+                <tr><td>created_at</td><td>DATETIME</td><td>NOT NULL</td><td>تاريخ الإنشاء</td></tr>
+            </tbody>
+        </table>
+        <h2>51. notifications (الإشعارات)</h2>
+        <div class="tbl-name">notifications <span class="note">— 253 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>user_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>المستخدم</td></tr>
+                <tr><td>type</td><td>VARCHAR(50)</td><td></td><td>نوع الإشعار</td></tr>
+                <tr><td>title_ar</td><td>VARCHAR(200)</td><td></td><td>العنوان</td></tr>
+                <tr><td>message_ar</td><td>TEXT</td><td></td><td>الرسالة</td></tr>
+                <tr><td>related_entity_type</td><td>VARCHAR(50)</td><td></td><td>نوع الكيان المرتبط</td></tr>
+                <tr><td>related_entity_id</td><td>INT UNSIGNED</td><td></td><td>معرف الكيان المرتبط</td></tr>
+                <tr><td>is_read</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 0</td><td>مقروء</td></tr>
+                <tr><td>read_at</td><td>DATETIME</td><td>NULLABLE</td><td>تاريخ القراءة</td></tr>
+            </tbody>
+        </table>
+        <h2>52. parent_students (ربط ولي الأمر بالطالب)</h2>
+        <div class="tbl-name">parent_students <span class="note">— 3 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>parent_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>ولي الأمر</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>relationship</td><td>ENUM</td><td>NOT NULL</td><td>صلة القرابة (father, mother, guardian, other)</td></tr>
+                <tr><td>ack_grade</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الدرجات</td></tr>
+                <tr><td>ack_behavior</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار السلوك</td></tr>
+                <tr><td>ack_attendance</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الحضور</td></tr>
+                <tr><td>ack_promotion</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الترفيع</td></tr>
+                <tr><td>last_ack_at</td><td>DATETIME</td><td>NULLABLE</td><td>آخر إقرار</td></tr>
+            </tbody>
+        </table>
+        <h2>53. parent_acknowledgments (إقرارات ولي الأمر)</h2>
+        <div class="tbl-name">parent_acknowledgments <span class="note">— 0 صف</span></div>
+        <table>
+            <thead><tr><th>العمود</th><th>نوع البيانات</th><th>القيد</th><th>الوصف</th></tr></thead>
+            <tbody>
+                <tr><td>id</td><td>INT UNSIGNED</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+                <tr><td>parent_id</td><td>INT UNSIGNED</td><td>FK → users.id</td><td>ولي الأمر</td></tr>
+                <tr><td>student_id</td><td>INT UNSIGNED</td><td>FK → students.id</td><td>الطالب</td></tr>
+                <tr><td>relationship</td><td>ENUM</td><td>NOT NULL</td><td>صلة القرابة</td></tr>
+                <tr><td>ack_grade</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الدرجات</td></tr>
+                <tr><td>ack_behavior</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار السلوك</td></tr>
+                <tr><td>ack_attendance</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الحضور</td></tr>
+                <tr><td>ack_promotion</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>إقرار الترفيع</td></tr>
+                <tr><td>last_ack_at</td><td>DATETIME</td><td>NULLABLE</td><td>آخر إقرار</td></tr>
+                <tr><td>is_active</td><td>TINYINT(1)</td><td>NOT NULL, DEFAULT 1</td><td>الحالة</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

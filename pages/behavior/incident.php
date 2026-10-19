@@ -33,8 +33,9 @@ try {
     $semesterId = $sem ? $sem['id'] : null;
 } catch (Exception $e) {}
 
-// تحميل محسب السلوك
+// تحميل محسب السلوك ودوال الفلترة
 require_once __DIR__ . '/../../includes/behavior_calculator.php';
+require_once __DIR__ . '/../../includes/filters.php';
 $behaviorCalc = new BehaviorCalculator($db);
 
 // ============================================================
@@ -49,6 +50,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['record_incident'])) {
         $categoryId = (int)($_POST['category_id'] ?? 0);
         $description = trim($_POST['description'] ?? '');
         $incidentDate = $_POST['incident_date'] ?? date('Y-m-d');
+
+        // فحص أمان: المعلم فقط لفصوله المسندة
+        if ($userRole === 'teacher') {
+            $assignedClasses = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!in_array($classId, $assignedClasses)) {
+                setFlash('ليس لديك صلاحية لتسجيل سلوك في هذا الفصل', 'danger');
+                redirect('incident.php');
+            }
+            // التحقق من أن الطالب مسجل في هذا الفصل
+            $checkStmt = $db->prepare("SELECT 1 FROM student_enrollments WHERE student_id = ? AND class_id = ? AND is_active = 1 AND status = 'enrolled'");
+            $checkStmt->execute([$studentId, $classId]);
+            if (!$checkStmt->fetch()) {
+                setFlash('الطالب غير مسجل في هذا الفصل', 'danger');
+                redirect('incident.php');
+            }
+        }
 
         if (empty($studentId) || empty($classId) || empty($categoryId)) {
             setFlash('يرجى ملء جميع الحقول المطلوبة', 'warning');
@@ -108,19 +125,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['record_incident'])) {
 // جلب بيانات العرض
 // ============================================================
 
-// جلب الفصول
+// جلب الفصول — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $sql = "SELECT c.id, c.name_ar FROM classes c WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY c.name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll();
     }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 // جلب الطلاب (حسب الفصل المحدد أو الكل)
@@ -128,27 +157,47 @@ $filterClass = $_GET['class_id'] ?? '';
 $students = [];
 if ($filterClass) {
     try {
+        $roleFilter = buildRoleFilter($db, $userRole, $userId, $schoolId, 'se.class_id');
         $stmt = $db->prepare("
             SELECT s.id, s.student_number, s.full_name_ar
             FROM students s
             INNER JOIN student_enrollments se ON se.student_id = s.id AND se.class_id = ? AND se.is_active = 1 AND se.status = 'enrolled'
             WHERE s.is_active = 1
+            {$roleFilter['sql']}
             ORDER BY s.full_name_ar
         ");
-        $stmt->execute([$filterClass]);
+        $stmt->execute(array_merge([$filterClass], $roleFilter['params']));
         $students = $stmt->fetchAll();
     } catch (Exception $e) {}
 } else {
     try {
-        $sql = "SELECT id, student_number, full_name_ar FROM students WHERE is_active = 1";
-        $params = [];
-        if ($schoolId && $userRole !== 'group_admin') {
-            $sql .= " AND school_id = ?";
-            $params[] = $schoolId;
+        if ($userRole === 'teacher' && $schoolId) {
+            $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+            $sql = "SELECT DISTINCT s.id, s.student_number, s.full_name_ar
+                    FROM students s
+                    JOIN student_enrollments se ON se.student_id = s.id AND se.is_active = 1 AND se.status = 'enrolled'
+                    JOIN subject_teachers st ON st.classroom_id = se.class_id AND st.teacher_id = ? AND st.is_active = 1
+                    WHERE s.is_active = 1 AND s.school_id = ?
+                    UNION
+                    SELECT DISTINCT s.id, s.student_number, s.full_name_ar
+                    FROM students s
+                    JOIN student_enrollments se ON se.student_id = s.id AND se.is_active = 1 AND se.status = 'enrolled'
+                    JOIN classes c ON c.id = se.class_id AND c.teacher_id = ? AND c.academic_year_id = ?
+                    WHERE s.is_active = 1 AND s.school_id = ?
+                    ORDER BY full_name_ar LIMIT 200";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$userId, $schoolId, $userId, $academicYearId, $schoolId]);
+        } else {
+            $sql = "SELECT id, student_number, full_name_ar FROM students WHERE is_active = 1";
+            $params = [];
+            if ($schoolId && $userRole !== 'group_admin') {
+                $sql .= " AND school_id = ?";
+                $params[] = $schoolId;
+            }
+            $sql .= " ORDER BY full_name_ar LIMIT 200";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
         }
-        $sql .= " ORDER BY full_name_ar LIMIT 200";
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
         $students = $stmt->fetchAll();
     } catch (Exception $e) {}
 }

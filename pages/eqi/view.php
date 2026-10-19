@@ -30,6 +30,12 @@ if (!$schoolId) {
     redirect('index.php');
 }
 
+// التحقق من ملكية المدرسة لغير group_admin
+if ($userRole !== 'group_admin' && $userSchoolId && $schoolId != $userSchoolId) {
+    setFlash('ليس لديك صلاحية لعرض بيانات هذه المدرسة.', 'danger');
+    redirect('index.php');
+}
+
 // دعم وضع "جميع السنوات" — اختيار أحدث حساب متاح
 if (!$yearId || !$semesterId) {
     try {

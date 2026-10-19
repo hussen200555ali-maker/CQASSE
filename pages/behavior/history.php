@@ -64,6 +64,16 @@ if ($studentId) {
             $classId = $student['class_id'];
         }
 
+        // التحقق من وصول المعلم — الطالب ضمن فصوله المسموحة
+        if ($userRole === 'teacher' && $student) {
+            $studentClassId = $student['class_id'] ?? $classId;
+            $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!in_array((int)$studentClassId, $allowedIds)) {
+                setFlash('ليس لديك صلاحية لعرض سجل هذا الطالب', 'danger');
+                redirect('index.php');
+            }
+        }
+
         // جلب السجل السلوكي الكامل
         if ($classId && $academicYearId && $semesterId) {
             $behaviorHistory = $behaviorCalc->getBehaviorHistory($studentId, $classId, $academicYearId, $semesterId);
@@ -91,31 +101,63 @@ if ($studentId) {
     }
 }
 
-// جلب الفصول والطلاب للفلتر
+// جلب الفصول والطلاب للفلتر — للمعلم: فقط فصوله وطلابه
 $classes = [];
 $studentsList = [];
 try {
-    $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
-    }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $classes = $stmt->fetchAll();
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $sql = "SELECT DISTINCT c.id, c.name_ar
+                FROM classes c
+                JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+                WHERE c.is_active = 1 AND c.school_id = ?
+                UNION
+                SELECT DISTINCT c.id, c.name_ar
+                FROM classes c
+                WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+                ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$userId, $schoolId, $userId, $schoolId, $academicYearId]);
+        $classes = $stmt->fetchAll();
 
-    $sql = "SELECT id, student_number, full_name_ar FROM students WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+        $sql = "SELECT DISTINCT s.id, s.student_number, s.full_name_ar
+                FROM students s
+                JOIN student_enrollments se ON se.student_id = s.id AND se.is_active = 1 AND se.status = 'enrolled'
+                JOIN subject_teachers st ON st.classroom_id = se.class_id AND st.teacher_id = ? AND st.is_active = 1
+                WHERE s.is_active = 1 AND s.school_id = ?
+                UNION
+                SELECT DISTINCT s.id, s.student_number, s.full_name_ar
+                FROM students s
+                JOIN student_enrollments se ON se.student_id = s.id AND se.is_active = 1 AND se.status = 'enrolled'
+                JOIN classes c ON c.id = se.class_id AND c.teacher_id = ? AND c.academic_year_id = ?
+                WHERE s.is_active = 1 AND s.school_id = ?
+                ORDER BY full_name_ar LIMIT 200";
+        $stmt = $db->prepare($sql);
+        $stmt->execute([$userId, $schoolId, $userId, $academicYearId, $schoolId]);
+        $studentsList = $stmt->fetchAll();
+    } else {
+        $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll();
+
+        $sql = "SELECT id, student_number, full_name_ar FROM students WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY full_name_ar LIMIT 200";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $studentsList = $stmt->fetchAll();
     }
-    $sql .= " ORDER BY full_name_ar LIMIT 200";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $studentsList = $stmt->fetchAll();
 } catch (Exception $e) {}
 ?>
 

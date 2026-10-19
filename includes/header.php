@@ -52,20 +52,13 @@ $userRoleLabel = $roleLabels[$userRole] ?? $userRole;
 // User initials for avatar
 $userInitials = mb_substr($userName, 0, 1, 'UTF-8');
 
-// Notification count for unified tab (alerts only)
+// Notification count (من جدول notifications لكل مستخدم)
 $notificationCount = 0;
 if (isset($db) && isLoggedIn()) {
     try {
-        $userRole = $_SESSION['user']['role'] ?? '';
-        $schoolId = $_SESSION['user']['school_id'] ?? null;
-
-        $alertSql = "SELECT COUNT(*) FROM alerts WHERE is_read = 0 AND is_resolved = 0";
-        if (in_array($userRole, ['school_admin', 'teacher']) && $schoolId) {
-            $alertSql .= " AND school_id = " . (int)$schoolId;
-        }
-
-        $alertStmt = $db->query($alertSql);
-        $notificationCount = (int)$alertStmt->fetchColumn();
+        $stmt = $db->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+        $stmt->execute([$_SESSION['user']['id']]);
+        $notificationCount = (int)$stmt->fetchColumn();
     } catch (Exception $e) {
         $notificationCount = 0;
     }
@@ -76,12 +69,12 @@ if (isset($db) && isLoggedIn()) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS">
-    <meta name="author" content="EQAS">
+    <meta name="description" content="نظام التقييم الشامل لجودة التعليم المدرسي  - CQASSE">
+    <meta name="author" content="CQASSE">
     <meta name="csrf-token" content="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
     <meta name="base-url" content="<?php echo defined('EQAS_URL') ? EQAS_URL : ''; ?>">
 
-    <title><?php echo htmlspecialchars($pageTitle); ?> | نظام التقييم الشامل</title>
+    <title><?php echo htmlspecialchars($pageTitle); ?> | CQASSE - نظام التقييم الشامل لجودة التعليم المدرسي</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="<?php echo EQAS_ASSETS_URL ?? 'assets'; ?>/img/favicon.svg">
@@ -200,14 +193,18 @@ if (isset($db) && isLoggedIn()) {
             width: 52px;
             height: 52px;
             margin: 0 auto 6px;
-            background: linear-gradient(135deg, #c8a951 0%, #d9c47a 100%);
+            background: #1a5632;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
-            color: #134425;
             box-shadow: 0 4px 14px rgba(200, 169, 81, 0.35);
+        }
+        .sidebar-logo .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
         .sidebar-logo h2 {
             margin: 0;
@@ -788,11 +785,26 @@ if (isset($db) && isLoggedIn()) {
                     </div>
 
                     <!-- Notifications -->
-                    <div class="topbar-item notification-bell" onclick="window.location.href='<?php echo baseUrl('pages/notifications/index.php?tab=unified'); ?>'">
-                        <i class="fas fa-bell"></i>
-                        <?php if ($notificationCount > 0): ?>
-                        <span class="notification-badge"><?php echo $notificationCount > 99 ? '99+' : $notificationCount; ?></span>
-                        <?php endif; ?>
+                    <div class="topbar-item">
+                        <button class="notification-bell" type="button" aria-label="الإشعارات" id="notification-toggle">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notifBadge"
+                                  style="<?php echo $notificationCount > 0 ? '' : 'display:none;'; ?>"><?php echo $notificationCount > 99 ? '99+' : $notificationCount; ?></span>
+                        </button>
+                        <div class="notification-dropdown" id="notifDropdown">
+                            <div class="notification-header">
+                                <strong>آخر الإشعارات</strong>
+                                <a href="<?php echo baseUrl('pages/notifications/index.php?tab=unified'); ?>" style="font-size:12px;">عرض الكل</a>
+                            </div>
+                            <div class="notification-list" id="notifPreviewList">
+                                <div class="notification-loading" style="padding:20px;text-align:center;color:#888;font-size:13px;">
+                                    <i class="fas fa-spinner fa-spin"></i> جاري التحميل...
+                                </div>
+                            </div>
+                            <div class="notification-footer">
+                                <small id="notifPreviewCount"><?php echo $notificationCount; ?> إشعار غير مقروء</small>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- User Dropdown -->
@@ -814,7 +826,9 @@ if (isset($db) && isLoggedIn()) {
                                 <?php endif; ?>
                             </div>
                             <a href="<?php echo baseUrl('pages/users/profile.php'); ?>"><i class="fas fa-user"></i> الملف الشخصي</a>
+                            <?php if ($userRole !== 'teacher' && $userRole !== 'parent'): ?>
                             <a href="<?php echo baseUrl('pages/settings/index.php'); ?>"><i class="fas fa-cog"></i> الإعدادات</a>
+                            <?php endif; ?>
                             <div class="dropdown-divider"></div>
                             <a href="<?php echo baseUrl('logout.php'); ?>" class="text-danger"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
                         </div>

@@ -168,25 +168,19 @@ if ($userRole === 'group_admin') {
     $allSchools = $db->query("SELECT id, name_ar FROM schools WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
 }
 
-// إنشاء الجدول إذا لم يكن موجوداً (للتوافق مع قواعد البيانات القديمة)
-$db->exec("CREATE TABLE IF NOT EXISTS school_improvement_plans (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    school_id INT UNSIGNED NOT NULL,
-    trigger_type ENUM('climate','facility','both') DEFAULT 'both',
-    weaknesses TEXT,
-    goals TEXT,
-    strategies TEXT,
-    timeline VARCHAR(200),
-    responsible VARCHAR(200),
-    status ENUM('active','completed','cancelled') DEFAULT 'active',
-    progress INT DEFAULT 0,
-    created_by INT UNSIGNED,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_active TINYINT(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+// ═══════════════════════════════════════════
+// التأكد من بنية الجدول (صيانة)
+// ═══════════════════════════════════════════
+try {
+    $colCheck = $db->query("SHOW COLUMNS FROM school_improvement_plans LIKE 'trigger_type'")->fetch();
+    if (!$colCheck) {
+        $db->exec("ALTER TABLE school_improvement_plans ADD COLUMN trigger_type ENUM('climate','facility','both') DEFAULT 'both' AFTER semester_id");
+    }
+} catch (Exception $e) {}
 
+// ═══════════════════════════════════════════
 // معالجة الحفظ
+// ═══════════════════════════════════════════
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf()) {
         setFlash('خطأ في التحقق.', 'danger');
@@ -201,12 +195,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $timeline = trim($_POST['timeline'] ?? '');
             $responsibleUserId = intval($_POST['responsible_user_id'] ?? 0);
             if ($responsibleUserId === 0) $responsibleUserId = null;
+            $academicYearId = intval($_POST['academic_year_id'] ?? currentAcademicYearId());
+            $semesterId = intval($_POST['semester_id'] ?? currentSemesterId());
 
             if (empty($weaknesses) || empty($goals) || empty($strategies)) {
                 setFlash('يرجى ملء الحقول المطلوبة (نقاط الضعف، الأهداف، الاستراتيجيات).', 'warning');
             } else {
-                $stmt = $db->prepare("INSERT INTO school_improvement_plans (school_id, trigger_type, weaknesses, goals, strategies, timeline, responsible_user_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$schoolId, $triggerType, $weaknesses, $goals, $strategies, $timeline, $responsibleUserId, $_SESSION['user']['id']]);
+                $stmt = $db->prepare("INSERT INTO school_improvement_plans (school_id, academic_year_id, semester_id, trigger_type, weaknesses, goals, strategies, timeline, responsible_user_id, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$schoolId, $academicYearId, $semesterId, $triggerType, $weaknesses, $goals, $strategies, $timeline, $responsibleUserId, $_SESSION['user']['id']]);
                 logActivity($db, $_SESSION['user']['id'], 'improvement_plan_create', "إنشاء خطة تحسين المدرسة", 'school_improvement_plans', $db->lastInsertId());
                 setFlash('تم إنشاء خطة التحسين بنجاح.', 'success');
             }
@@ -254,7 +250,7 @@ $stmt->execute([$schoolId]);
 $plans = $stmt->fetchAll();
 
 // جلب المستخدمين المسؤولين
-$usersStmt = $db->query("SELECT id, full_name_ar, role_name FROM users WHERE is_active = 1 ORDER BY full_name_ar");
+$usersStmt = $db->query("SELECT u.id, u.full_name_ar, r.display_name_ar as role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.is_active = 1 ORDER BY u.full_name_ar");
 $availableUsers = $usersStmt->fetchAll();
 
 // هل تحتاج خطة؟
@@ -294,8 +290,8 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
                     </select>
                 </form>
                 <?php endif; ?>
-                <?php if ($needsPlan && !$hasActivePlan): ?>
-                <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة تحسين</button>
+                <?php if (!$hasActivePlan): ?>
+                <button type="button" class="btn btn-<?= $needsPlan ? 'danger' : 'primary' ?> btn-sm" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة تحسين</button>
                 <?php endif; ?>
                 <button type="button" class="btn btn-light btn-sm" onclick="window.print()">🖨️ طباعة</button>
             </div>
@@ -313,12 +309,20 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
             </div>
             <?php endif; ?>
 
-            <!-- نموذج الإنشاء -->
+            <?php if (!$needsPlan && !$hasActivePlan): ?>
+            <div class="alert" style="background:#e8f4fd; border:1px solid #17a2b8; border-radius:var(--radius-md); padding:12px 16px; margin-bottom:16px;">
+                <strong>ℹ️ المدرسة لا تحتاج خطة تحسين حالياً.</strong>
+                درجة المناخ (<?= $climateScore !== null ? $climateScore . '%' : 'غير متوفرة' ?>) والمرافق (<?= $facilityScore !== null ? $facilityScore . '%' : 'غير متوفرة' ?>) أعلى من 55%.
+                يمكنك إنشاء خطة تحسين اختيارية إذا رغبت.
+            </div>
+            <?php endif; ?>
             <div id="create-form" style="display:none;margin-bottom:20px;">
                 <div class="card" style="border:2px solid var(--danger);">
                     <form method="POST">
                         <?= csrfField() ?>
                         <input type="hidden" name="action" value="create_plan">
+                        <input type="hidden" name="academic_year_id" value="<?= currentAcademicYearId() ?>">
+                        <input type="hidden" name="semester_id" value="<?= currentSemesterId() ?>">
                         <div class="card-body">
                             <div class="form-group">
                                 <label class="form-label">سبب التفعيل</label>
@@ -368,7 +372,10 @@ $triggerLabels = ['climate' => 'مناخ مدرسي', 'facility' => 'مرافق'
             <?php if (empty($plans)): ?>
             <div style="text-align:center;padding:40px;color:var(--text-muted);">
                 <div style="font-size:48px;margin-bottom:12px;">📈</div>
-                <p>لا توجد خطط تحسين حالياً.</p>
+                <p style="margin-bottom:16px;">لا توجد خطط تحسين حالياً.</p>
+                <?php if (!$hasActivePlan): ?>
+                <button type="button" class="btn btn-<?= $needsPlan ? 'danger' : 'primary' ?>" onclick="document.getElementById('create-form').style.display='block'">➕ إنشاء خطة تحسين</button>
+                <?php endif; ?>
             </div>
             <?php else: ?>
             <?php foreach ($plans as $plan):

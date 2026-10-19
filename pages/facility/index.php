@@ -27,25 +27,25 @@ $schoolId = $_SESSION['user']['school_id'] ?? null;
 $filterSchool = $_GET['school_id'] ?? '';
 $filterSemester = $_GET['semester_id'] ?? '0';
 
-$sql = "SELECT fc.*, s.name_ar as school_name, u.full_name_ar as evaluator_name,
+$sql = "SELECT s.*, s.survey_date as evaluation_date, sch.name_ar as school_name, u.full_name_ar as evaluator_name,
         sem.name_ar as semester_name, ay.name as year_name
-        FROM facility_checklists fc
-        JOIN schools s ON fc.school_id = s.id
-        JOIN users u ON fc.evaluator_id = u.id
-        JOIN semesters sem ON fc.semester_id = sem.id
-        JOIN academic_years ay ON fc.academic_year_id = ay.id
-        WHERE fc.is_active = 1";
+        FROM surveys s
+        JOIN schools sch ON s.school_id = sch.id
+        JOIN users u ON s.evaluator_id = u.id
+        JOIN semesters sem ON s.semester_id = sem.id
+        JOIN academic_years ay ON s.academic_year_id = ay.id
+        WHERE s.survey_type = 'facility' AND s.is_active = 1";
 $params = [];
 
-if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND fc.school_id = ?"; $params[] = $schoolId; }
-if ($filterSchool) { $sql .= " AND fc.school_id = ?"; $params[] = $filterSchool; }
+if ($schoolId && $userRole !== 'group_admin') { $sql .= " AND s.school_id = ?"; $params[] = $schoolId; }
+if ($filterSchool) { $sql .= " AND s.school_id = ?"; $params[] = $filterSchool; }
 if ($filterSemester && $filterSemester !== '0') {
-    $sq = buildSemesterSubquery($filterSemester, 'fc');
+    $sq = buildSemesterSubquery($filterSemester, 's');
     $sql .= $sq['sql'];
     $params = array_merge($params, $sq['params']);
 }
 
-$sql .= " ORDER BY fc.evaluation_date DESC";
+$sql .= " ORDER BY s.survey_date DESC";
 
 try {
     $stmt = $db->prepare($sql);

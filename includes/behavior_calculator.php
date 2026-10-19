@@ -781,7 +781,7 @@ class BehaviorCalculator {
             $stmt = $this->db->prepare("
                 SELECT id FROM assessment_forms 
                 WHERE form_key = 'behavior_eval' AND is_active = 1
-                LIMIT 1
+                ORDER BY is_default DESC, created_at DESC LIMIT 1
             "); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema)
             $stmt->execute([]);
             $form = $stmt->fetch();
@@ -798,7 +798,7 @@ class BehaviorCalculator {
                 SELECT ar.item_id, ar.numeric_value, ai.weight, ai.tool_type, 
                        ai.is_inverse, ai.max_value, ai.text_ar
                 FROM assessment_responses ar
-                INNER JOIN assessment_items ai ON ai.id = ar.item_id
+                INNER JOIN assessment_structure ai ON ai.id = ar.item_id
                 WHERE ar.form_id = ? AND ar.student_id = ? AND ar.class_id = ?
                     AND ar.academic_year_id = ? AND ar.semester_id = ? 
                     AND ar.is_active = 1

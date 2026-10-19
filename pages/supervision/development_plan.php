@@ -193,9 +193,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'update_progress') {
             $id = (int)$_POST['plan_id'];
             $progress = (int)$_POST['progress'];
-            $followUpNotes = trim($_POST['follow_up_notes'] ?? '');
+            $followUpNotes = trim($_POST['notes'] ?? '');
             $status = $progress >= 100 ? 'completed' : 'active';
-            $stmt = $db->prepare("UPDATE improvement_plans SET progress = ?, follow_up_notes = ?, status = ? WHERE id = ? AND plan_type = 'teacher'");
+            $stmt = $db->prepare("UPDATE improvement_plans SET progress = ?, notes = ?, status = ? WHERE id = ? AND plan_type = 'teacher'");
             $stmt->execute([$progress, $followUpNotes, $status, $id]);
             logActivity($db, $_SESSION['user']['id'], 'dev_plan_progress', "تحديث تقدم خطة تطوير رقم {$id} إلى {$progress}%", 'improvement_plans', $id);
             setFlash('تم تحديث التقدم.', 'success');
@@ -423,11 +423,11 @@ $statusColors = ['active' => 'var(--warning)', 'completed' => 'var(--success)', 
                                 <input type="number" name="progress" class="form-control" value="<?= $plan['progress'] ?>" min="0" max="100" style="text-align:center;">
                             </div>
                             <div class="form-group" style="margin:0;flex:1;min-width:200px;">
-                                <input type="text" name="follow_up_notes" class="form-control" placeholder="ملاحظات المتابعة..." value="<?= e($plan['follow_up_notes'] ?? '') ?>">
+                                <input type="text" name="notes" class="form-control" placeholder="ملاحظات المتابعة..." value="<?= e($plan['notes'] ?? '') ?>">
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm">تحديث</button>
-                            <button type="submit" name="action" value="complete_plan" class="btn btn-success btn-sm" onclick="this.form.elements['action'].value='complete_plan';return confirm('إكمال الخطة؟');">✅ إكمال</button>
-                            <button type="submit" name="action" value="cancel_plan" class="btn btn-danger btn-sm" onclick="this.form.elements['action'].value='cancel_plan';return confirm('إلغاء الخطة؟');">❌ إلغاء</button>
+                            <button type="button" name="action" value="complete_plan" class="btn btn-success btn-sm" onclick="if(confirm('إكمال الخطة؟')) { this.form.elements['action'].value='complete_plan'; this.form.submit(); }">✅ إكمال</button>
+                            <button type="button" name="action" value="cancel_plan" class="btn btn-danger btn-sm" onclick="if(confirm('إلغاء الخطة؟')) { this.form.elements['action'].value='cancel_plan'; this.form.submit(); }">❌ إلغاء</button>
                         </div>
                     </form>
                     <?php endif; ?>
@@ -441,3 +441,5 @@ $statusColors = ['active' => 'var(--warning)', 'completed' => 'var(--success)', 
 
 <?php
 require_once __DIR__ . '/../../includes/footer.php';
+
+

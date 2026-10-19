@@ -76,7 +76,7 @@ if (!empty($selectedSchoolIds)) {
     $adjuster = new ContextualAdjustmentService($db);
     foreach ($comparisonData as &$school) {
         $raw = $school['eqi_score'] ?: 0;
-        $adj = $adjuster->calculateAdjustedSQIWithDetails($school['school_id'], $selectedAcademicYearId, $raw);
+        $adj = $adjuster->calculateAdjustedSQIWithDetails($school['school_id'], $raw);
         $school['adjusted_eqi'] = $adj['adjusted_sqi'];
         $school['challenge_index'] = $adj['challenge_index'];
         $school['has_context'] = $adj['has_context'];

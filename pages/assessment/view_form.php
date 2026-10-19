@@ -61,9 +61,17 @@ foreach ($form['categories'] as $cat) {
             <div class="flex items-center gap-3">
                 <span style="font-size:28px;"><?php echo $engine->getFormTypeIcon($form['form_key']); /* [إصلاح 2026-05-11] form_type → form_key */ ?></span>
                 <div>
-                    <h3 class="card-title"><?php echo e($form['name_ar']); ?></h3>
+                    <h3 class="card-title">
+                        <?php echo e($form['name_ar']); ?>
+                        <?php if ($form['is_default']): ?>
+                            <span class="badge" style="background:#28a745;color:white;font-size:11px;vertical-align:middle;">⭐ افتراضي</span>
+                        <?php endif; ?>
+                    </h3>
                     <?php if ($form['name_en']): ?>
                         <div style="font-size:13px; color:var(--text-muted);"><?php echo e($form['name_en']); ?></div>
+                    <?php endif; ?>
+                    <?php if ($form['version']): ?>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">الإصدار: <?php echo e($form['version']); ?></div>
                     <?php endif; ?>
                 </div>
             </div>

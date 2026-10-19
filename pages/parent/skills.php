@@ -12,10 +12,10 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../includes/header.php';
+
 $pageTitle = 'مهارات الأبناء';
 $breadcrumb = ['لوحة ولي الأمر' => baseUrl('pages/dashboard/parent.php'), 'مهارات الأبناء' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
 
 // التحقق من الصلاحية
 if (!hasPermission('parent')) {
@@ -182,7 +182,7 @@ foreach ($children as $child) {
                         AVG(ar.numeric_value) as avg_value,
                         ai.tool_type, ai.max_value as item_max_value
                     FROM assessment_responses ar
-                    JOIN assessment_items ai ON ar.item_id = ai.id
+                    JOIN assessment_structure ai ON ar.item_id = ai.id
                     JOIN assessment_forms af ON ar.form_id = af.id
                     JOIN student_enrollments se ON ar.student_id = se.student_id AND se.class_id = ? AND se.is_active = 1
                     WHERE ar.class_id = ? AND ar.is_active = 1

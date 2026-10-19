@@ -19,25 +19,30 @@ if (!hasPermission('teacher')) {
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
 
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId   = $_SESSION['user']['id'];
+$schoolId = $_SESSION['user']['school_id'] ?? null;
+
 $evalId = (int)($_GET['id'] ?? 0);
 if (!$evalId) {
     setFlash('معرف التقييم غير صالح', 'danger');
     redirect('index.php');
 }
 
-// جلب بيانات التقييم
+// جلب بيانات التقييم مع التحقق من ملكية المدرسة
 $evaluation = null;
 try {
     $stmt = $db->prepare("
         SELECT e.*, s.full_name_ar as student_name, s.student_number,
-               c.name_ar as class_name, gl.name_ar as grade_name,
+               c.name_ar as class_name, c.school_id as school_id,
+               gl.name_ar as grade_name,
                u.full_name_ar as evaluator_name,
                sem.name_ar as semester_name, ay.name as year_name
         FROM evaluations e
         JOIN students s ON e.student_id = s.id
         JOIN classes c ON e.class_id = c.id
         JOIN grade_levels gl ON c.grade_level_id = gl.id
-        JOIN users u ON e.student_id = u.id
+        JOIN users u ON e.evaluated_by = u.id
         JOIN semesters sem ON e.semester_id = sem.id
         JOIN academic_years ay ON e.academic_year_id = ay.id
         WHERE e.eval_type = 'behavior_score' AND e.id = ? AND e.is_active = 1
@@ -51,11 +56,27 @@ if (!$evaluation) {
     redirect('index.php');
 }
 
+// التحقق من ملكية المدرسة
+if ($schoolId && $userRole !== 'group_admin' && $evaluation['school_id'] != $schoolId) {
+    setFlash('ليس لديك صلاحية لعرض هذا التقييم', 'danger');
+    redirect('index.php');
+}
+
+// التحقق من وصول المعلم — الفصل ضمن فصوله المسموحة
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array((int)$evaluation['class_id'], $allowedIds)) {
+        setFlash('ليس لديك صلاحية لعرض هذا التقييم', 'danger');
+        redirect('index.php');
+    }
+}
+
 // جلب التقييمات السابقة للمقارنة
 $previousEvals = [];
 try {
     $stmt = $db->prepare("
-        SELECT id, e.created_at as evaluation_date, e.combined_score as overall_score 
+        SELECT id, e.created_at as evaluation_date, 
+               COALESCE(e.current_percentage, e.combined_score) as overall_score 
         FROM evaluations e
         WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.id != ? AND e.is_active = 1
         ORDER BY e.created_at DESC LIMIT 5
@@ -65,8 +86,36 @@ try {
 } catch (Exception $e) {}
 
 // حساب الدرجة الكلية
-$overallScore = $evaluation['overall_score'];
+$overallScore = $evaluation['current_percentage'] ?? $evaluation['combined_score'] ?? null;
 $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null;
+
+// جلب الحوادث السلوكية (العناصر التفصيلية)
+$items = [];
+try {
+    $stmt = $db->prepare("
+        SELECT bi.*, bc.name_ar as category_name, bc.points as category_points,
+               u.full_name_ar as reported_by_name
+        FROM behavior_incidents bi
+        JOIN behavior_categories bc ON bi.category_id = bc.id
+        LEFT JOIN users u ON bi.reported_by = u.id
+        WHERE bi.student_id = ? AND bi.academic_year_id = ? AND bi.semester_id = ? AND bi.is_active = 1
+        ORDER BY bi.incident_date DESC
+    ");
+    $stmt->execute([$evaluation['student_id'], $evaluation['academic_year_id'], $evaluation['semester_id']]);
+    $items = $stmt->fetchAll();
+} catch (Exception $e) {}
+
+// جلب درجات السلوك
+$behaviorScore = null;
+try {
+    $stmt = $db->prepare("
+        SELECT * FROM behavior_scores
+        WHERE student_id = ? AND academic_year_id = ? AND semester_id = ? AND is_active = 1
+        LIMIT 1
+    ");
+    $stmt->execute([$evaluation['student_id'], $evaluation['academic_year_id'], $evaluation['semester_id']]);
+    $behaviorScore = $stmt->fetch();
+} catch (Exception $e) {}
 ?>
 
 <!-- معلومات الطالب -->
@@ -102,7 +151,7 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
                 </div>
                 <div>
                     <span style="font-size:12px; color:var(--text-muted);">التاريخ</span>
-                    <div style="font-weight:600;"><?php echo formatDateAr($evaluation['evaluation_date'], 'medium'); ?></div>
+                    <div style="font-weight:600;"><?php echo formatDateAr($evaluation['created_at'] ?? null, 'medium'); ?></div>
                 </div>
             </div>
         </div>
@@ -127,9 +176,17 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
     </div>
 </div>
 
-<!-- عناصر التقييم بالأشرطة المرئية -->
+<!-- الحوادث السلوكية -->
 <div class="section">
-    <h3 class="section-title">تفاصيل التقييم</h3>
+    <h3 class="section-title">الحوادث السلوكية</h3>
+    <?php if (empty($items)): ?>
+    <div class="card">
+        <div class="card-body" style="text-align:center; padding:30px; color:var(--text-muted);">
+            <div style="font-size:48px; margin-bottom:12px;">📋</div>
+            <p>لا توجد حوادث سلوكية مسجلة لهذا الطالب في هذا الفصل.</p>
+        </div>
+    </div>
+    <?php else: ?>
     <?php 
     $currentCategory = '';
     foreach ($items as $item): 
@@ -143,18 +200,16 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
         </div>
         <div class="card-body">
     <?php endif; ?>
-            <div style="margin-bottom:16px;">
+            <div style="margin-bottom:16px; padding:12px; background:var(--background); border-radius:var(--radius);">
                 <div class="flex justify-between items-center mb-1">
-                    <span style="font-size:14px; font-weight:500;"><?php echo e($item['text_ar']); ?></span>
-                    <span style="font-size:14px; font-weight:600; color:<?php echo $engine->getScoreRating($item['score'] ?? 0)['color']; ?>;">
-                        <?php echo number_format($item['score'] ?? 0, 1); ?>%
+                    <span style="font-size:14px; font-weight:500;"><?php echo e($item['description'] ?? 'بدون وصف'); ?></span>
+                    <span style="font-size:14px; font-weight:600; color:<?php echo $item['points'] < 0 ? 'var(--danger)' : 'var(--success)'; ?>;">
+                        <?php echo $item['points'] > 0 ? '+' : ''; ?><?php echo number_format($item['points'], 1); ?> نقطة
                     </span>
                 </div>
-                <?php echo $engine->renderScoreBar($item['score'] ?? 0); ?>
                 <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-                    الأداة: <?php echo e($engine->getToolLabel($item['tool_type'])); ?>
-                    <?php if ($item['is_inverse']): ?> | <span style="color:var(--warning);">عكسي</span><?php endif; ?>
-                    | الوزن: <?php echo number_format($item['weight'], 1); ?>
+                    التاريخ: <?php echo formatDateAr($item['incident_date'], 'short'); ?>
+                    <?php if ($item['reported_by_name']): ?> | المبلّغ: <?php echo e($item['reported_by_name']); ?><?php endif; ?>
                 </div>
             </div>
     <?php endforeach; ?>
@@ -162,14 +217,32 @@ $rating = $overallScore !== null ? $engine->getScoreRating($overallScore) : null
         </div>
     </div>
     <?php endif; ?>
+    <?php endif; ?>
 </div>
 
-<?php if ($evaluation['notes']): ?>
+<?php if ($behaviorScore): ?>
 <div class="section">
     <div class="card">
-        <div class="card-header"><h3 class="card-title">📝 ملاحظات</h3></div>
+        <div class="card-header"><h3 class="card-title">📊 ملخص درجات السلوك</h3></div>
         <div class="card-body">
-            <p><?php echo e($evaluation['notes']); ?></p>
+            <div class="grid grid-4">
+                <div>
+                    <span style="font-size:12px; color:var(--text-muted);">النقاط الابتدائية</span>
+                    <div style="font-weight:600;"><?php echo number_format($behaviorScore['starting_points'], 1); ?></div>
+                </div>
+                <div>
+                    <span style="font-size:12px; color:var(--text-muted);">النقاط المكتسبة</span>
+                    <div style="font-weight:600; color:var(--success);">+<?php echo number_format($behaviorScore['earned_points'], 1); ?></div>
+                </div>
+                <div>
+                    <span style="font-size:12px; color:var(--text-muted);">النقاط المخصومة</span>
+                    <div style="font-weight:600; color:var(--danger);">-<?php echo number_format($behaviorScore['deducted_points'], 1); ?></div>
+                </div>
+                <div>
+                    <span style="font-size:12px; color:var(--text-muted);">النسبة الحالية</span>
+                    <div style="font-weight:600;"><?php echo number_format($behaviorScore['current_percentage'], 1); ?>%</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

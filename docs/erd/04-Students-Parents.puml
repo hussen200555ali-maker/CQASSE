@@ -1,0 +1,67 @@
+@startuml 04-Students-Parents
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "students" as students {
+  id : int(10)
+  student_number : varchar(20)
+  full_name_ar : varchar(200)
+  full_name_en : varchar(200)
+  guardian_name : varchar(200)
+  guardian_phone : varchar(20)
+  guardian_email : varchar(100)
+  * grade_level_id : int(10)
+  * school_id : int(10)
+  enrollment_date : date
+}
+
+entity "student_enrollments" as student_enrollments {
+  id : int(10)
+  * student_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  enrollment_date : date
+  status : enum('enrolled','transferred','dropped')
+  is_active : tinyint(1)
+}
+
+entity "student_notes" as student_notes {
+  id : int(10)
+  * student_id : int(10)
+  * class_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  note_type : enum('general','academic','behavioral','attendance')
+  title_ar : varchar(200)
+  content_ar : text
+  priority : enum('low','medium','high','urgent')
+  is_pinned : tinyint(1)
+}
+
+entity "parent_acknowledgments" as parent_acknowledgments {
+  id : int(10)
+  * parent_id : int(10)
+  * student_id : int(10)
+  ack_type : enum('grade','behavior','attendance','promotion')
+  * entity_id : int(10)
+  is_acknowledged : tinyint(1)
+  acknowledged_at : datetime
+  notes : text
+  is_active : tinyint(1)
+  created_at : datetime
+}
+
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+students ||--o{ students
+@enduml

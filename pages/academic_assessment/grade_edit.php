@@ -7,7 +7,7 @@
  * يتضمن:
  * - اختيار الاختبار لتعديل درجاته
  * - عرض الدرجات الحالية في جدول قابل للتعديل
- * - تسجيل التغييرات في سجل تغيير الدرجات (grade_change_log)
+ * - تسجيل التغييرات في سجل النشاطات (activity_logs)
  * - طلب سبب التغيير لكل درجة معدّلة
  * - تمييز الدرجات المعدّلة بلون مختلف
  * - منع التعديل إذا كان الاختبار مقفلاً
@@ -24,14 +24,17 @@ require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/academic_calculator.php';
 
 // التحقق من الصلاحيات
-if (!hasPermission('school_admin')) {
-    setFlash('صلاحية تعديل الدرجات متاحة فقط لمديري المدارس وفما فوق', 'danger');
+if (!hasPermission('teacher')) {
+    setFlash('صلاحية تعديل الدرجات متاحة فقط للمعلمين وفما فوق', 'danger');
     redirect('../../index.php');
 }
 
 $calculator = new AcademicCalculator($db);
 $academicYearId = getCurrentAcademicYearId($db);
 $schoolId = $_SESSION['user']['school_id'] ?? 0;
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
+$currentSemesterId = currentSemesterId($academicYearId);
 
 // ============================================================
 // معالجة حفظ التعديلات
@@ -52,9 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     // التحقق من أن الاختبار غير مقفل
-    $stmt = $db->prepare("SELECT t.* FROM tests t WHERE t.id = ? AND t.is_active = 1");
+    $stmt = $db->prepare("SELECT t.*, c.school_id FROM tests t JOIN classes c ON t.class_id = c.id WHERE t.id = ? AND t.is_active = 1");
     $stmt->execute([$testId]);
     $testInfo = $stmt->fetch();
+    
+    // التحقق من أن الاختبار ينتمي لنفس المدرسة
+    if ($testInfo && $schoolId && (int)$testInfo['school_id'] !== (int)$schoolId) {
+        setFlash('الاختبار غير موجود في مدرستك', 'danger');
+        redirect('grade_edit.php');
+    }
 
     if (!$testInfo) {
         setFlash('الاختبار غير موجود', 'danger');
@@ -64,6 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if ($testInfo['status'] === 'locked') {
         setFlash('لا يمكن تعديل درجات اختبار مقفل', 'danger');
         redirect('grade_edit.php?test_id=' . $testId);
+    }
+
+    // المعلم: السماح بالتعديل فقط في الفصل الحالي
+    if ($userRole === 'teacher' && $currentSemesterId && (int)$testInfo['semester_id'] !== (int)$currentSemesterId) {
+        setFlash('يمكنك تعديل الدرجات فقط في الفصل الدراسي الحالي', 'danger');
+        redirect('grade_edit.php');
     }
 
     try {
@@ -116,14 +131,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $_SESSION['user']['id'] ?? 0, $gradeId
             ]);
 
-            // تسجيل التغيير في سجل التغييرات
+            // تسجيل التغيير في سجل النشاطات
+            $detailsJson = json_encode([
+                'old_value' => $oldValue,
+                'new_value' => $newValue,
+                'reason' => $reason,
+                'grade_id' => $gradeId,
+                'test_id' => $testId
+            ]);
             $stmt = $db->prepare("
-                INSERT INTO grade_change_log (grade_id, old_value, new_value, reason, changed_by, created_at)
-                VALUES (?, ?, ?, ?, ?, NOW())
+                INSERT INTO activity_logs (user_id, action, entity_type, entity_id, description, details_json, created_at)
+                VALUES (?, 'grade_change', 'grades', ?, ?, ?, NOW())
             ");
             $stmt->execute([
-                $gradeId, $oldValue, $newValue, $reason,
-                $_SESSION['user']['id'] ?? 0
+                $_SESSION['user']['id'] ?? 0,
+                $gradeId,
+                "تغيير الدرجة من {$oldValue} إلى {$newValue}",
+                $detailsJson
             ]);
 
             $changedCount++;
@@ -152,14 +176,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // جلب الفصول
 $classes = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT c.id, c.name_ar, gl.name_ar AS grade_name
-        FROM classes c
-        INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
-        WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
-        ORDER BY gl.level_number, c.name_ar
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    if ($userRole === 'teacher') {
+        $stmt = $db->prepare("
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            UNION
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+            ORDER BY grade_name, name_ar
+        ");
+        $stmt->execute([$userId, $schoolId, $academicYearId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            ORDER BY gl.level_number, c.name_ar
+        ");
+        $stmt->execute([$schoolId, $academicYearId]);
+    }
     $classes = $stmt->fetchAll();
 }
 
@@ -183,9 +224,11 @@ if ($selectedTestId > 0) {
         INNER JOIN classes c ON c.id = t.class_id
         INNER JOIN assessment_types at ON at.id = t.assessment_type_id
         INNER JOIN semesters sem ON sem.id = t.semester_id
-        WHERE t.id = ? AND t.is_active = 1
+        WHERE t.id = ? AND t.is_active = 1" . ($schoolId ? " AND c.school_id = ?" : "") . "
     ");
-    $stmt->execute([$selectedTestId]);
+    $params = [$selectedTestId];
+    if ($schoolId) $params[] = $schoolId;
+    $stmt->execute($params);
     $testData = $stmt->fetch();
 
     if ($testData) {
@@ -204,19 +247,30 @@ if ($selectedTestId > 0) {
         $stmt->execute([$selectedTestId]);
         $gradesList = $stmt->fetchAll();
 
-        // جلب سجل التغييرات
+        // جلب سجل التغييرات من activity_logs
+        $changeLogs = [];
         $gradeIds = array_column($gradesList, 'grade_id');
         if (!empty($gradeIds)) {
             $placeholders = implode(',', array_fill(0, count($gradeIds), '?'));
             $stmt = $db->prepare("
-                SELECT gcl.*, u.full_name_ar AS changed_by_name
-                FROM grade_change_log gcl
-                LEFT JOIN users u ON u.id = gcl.changed_by
-                WHERE gcl.grade_id IN ({$placeholders})
-                ORDER BY gcl.created_at DESC
+                SELECT al.id, al.entity_id AS grade_id, al.description, al.details_json,
+                       al.user_id AS changed_by, al.created_at, u.full_name_ar AS changed_by_name
+                FROM activity_logs al
+                LEFT JOIN users u ON u.id = al.user_id
+                WHERE al.action = 'grade_change' AND al.entity_type = 'grades' AND al.entity_id IN ({$placeholders})
+                ORDER BY al.created_at DESC
             ");
             $stmt->execute($gradeIds);
             $changeLogs = $stmt->fetchAll();
+
+            // إضافة old_value, new_value, reason من details_json
+            foreach ($changeLogs as &$log) {
+                $details = json_decode($log['details_json'], true) ?: [];
+                $log['old_value'] = $details['old_value'] ?? 0;
+                $log['new_value'] = $details['new_value'] ?? 0;
+                $log['reason'] = $details['reason'] ?? '';
+            }
+            unset($log);
         }
     }
 }
@@ -224,15 +278,24 @@ if ($selectedTestId > 0) {
 // جلب اختبارات الفصل والمادة
 $availableTests = [];
 if ($selectedClassId > 0 && $selectedSubjectId > 0) {
-    $stmt = $db->prepare("
+    $sql = "
         SELECT t.*, at.name_ar AS type_name,
                (SELECT COUNT(*) FROM grades g WHERE g.test_id = t.id AND g.is_active = 1) AS grade_count
         FROM tests t
         INNER JOIN assessment_types at ON at.id = t.assessment_type_id
         WHERE t.class_id = ? AND t.subject_id = ? AND t.academic_year_id = ? AND t.is_active = 1
-        ORDER BY t.test_date DESC
-    ");
-    $stmt->execute([$selectedClassId, $selectedSubjectId, $academicYearId]);
+    ";
+    $params = [$selectedClassId, $selectedSubjectId, $academicYearId];
+
+    // المعلم: يرى فقط اختبارات الفصل الحالي
+    if ($userRole === 'teacher' && $currentSemesterId) {
+        $sql .= " AND t.semester_id = ?";
+        $params[] = $currentSemesterId;
+    }
+
+    $sql .= " ORDER BY t.test_date DESC";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $availableTests = $stmt->fetchAll();
 }
 ?>

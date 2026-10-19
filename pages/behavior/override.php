@@ -54,22 +54,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_override'])) {
             setFlash('معيار التجاوز غير صالح', 'danger');
         } else {
             try {
-                $result = $behaviorCalc->createPromotionOverride(
-                    $overrideStudent,
-                    $academicYearId,
-                    $semesterId,
-                    $overrideCriterion,
-                    $overrideReason,
-                    $userId
-                );
-
-                if ($result['success']) {
-                    logActivity($db, $userId, 'behavior_override',
-                        "إنشاء تجاوز سلوك للطالب رقم {$overrideStudent}: {$overrideReason}",
-                        'promotion_overrides', $result['override_id'] ?? null);
-                    setFlash($result['message'], 'success');
+                // التحقق من ملكية المدرسة قبل إنشاء التجاوز
+                $stmt = $db->prepare("SELECT s.id, s.school_id FROM students s WHERE s.id = ?");
+                $stmt->execute([$overrideStudent]);
+                $studentCheck = $stmt->fetch();
+                if (!$studentCheck) {
+                    setFlash('الطالب غير موجود', 'danger');
+                } elseif ($schoolId && $userRole !== 'group_admin' && $studentCheck['school_id'] != $schoolId) {
+                    setFlash('ليس لديك صلاحية لإنشاء تجاوز لهذا الطالب', 'danger');
                 } else {
-                    setFlash($result['message'], 'danger');
+                    $result = $behaviorCalc->createPromotionOverride(
+                        $overrideStudent,
+                        $academicYearId,
+                        $semesterId,
+                        $overrideCriterion,
+                        $overrideReason,
+                        $userId
+                    );
+
+                    if ($result['success']) {
+                        logActivity($db, $userId, 'behavior_override',
+                            "إنشاء تجاوز سلوك للطالب رقم {$overrideStudent}: {$overrideReason}",
+                            'promotion_overrides', $result['override_id'] ?? null);
+                        setFlash($result['message'], 'success');
+                    } else {
+                        setFlash($result['message'], 'danger');
+                    }
                 }
             } catch (Exception $e) {
                 setFlash('حدث خطأ أثناء إنشاء التجاوز: ' . $e->getMessage(), 'danger');

@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_notifications'
     $typeLabelMap = [
         'alert' => 'تنبيه', 'announcement' => 'إعلان', 'reminder' => 'تذكير',
         'system' => 'نظام', 'acknowledgment' => 'إقرار', 'info' => 'معلومات',
-        'ack_request' => 'طلب إقرار',
+        'ack_request' => 'طلب إقرار', 'parent_link' => 'ربط ولي أمر',
     ];
     foreach ($exportData as $row) {
         fputcsv($output, [
@@ -63,6 +63,8 @@ require_once __DIR__ . '/../../includes/header.php';
 
 requireLogin();
 
+$userId = $_SESSION['user']['id'] ?? null; // يجب قبل استخدامه
+
 $showAlerts = in_array($tab, ['alerts', 'unified']);
 
 if ($showAlerts) {
@@ -86,8 +88,11 @@ if ($showAlerts) {
         'page' => max(1, (int)($_GET['alert_page'] ?? 1)),
     ];
 
-    // أحيانًا يتم تمرير tab=alerts مع قيم GET قد لا تكون موجودة دائمًا.
-    // لضمان عمل الفلترة يجب أن يتم تمرير نفس القيم كما هي.
+    // تطبيق الفلترة حسب الدور على استعلام التنبيهات
+    $alertFilters['where'] = $alertFilters['where'] ?? [];
+    $alertFilters['params'] = $alertFilters['params'] ?? [];
+    $alertFilters = $alertEngine->applyRoleFilter($alertFilters, $userRole, $userId);
+
     $alerts = $alertEngine->getAlerts($alertFilters);
     $totalAlerts = $alertEngine->getAlertsCount($alertFilters);
     $unresolvedAlerts = $alertEngine->getUnreadCount($_SESSION['user']['id'] ?? null);
@@ -231,18 +236,19 @@ $typeLabels = [
     'acknowledgment' => ['label' => 'إقرار', 'icon' => '✅', 'color' => 'success'],
     'info' => ['label' => 'معلومات', 'icon' => 'ℹ️', 'color' => 'info'],
     'ack_request' => ['label' => 'طلب إقرار', 'icon' => '📝', 'color' => 'warning'],
+    'parent_link' => ['label' => 'ربط ولي أمر', 'icon' => '🔗', 'color' => 'success'],
 ];
 
 // روابط الكيانات المرتبطة
 $entityLinks = [
-    'student' => '/pages/students/view.php?id=',
-    'class' => '/pages/classes/view.php?id=',
-    'grade' => '/pages/grade_sheets/view.php?id=',
-    'alert' => '/pages/alerts/index.php?id=',
-    'promotion' => '/pages/promotion/index.php?id=',
-    'teacher' => '/pages/users/view.php?id=',
-    'school' => '/pages/schools/view.php?id=',
-    'improvement_plan' => '/pages/supervision/improvement_plan.php?id=',
+    'student' => EQAS_URL . '/pages/students/view.php?id=',
+    'class' => EQAS_URL . '/pages/classes/view.php?id=',
+    'grade' => EQAS_URL . '/pages/grade_sheets/view.php?id=',
+    'alert' => EQAS_URL . '/pages/alerts/index.php?id=',
+    'promotion' => EQAS_URL . '/pages/promotion/index.php?id=',
+    'teacher' => EQAS_URL . '/pages/users/view.php?id=',
+    'school' => EQAS_URL . '/pages/schools/view.php?id=',
+    'improvement_plan' => EQAS_URL . '/pages/supervision/improvement_plan.php?id=',
 ];
 ?><!-- ... نهاية PHP --><?php if ($tab !== 'notifications' && $tab !== 'unified'): $unreadCount = 0; endif; ?>
 
@@ -423,14 +429,18 @@ $entityLinks = [
                 <div class="form-group" style="min-width:140px;">
                     <select name="alert_type" class="form-control">
                         <option value="">جميع الأنواع</option>
-                        <option value="academic" <?= ($alertFilters['alert_type'] ?? '') === 'academic' ? 'selected' : '' ?>>أكاديمي</option>
-                        <option value="behavior" <?= ($alertFilters['alert_type'] ?? '') === 'behavior' ? 'selected' : '' ?>>سلوكي</option>
-                        <option value="attendance" <?= ($alertFilters['alert_type'] ?? '') === 'attendance' ? 'selected' : '' ?>>حضور</option>
-                        <option value="eqi" <?= ($alertFilters['alert_type'] ?? '') === 'eqi' ? 'selected' : '' ?>>مؤشر الجودة</option>
-                        <option value="promotion" <?= ($alertFilters['alert_type'] ?? '') === 'promotion' ? 'selected' : '' ?>>ترفيع</option>
-                        <option value="climate" <?= ($alertFilters['alert_type'] ?? '') === 'climate' ? 'selected' : '' ?>>المناخ المدرسي</option>
-                        <option value="teaching" <?= ($alertFilters['alert_type'] ?? '') === 'teaching' ? 'selected' : '' ?>>تقييم المعلمين</option>
-                        <option value="improvement_plan" <?= ($alertFilters['alert_type'] ?? '') === 'improvement_plan' ? 'selected' : '' ?>>خطط التحسين</option>
+                        <?php
+                        $notifAllowedTypes = $alertEngine->getRoleBasedFilter($userRole, $userId);
+                        $notifTypeList = is_array($notifAllowedTypes['alert_types']) ? $notifAllowedTypes['alert_types'] : ['academic','behavior','attendance','promotion','eqi','climate','teaching','improvement_plan'];
+                        $notifTypeLabels = [
+                            'academic' => 'أكاديمي', 'behavior' => 'سلوكي', 'attendance' => 'حضور',
+                            'eqi' => 'مؤشر الجودة', 'promotion' => 'ترفيع',
+                            'climate' => 'المناخ المدرسي', 'teaching' => 'تقييم المعلمين',
+                            'improvement_plan' => 'خطط التحسين'
+                        ];
+                        foreach ($notifTypeList as $nt): ?>
+                        <option value="<?= $nt ?>" <?= ($alertFilters['alert_type'] ?? '') === $nt ? 'selected' : '' ?>><?= $notifTypeLabels[$nt] ?? $nt ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group" style="min-width:140px;">

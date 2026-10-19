@@ -416,3 +416,194 @@
 - `tests/unit/EQICalculatorTest.php` — +17 اختبار
 - `tests/e2e/eqi-module.spec.js` — ملف جديد (12 اختبار E2E)
 - `AGENTS.md` — هذا القسم
+
+### 21. إشعار مدير المدرسة بتعديل الحضور — تحسين وحدة الحضور (2026-05-22)
+
+**القرار:** عند تعديل معلم لسجل حضور في `amend.php`، يُرسل إشعار (`notifications`) لمدير المدرسة فقط.
+
+**التصميم:**
+- لا يُستخدم `AlertEngine` ولا جدول `alerts` — إدراج مباشر في `notifications` فقط
+- يُبحث عن `school_admin` في نفس `school_id` للمدرسة المعنية
+- لا يصل لـ `group_admin` ولا ولي الأمر
+- يستخدم دالة `attendanceStatusAr()` من `helpers.php` لترجمة الحالات إلى العربية
+- جلب اسم الطالب عبر JOIN إضافي مع `students` في استعلام السجل
+
+**محتوى الإشعار:**
+- العنوان: "تعديل سجل حضور"
+- الرسالة: "قام المعلم {اسمه} بتعديل حضور الطالب {اسمه} من (حالة) إلى (حالة). السبب: {السبب}"
+- `type = 'info'` (معلوماتي)
+- `related_entity_type = 'attendance_daily'`
+- `created_at = NOW()`
+
+**الملف المعدل:**
+- `pages/attendance/amend.php` — تعديل استعلام SQL (JOIN مع students) + إضافة كود الإشعار بعد `$db->commit()`
+
+### 22. تحديث بيانات الاستمارات الشامل — v4.0.0 (2026-05-17)
+
+**القرار:** إعادة بناء وتوسيع بيانات جميع استمارات التقييم في `assessment_structure` لجعلها متكاملة وحقيقية ومعبرة عن احتياجات مدير المجموعة.
+
+**إصلاح علة هامة:** تم اكتشاف أن `parent_id` في استمارات 1 و2 و4 تشير إلى IDs خاطئة (إزاحة +18). \
+مثلاً: items 19-20 كان `parent_id=19` والصحيح `parent_id=1`. تم إصلاحها.
+
+**الملخص الكمي:**
+
+| الاستمارة | الحالة السابقة | الحالة الجديدة |
+|-----------|---------------|----------------|
+| سلوكي (1) | 6 أسئلة | **12 سؤالاً** (+ محور المسؤولية الشخصية) |
+| مهارات (2) | 6 أسئلة | **16 سؤالاً** (+ محور المهارات التكنولوجية) |
+| تقييم ذاتي (3) | سؤال واحد | **24 سؤالاً** — 5 محاور كاملة |
+| أقران (4) | 4 أسئلة | **16 سؤالاً** (+ محوري الممارسات المهنية والإبداع) |
+| إشرافي (5) | سؤالين "fdvd/fdf" | **23 سؤالاً** — 5 محاور كاملة |
+| مناخ مدرسي (6) | 18 سؤالاً فارغاً | **24 سؤالاً** بكل النصوص |
+| مرافق (7) | 4 أسئلة | **13 سؤالاً** (+ محور الأمن والسلامة) |
+| رضا معلمين (14) | **معطل**، 13 سؤالاً فارغاً | **مفعّل**، 20 سؤالاً كاملة |
+| رضا أولياء (17) | **معطل**، 12 سؤالاً فارغاً | **مفعّل**، 20 سؤالاً كاملة |
+
+**الأوزان:** جميع المعايير وزعت بأوزان نسبية (مجموع 100 لكل استمارة) لتصبح جاهزة لخوارزميات التقييم المستقبلية.
+
+**التنظيف:** تعطيل بيانات الاختبار (`form_id=22`) وترتيب `sort_order`.
+
+**الملفات:**
+- `scripts/migrate_v4.0.0.sql` — سكريبت الترحيل الكامل (قابل للتشغيل المتكرر)
+
+### 22. دعم استمارات تقييم متعددة من نفس النوع (2026-05-17)
+
+**القرار:** إزالة UNIQUE constraint من `assessment_forms.form_key`، إضافة `is_default` و `version` لدعم استمارات متعددة لكل نوع.
+
+**التصميم:**
+- `form_key`: لم يعد UNIQUE — يمكن وجود استمارات متعددة بنفس المفتاح
+- `is_default`: TINYINT(1) DEFAULT 0 — تحدد الاستمارة الافتراضية لكل نوع
+- `version`: VARCHAR(50) — للتفرقة بين الاستمارات (إصدار، مرحلة، فصل)
+
+**آلية اختيار الاستمارة في صفحات التقييم (22 ملف):**
+```sql
+SELECT id FROM assessment_forms 
+WHERE form_key = 'xxx' AND is_active = 1 
+ORDER BY is_default DESC, created_at DESC 
+LIMIT 1
+```
+- الافتراضية أولاً، ثم الأحدث تاريخياً
+
+**واجهة الإدارة (`manage_forms.php`):**
+- عرض النماذج مجمعة حسب النوع
+- زر "تعيين كافتراضي" لكل استمارة (يُزيل الافتراضية عن بقية نفس النوع)
+- شارة ⭐ افتراضي للتمييز
+- عرض الإصدار (version)
+
+**ملاحظة:** `form_key` لا يزال `ENUM` — لا يمكن إضافة أنواع جديدة دون تعديل الكود
+
+**الملفات الجديدة:**
+- `scripts/migrate_v3.4.0.sql` — ALTER TABLE + تعيين is_default
+
+**الملفات المعدلة:**
+- `database/schema.sql` — إزالة UNIQUE KEY، إضافة `is_default`, `version`
+- `includes/assessment_engine.php` — إضافة `version` إلى INSERT
+- `pages/assessment/add_form.php` — إزالة فحص التكرار، إضافة حقل `version`
+- `pages/assessment/manage_forms.php` — إعادة بناء كاملة (عرض مجمع + إدارة افتراضي)
+- `pages/assessment/view_form.php` — عرض `is_default` و `version`
+- `includes/behavior_calculator.php` — ORDER BY is_default DESC, created_at DESC
+- 18 ملف تقييم (climate, skills, behavior, facility, teaching/self, teaching/peer, teaching/admin) — نفس التغيير
+- `tests/bootstrap.php` — إضافة `is_default`, `version` إلى schema الاختبار
+
+### 23. إصلاح وحدة تقييم المهارات — الترحيل من skills_evaluations إلى evaluations (2026-05-17)
+
+**القرار:** إصلاح وحدة تقييم المهارات (skills) للعمل مع الجداول الموجودة (`evaluations` + `assessment_responses`) بدلاً من `skills_evaluations` و `skills_items` القديمة.
+
+**الإصلاحات:**
+- `pages/skills/index.php`: استبدال 10 مراجع من `overall_score` → `combined_score`، واستبدال `evaluation_date` → `created_at` (لأن جدول `evaluations` يستخدم `combined_score` و `created_at` وليس `overall_score` / `evaluation_date`).
+- `pages/skills/evaluate.php`: تحديث استعلام التقييمات السابقة من `skills_evaluations` إلى `evaluations` مع `eval_type = 'skills_checklist'`، واستخدام `e.combined_score as overall_score` للحفاظ على توافقية الأسماء.
+- تم تشغيل اختبار Playwright شامل (إنشاء ← عرض ← تعديل) ونجح ✅
+
+**الملفات المعدلة:**
+- `pages/skills/index.php` — 10 إصلاحات مرجعية
+- `pages/skills/evaluate.php` — تحديث استعلام التقييمات السابقة
+
+**ملاحظة:** بقية الملفات (`view.php`, `edit.php`) كانت قد أُصلحت مسبقاً في الجلسة السابقة.
+
+### 24. إصلاح climate_survey.php بعد دمج climate_surveys في surveys (2026-05-17)
+
+**القرار:** إصلاح `pages/supervision/climate_survey.php` للعمل مع جدول `surveys` الجديد (بعد ترحيل v3.3.0) الذي يخزن استجابة واحدة لكل صف، بدلاً من `climate_surveys` القديم الذي كان يخزن بيانات مجمعة.
+
+**الإصلاحات:**
+- استبدال استعلام `SELECT * FROM surveys` باستعلام تجميعي (GROUP BY `respondent_type`) يحسب `COUNT(*) AS total_respondents` و `AVG(overall_score) AS avg_score` وحالة مركبة عبر `CASE WHEN`.
+- استبدال `$survey['title']` بـ `$respondentLabels[$survey['respondent_type']]` لأن جدول `surveys` لا يحتوي على عمود `title`.
+- إزالة أزرار الإجراءات (تفعيل/إغلاق) لأن معالج POST يُحوّل إلى الصفحة الجديدة (`pages/climate/survey.php`) ولا يعالج هذه الإجراءات — وبالتالي كان `$survey['id']` يُسبب خطأ key غير موجود بعد التجميع.
+
+**الملفات المعدلة:**
+- `pages/supervision/climate_survey.php` — استعلام SQL + إزالة أزرار الإجراءات الميتة
+
+### 25. إنشاء تقرير المدرسة — school_report.php (2026-05-19)
+
+**القرار:** إنشاء `pages/reports/school_report.php` لتوليد تقرير PDF مخصص لكل مدرسة. يحل مشكلة الرابط المكسور في `pages/dashboard/school_admin.php:775`.
+
+**التصميم:**
+- **الصلاحية:** `group_admin` + `school_admin` فقط (بدون تداخل)
+- **group_admin:** يرى قائمة منسدلة لاختيار أي مدرسة
+- **school_admin:** مقيد بـ `currentSchoolId()` تلقائياً — لا يرى قائمة اختيار، لا يمكنه التلاعب بـ `school_id` في POST
+- **teacher:** ممنوع الدخول (403)
+
+**فحص الصلاحية (مزدوج — POST و GET):**
+```php
+$userRole = $_SESSION['user']['role'] ?? '';
+if ($userRole !== 'group_admin' && $userRole !== 'school_admin') {
+    // 403 في POST، redirect في GET
+}
+```
+
+**محتوى التقرير PDF (8 أقسام):**
+1. غلاف: اسم المدرسة + السنة + المُعد
+2. الملخص التنفيذي: 4 بطاقات KPI (طلاب، معلمين، شعب، مؤشر الجودة)
+3. مؤشر جودة التعليم (EQI): الدرجة الكلية + الأبعاد الفرعية (5 أبعاد) + الاتجاه السنوي
+4. الحضور والانضباط: نسبة الحضور + إحصائيات السلوك
+5. التقييمات الإشرافية: عدد التقييمات + المتوسط
+6. المناخ المدرسي: نتائج الاستبيانات
+7. الأداء الأكاديمي: جدول المواد بالمتوسط + أفضل/أضعف مادة
+8. التنبيهات المفتوحة: آخر 10 تنبيهات غير محلولة
+9. التوصيات الذكية: 3-7 توصيات حسب الأداء
+
+**البيانات:** 9 استعلامات محسّنة مع فلترة `school_id` في كل منها.
+**محرك PDF:** يستخدم `ReportTemplate` الموجود في `includes/report_template.php`.
+
+**الملفات الجديدة:**
+- `pages/reports/school_report.php` — تقرير مدرسة PDF (450 سطر)
+
+**لم يتم تعديل أي ملف موجود.**
+
+### 26. إصلاح خطأ مسار config.php في التقرير السنوي — واختبار POST المباشر (2026-05-20)
+
+**القرار:** إصلاح مسار تضمين `config.php` في `pages/reports/annual_report.php`، والتحقق من عدم إعادة التوجيه إلى `login.php` بعد إرسال النموذج.
+
+**الخطأ:** السطر 10 كان يحاول تضمين `../../includes/config.php` (أي `includes/config.php`)، ولكن الملف موجود فعلياً في جذر المشروع (`config.php`). مما تسبب في Fatal Error عند تحميل الصفحة.
+
+**الإصلاح:** تغيير المسار من:
+```php
+require_once __DIR__ . '/../../includes/config.php';
+```
+إلى:
+```php
+require_once __DIR__ . '/../../config.php';
+```
+
+**التحقق (Playwright — manually verified):**
+- تحميل الصفحة: ✅ لا يوجد Fatal Error، النموذج يظهر مع القوائم المنسدلة
+- إرسال النموذج (POST): ✅ لا إعادة توجيه إلى `login.php`، الصفحة تبقى على `annual_report.php`
+- فحص PHPUnit: 257 اختبار، 0 فشل جديد (فقط فشلان سابقان غير مرتبطين)
+- فحص PHP syntax: لا توجد أخطاء
+
+**الملفات المعدلة:**
+- `pages/reports/annual_report.php:10` — إصلاح مسار config.php
+
+### 27. إلغاء جدول attendance_amendments والاعتماد على amendment_log JSON (2026-05-22)
+
+**القرار:** إزالة كل الإشارات إلى `attendance_amendments` و `old_attendance_amendments` من الكود، والاعتماد على عمود `amendment_log` (LONGTEXT/json) الموجود مسبقاً في `attendance_daily`.
+
+**السبب:** ميغرايشن v3.3.0 أعادت تسمية `attendance_amendments` وأضافت `amendment_log` إلى `attendance_daily` الهدف منها استبدال الجدول المنفصل، لكن كود PHP لم يُحدّث. الجدول الأصلي لم يكن موجوداً أصلاً في `database/schema.sql`.
+
+**التصميم:**
+- **الكتابة:** داخل الترانزاكشن مع `FOR UPDATE` لقفل الصف، إضافة إدخال JSON إلى `amendment_log` عبر `substr` لإزالة `]` وإلحاق الإدخال الجديد
+- **القراءة:** `json_decode()` لكل سجل، دمج المصفوفات، `usort()` تنازلياً حسب `created_at`، ثم جلب أسماء المستخدمين من `users`
+- بنية كل إدخال: `{old_status, new_status, reason, amended_by, created_at}`
+- **بدون جداول جديدة، بدون تغيير schema، بدون تغيير واجهة المستخدم**
+
+**الملف المعدل:**
+- `pages/attendance/amend.php` — السطر 66-89 (INSERT → UPDATE)، السطر 209-247 (SELECT → json_decode)

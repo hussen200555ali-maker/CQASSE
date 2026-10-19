@@ -37,21 +37,26 @@ $sql = "SELECT e.*, s.full_name_ar as student_name, s.student_number,
         FROM evaluations e
         JOIN students s ON e.student_id = s.id
         JOIN classes c ON e.class_id = c.id
-        JOIN users u ON e.student_id = u.id
+        JOIN users u ON e.evaluated_by = u.id
         JOIN semesters sem ON e.semester_id = sem.id
         WHERE e.eval_type = 'behavior_score' AND e.is_active = 1";
 $params = [];
 
-// فلتر حسب المدرسة
-if ($schoolId && $userRole !== 'group_admin') {
+// فلتر حسب المدرسة أو فصول المعلم المسندة
+if ($userRole === 'teacher') {
+    $allowedClassIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!empty($allowedClassIds)) {
+        $ph = implode(',', array_fill(0, count($allowedClassIds), '?'));
+        $sql .= " AND (e.evaluated_by = ? OR e.class_id IN ($ph))";
+        $params[] = $userId;
+        $params = array_merge($params, $allowedClassIds);
+    } else {
+        $sql .= " AND e.evaluated_by = ?";
+        $params[] = $userId;
+    }
+} elseif ($schoolId) {
     $sql .= " AND e.class_id IN (SELECT id FROM classes WHERE school_id = ?)";
     $params[] = $schoolId;
-}
-
-// فلتر حسب المعلم (يرى فقط تقييماته)
-if ($userRole === 'teacher') {
-    $sql .= " AND e.student_id = ?";
-    $params[] = $userId;
 }
 
 if ($filterClass) {
@@ -78,19 +83,31 @@ try {
     $evaluations = [];
 }
 
-// جلب الفصول للفلتر
+// جلب الفصول للفلتر — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $classSql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $classParams = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $classSql .= " AND school_id = ?";
-        $classParams[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $classSql = "SELECT c.id, c.name_ar FROM classes c WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY c.name_ar";
+            $stmt = $db->prepare($classSql);
+            $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $classSql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $classParams = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $classSql .= " AND school_id = ?";
+            $classParams[] = $schoolId;
+        }
+        $classSql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($classSql);
+        $stmt->execute($classParams);
+        $classes = $stmt->fetchAll();
     }
-    $classSql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($classSql);
-    $stmt->execute($classParams);
-    $classes = $stmt->fetchAll();
 } catch (Exception $e) {
     $classes = [];
 }
@@ -161,7 +178,8 @@ try {
                         </thead>
                         <tbody>
                             <?php foreach ($evaluations as $i => $eval): 
-                                $rating = $eval['overall_score'] !== null ? $engine->getScoreRating($eval['overall_score']) : null;
+                                $score = $eval['current_percentage'] ?? $eval['combined_score'] ?? null;
+                                $rating = $score !== null ? $engine->getScoreRating($score) : null;
                             ?>
                             <tr>
                                 <td><?php echo $i + 1; ?></td>
@@ -172,11 +190,11 @@ try {
                                 <td><?php echo e($eval['class_name']); ?></td>
                                 <td><?php echo e($eval['semester_name']); ?></td>
                                 <td><?php echo e($eval['evaluator_name']); ?></td>
-                                <td><?php echo formatDateAr($eval['evaluation_date'], 'short'); ?></td>
+                                <td><?php echo formatDateAr($eval['created_at'] ?? $eval['evaluation_date'] ?? null, 'short'); ?></td>
                                 <td>
                                     <?php if ($rating): ?>
                                         <span style="font-weight:700; color:<?php echo $rating['color']; ?>;">
-                                            <?php echo number_format($eval['overall_score'], 1); ?>%
+                                            <?php echo number_format($score, 1); ?>%
                                         </span>
                                         <div style="font-size:11px; color:<?php echo $rating['color']; ?>;"><?php echo $rating['label']; ?></div>
                                     <?php else: ?>

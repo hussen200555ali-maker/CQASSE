@@ -1,0 +1,123 @@
+@startuml BFD5 — التقارير والتحليلات (المشاهد)
+skinparam linetype ortho
+skinparam rectangle { backgroundColor White }
+hide circle
+
+' ═══════════════════════════════════════════════════
+' BFD 5: التقارير والتحليلات (المشاهد)
+' مشاهد (VIEWS): v_student_current, v_student_subject_summary,
+'                  student_subject_summary, v_semester_scores,
+'                  v_attendance_summary
+' ملاحظة: المشاهد لا تخزن بيانات — تُشتق من استعلامات SQL
+' ═══════════════════════════════════════════════════
+
+entity "v_student_current" as v_student_current {
+  student_id : INT UNSIGNED
+  student_number : VARCHAR(20)
+  full_name_ar : VARCHAR(200)
+  full_name_en : VARCHAR(200)
+  guardian_name : VARCHAR(200)
+  guardian_phone : VARCHAR(20)
+  grade_level_id : INT UNSIGNED
+  school_id : INT UNSIGNED
+  grade_year_id : INT UNSIGNED
+  enrollment_status : ENUM
+  class_id : INT UNSIGNED
+  academic_year_id : INT UNSIGNED
+  class_name : VARCHAR(100)
+  grade_name : VARCHAR(50)
+  stage : ENUM
+  school_name : VARCHAR(200)
+  academic_year_name : VARCHAR(50)
+}
+
+entity "v_student_subject_summary" as v_student_subject_summary {
+  student_id : INT UNSIGNED
+  subject_id : INT UNSIGNED
+  class_id : INT UNSIGNED
+  academic_year_id : INT UNSIGNED
+  semester_id : INT UNSIGNED
+  total_grade : DECIMAL(7,2)
+  max_grade : DECIMAL(7,2)
+  percentage : DECIMAL(5,2)
+}
+
+entity "student_subject_summary" as student_subject_summary {
+  id : INT UNSIGNED
+  student_id : INT UNSIGNED
+  subject_id : INT UNSIGNED
+  class_id : INT UNSIGNED
+  academic_year_id : INT UNSIGNED
+  semester_id : INT UNSIGNED
+  total_grade : DECIMAL(7,2)
+  max_grade : DECIMAL(7,2)
+  percentage : DECIMAL(5,2)
+  letter_grade : VARCHAR(3)
+  grade_point : DECIMAL(3,2)
+  rank_in_class : INT UNSIGNED
+  is_active : TINYINT(1)
+  updated_at : DATETIME
+}
+
+entity "v_semester_scores" as v_semester_scores {
+  student_id : INT UNSIGNED
+  academic_year_id : INT UNSIGNED
+  semester_id : INT UNSIGNED
+  gpa : DECIMAL(3,2)
+  total_percentage : DECIMAL(5,2)
+}
+
+entity "v_attendance_summary" as v_attendance_summary {
+  student_id : INT UNSIGNED
+  class_id : INT UNSIGNED
+  academic_year_id : INT UNSIGNED
+  semester_id : INT UNSIGNED
+  total_days : INT UNSIGNED
+  present_days : INT UNSIGNED
+  absent_days : INT UNSIGNED
+  late_days : INT UNSIGNED
+  excused_days : INT UNSIGNED
+  attendance_rate : DECIMAL(5,2)
+  is_below_threshold : TINYINT(1)
+  is_active : TINYINT(1)
+}
+
+' ═══ Internal view dependencies (data sources) ═══
+' v_student_current ← students, enrollments, classes, grade_levels, schools, academic_years
+' v_student_subject_summary ← grades, tests, subjects
+' student_subject_summary ← grades, tests, subjects (extended with GPA, rank)
+' v_semester_scores ← grades (per student per semester)
+' v_attendance_summary ← attendance_daily
+
+note bottom of v_student_current
+  المصدر: JOIN بين
+  students + student_enrollments +
+  classes + grade_levels +
+  schools + academic_years
+end note
+
+note bottom of v_student_subject_summary
+  المصدر: grades JOIN tests JOIN subjects
+  (حسب student_id, subject_id, class_id,
+  academic_year_id, semester_id)
+end note
+
+note bottom of student_subject_summary
+  المصدر: v_student_subject_summary +
+  letter_grade + GPA + الترتيب في الشعبة
+  (row_number() ضمن class_id لكل فصل)
+end note
+
+note bottom of v_semester_scores
+  المصدر: grades (تجميع حسب
+  student_id + academic_year_id + semester_id)
+  → AVG(percentage), GPA محسوب
+end note
+
+note bottom of v_attendance_summary
+  المصدر: attendance_daily (تجميع حسب
+  student_id + class_id + academic_year_id + semester_id)
+  → COUNT لكل status
+end note
+
+@enduml

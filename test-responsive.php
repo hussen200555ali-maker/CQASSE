@@ -51,9 +51,9 @@ $userRoleLabel = 'مدير النظام';
 <div class="page-wrapper">
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-            <h2>EQAS</h2>
-            <div class="logo-subtitle">نظام التقييم الشامل</div>
+            <div class="logo-icon"><img src="assets/img/logo-login.svg" alt="CQASSE" class="sidebar-logo-img" width="48" height="48"></div>
+            <h2>CQASSE</h2>
+            <div class="logo-subtitle">نظام التقييم الشامل لجودة التعليم المدرسي</div>
         </div>
         <div class="sidebar-user">
             <div class="sidebar-user-avatar"><?php echo $userInitials; ?></div>

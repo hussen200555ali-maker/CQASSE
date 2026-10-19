@@ -46,13 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['recalculate'])) {
 
         if ($recalcClass && $recalcSem && $recalcYear) {
             try {
+                $roleFilter = buildRoleFilter($db, $userRole, $userId, $schoolId, 'ad.class_id');
                 // جلب جميع الطلاب في الفصل
                 $stmt = $db->prepare("
                     SELECT DISTINCT ad.student_id
                     FROM attendance_daily ad
+                    INNER JOIN students s ON s.id = ad.student_id
                     WHERE ad.class_id = ? AND ad.academic_year_id = ? AND ad.semester_id = ? AND ad.is_active = 1
+                    {$roleFilter['sql']}
                 ");
-                $stmt->execute([$recalcClass, $recalcYear, $recalcSem]);
+                $stmt->execute(array_merge([$recalcClass, $recalcYear, $recalcSem], $roleFilter['params']));
                 $studentIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
                 $recalcCount = 0;
@@ -106,19 +109,31 @@ $filterClass   = $_GET['class_id'] ?? '';
 $filterSemester = $_GET['semester_id'] ?? '0';
 $sortBy = $_GET['sort'] ?? 'name';
 
-// جلب الفصول
+// جلب الفصول — للمعلم: فقط فصوله المسندة إليه
 $classes = [];
 try {
-    $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
-    $params = [];
-    if ($schoolId && $userRole !== 'group_admin') {
-        $sql .= " AND school_id = ?";
-        $params[] = $schoolId;
+    if ($userRole === 'teacher' && $schoolId) {
+        $academicYearId = $_SESSION['academic_year_id'] ?? getCurrentAcademicYearId($db);
+        $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+        if (!empty($allowedIds)) {
+            $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+            $sql = "SELECT c.id, c.name_ar FROM classes c WHERE c.id IN ($ph) AND c.is_active = 1 ORDER BY c.name_ar";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($allowedIds);
+            $classes = $stmt->fetchAll();
+        }
+    } else {
+        $sql = "SELECT id, name_ar FROM classes WHERE is_active = 1";
+        $params = [];
+        if ($schoolId && $userRole !== 'group_admin') {
+            $sql .= " AND school_id = ?";
+            $params[] = $schoolId;
+        }
+        $sql .= " ORDER BY name_ar";
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $classes = $stmt->fetchAll();
     }
-    $sql .= " ORDER BY name_ar";
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    $classes = $stmt->fetchAll();
 } catch (Exception $e) {}
 
 // جلب ملخص الحضور
@@ -131,14 +146,16 @@ if ($filterSemester && $filterSemester !== '0' && $academicYearId) {
         $resolvedSemId = (int)$sStmt->fetchColumn();
     }
 }
+$summaryData = [];
 if ($filterClass && $filterSemester && $academicYearId) {
     try {
+        $roleFilter = buildRoleFilter($db, $userRole, $userId, $schoolId, 'v.class_id');
         $sql = "SELECT v.*, s.full_name_ar AS student_name, s.student_number, c.name_ar AS class_name
                 FROM v_attendance_summary v
                 INNER JOIN students s ON s.id = v.student_id
                 INNER JOIN classes c ON c.id = v.class_id
-                WHERE v.class_id = ? AND v.academic_year_id = ?";
-        $params = [$filterClass, $academicYearId];
+                WHERE v.class_id = ? AND v.academic_year_id = ? {$roleFilter['sql']}";
+        $params = array_merge([$filterClass, $academicYearId], $roleFilter['params']);
         if ($resolvedSemId) {
             $sql .= " AND v.semester_id = ?";
             $params[] = $resolvedSemId;
@@ -261,7 +278,7 @@ if ($schoolId) {
                         <tr>
                             <td><?= $i + 1 ?></td>
                             <td>
-                                <div style="font-weight:600;"><?= e($row['student_name']) ?></div>
+                                <a href="../students/view.php?id=<?= $row['student_id'] ?>" style="font-weight:600; color:inherit; text-decoration:none;"><?= e($row['student_name']) ?></a>
                                 <div style="font-size:11px; color:var(--text-muted);"><?= e($row['student_number']) ?></div>
                             </td>
                             <td><?= $row['total_days'] ?></td>
@@ -366,7 +383,7 @@ if (ctx) {
 }
 
 // تصدير إلى Excel (CSV)
-function exportToExcel() {
+window.exportToExcel = function() {
     const table = document.getElementById('summary-table');
     if (!table) return;
     

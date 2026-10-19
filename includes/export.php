@@ -609,16 +609,20 @@ function createExportFile($db, $userId, $exportType, $format, $data, $headers, $
     }
 
     // حفظ سجل التصدير
-    $stmt = $db->prepare("INSERT INTO export_history (user_id, export_type, file_name, file_path, file_size, row_count, filters, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', NOW())");
-    $stmt->execute([
-        $userId,
-        $exportType,
-        $fileName,
-        $filePath,
-        filesize($filePath),
-        count($data),
-        json_encode($filters, JSON_UNESCAPED_UNICODE)
-    ]);
+    try {
+        $stmt = $db->prepare("INSERT INTO export_history (user_id, export_type, file_name, file_path, file_size, row_count, filters, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'completed', NOW())");
+        $stmt->execute([
+            $userId,
+            $exportType,
+            $fileName,
+            $filePath,
+            filesize($filePath),
+            count($data),
+            json_encode($filters, JSON_UNESCAPED_UNICODE)
+        ]);
+    } catch (Exception $e) {
+        error_log('Export history save failed: ' . $e->getMessage());
+    }
 
     return [
         'file_path' => $filePath,
@@ -717,7 +721,6 @@ function exportPDF($title, $html, $filename, $options = []) {
 
         // إعدادات الخط - دعم العربية
         $pdf->setRTL(true);
-        $pdf->setTempDir(sys_get_temp_dir());
 
         // الهوامش
         $pdf->SetMargins(15, 20, 15);
@@ -856,14 +859,14 @@ function exportGradeSheetPDF($db, $gradeData, $filename = '') {
         return ['success' => false, 'message' => 'لا توجد بيانات للتصدير'];
     }
 
-    $filename = $filename ?: 'كشف_درجات_' . ($gradeData['class_info']['class_name'] ?? '') . '_' . date('Ymd') . '.pdf';
+    $filename = $filename ?: 'كشف_درجات_' . ($gradeData['class_info']['name_ar'] ?? '') . '_' . date('Ymd') . '.pdf';
 
     // بناء HTML للكشف
     $html = '<h2 style="text-align:center;color:#1a5632;margin-bottom:5px;">كشف درجات</h2>';
     $html .= '<p style="text-align:center;color:#6c757d;margin-bottom:15px;">';
     $html .= e($gradeData['class_info']['school_name'] ?? '') . ' — ';
     $html .= e($gradeData['class_info']['grade_name'] ?? '') . ' — ';
-    $html .= e($gradeData['class_info']['class_name'] ?? '');
+    $html .= e($gradeData['class_info']['name_ar'] ?? '');
     $html .= '</p>';
 
     $html .= '<table><thead><tr>';

@@ -200,7 +200,7 @@ class PromotionEngine {
     private function getAttendanceRate($studentId, $yearId, $semesterId) {
         try {
             $sql = "SELECT attendance_rate 
-                    FROM attendance_summaries 
+                    FROM v_attendance_summary 
                     WHERE student_id = :student_id 
                         AND academic_year_id = :year_id 
                         AND semester_id = :semester_id 
@@ -229,10 +229,10 @@ class PromotionEngine {
      */
     public function saveDecision($data) {
         try {
-            $sql = "INSERT INTO promotion_decisions 
+            $sql = "INSERT INTO promotions 
                     (student_id, academic_year_id, semester_id, academic_score, behavior_score, 
                      attendance_score, academic_pass, behavior_pass, attendance_pass, decision, 
-                     notes, decided_by, decided_at)
+                     notes, decided_by, created_at)
                     VALUES (:student_id, :year_id, :semester_id, :academic, :behavior, 
                             :attendance, :academic_pass, :behavior_pass, :attendance_pass, 
                             :decision, :notes, :decided_by, NOW())
@@ -246,7 +246,7 @@ class PromotionEngine {
                         decision = VALUES(decision),
                         notes = VALUES(notes),
                         decided_by = VALUES(decided_by),
-                        decided_at = CURRENT_TIMESTAMP";
+                        created_at = CURRENT_TIMESTAMP";
             
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
@@ -276,7 +276,7 @@ class PromotionEngine {
         try {
             $sql = "SELECT pd.*, s.full_name_ar AS student_name, s.student_number,
                            u.full_name_ar AS decider_name
-                    FROM promotion_decisions pd
+                    FROM promotions pd
                     INNER JOIN students s ON s.id = pd.student_id
                     LEFT JOIN users u ON u.id = pd.decided_by
                     WHERE pd.student_id = :student_id 
@@ -306,7 +306,7 @@ class PromotionEngine {
                            s.school_id, sc.name_ar AS school_name,
                            c.name_ar AS class_name, gl.name_ar AS grade_name,
                            u.full_name_ar AS decider_name
-                    FROM promotion_decisions pd
+                    FROM promotions pd
                     INNER JOIN students s ON s.id = pd.student_id
                     LEFT JOIN schools sc ON sc.id = s.school_id
                     LEFT JOIN student_enrollments se ON se.student_id = s.id AND se.academic_year_id = pd.academic_year_id
@@ -405,7 +405,7 @@ class PromotionEngine {
      */
     public function approveDecision($decisionId, $approvedBy) {
         try {
-            $stmt = $this->db->prepare("UPDATE promotion_decisions 
+            $stmt = $this->db->prepare("UPDATE promotions 
                                          SET status = 'approved', 
                                              approved_by = :approved_by, 
                                              approved_at = NOW()
@@ -438,7 +438,7 @@ class PromotionEngine {
      */
     public function rejectDecision($decisionId, $rejectedBy, $reason = '') {
         try {
-            $stmt = $this->db->prepare("UPDATE promotion_decisions 
+            $stmt = $this->db->prepare("UPDATE promotions 
                                          SET status = 'rejected',
                                              rejection_reason = :reason,
                                              decision = 'under_review'
@@ -482,11 +482,11 @@ class PromotionEngine {
             
             $sql = "SELECT pd.*, s.full_name_ar AS student_name, s.student_number,
                            sc.name_ar AS school_name
-                    FROM promotion_decisions pd
+                    FROM promotions pd
                     INNER JOIN students s ON s.id = pd.student_id
                     LEFT JOIN schools sc ON sc.id = s.school_id
                     WHERE {$whereClause}
-                    ORDER BY pd.decided_at DESC";
+                    ORDER BY pd.created_at DESC";
             
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
@@ -522,7 +522,7 @@ class PromotionEngine {
     public function createImprovementPlan($studentId, $yearId, $semesterId, $planData) {
         try {
             // البحث عن قرار الترفيع المشروط
-            $stmt = $this->db->prepare("SELECT id FROM promotion_decisions 
+            $stmt = $this->db->prepare("SELECT id FROM promotions 
                                         WHERE student_id = :student_id 
                                             AND academic_year_id = :year_id 
                                             AND semester_id = :semester_id 
@@ -603,7 +603,7 @@ class PromotionEngine {
         
         $sql = "SELECT pd.*, s.full_name_ar AS student_name, s.student_number,
                        sc.name_ar AS school_name, c.name_ar AS class_name
-                FROM promotion_decisions pd
+                FROM promotions pd
                 INNER JOIN students s ON s.id = pd.student_id
                 LEFT JOIN schools sc ON sc.id = s.school_id
                 LEFT JOIN student_enrollments se ON se.student_id = s.id AND se.academic_year_id = pd.academic_year_id
@@ -649,7 +649,7 @@ class PromotionEngine {
         }
         
         $whereClause = implode(' AND ', $where);
-        $sql = "SELECT COUNT(*) FROM promotion_decisions pd
+        $sql = "SELECT COUNT(*) FROM promotions pd
                 INNER JOIN students s ON s.id = pd.student_id
                 WHERE {$whereClause}";
         $stmt = $this->db->prepare($sql);
@@ -685,14 +685,14 @@ class PromotionEngine {
             $filter = $schoolFilter . $yearFilter . $semesterFilter;
             
             // الإجمالي
-            $sql = "SELECT COUNT(*) FROM promotion_decisions pd 
+            $sql = "SELECT COUNT(*) FROM promotions pd 
                     INNER JOIN students s ON s.id = pd.student_id 
                     WHERE pd.is_active = 1 {$filter}";
             $stats['total'] = (int)$this->db->query($sql)->fetchColumn();
             
             // حسب القرار
             $sql = "SELECT pd.decision, COUNT(*) AS cnt 
-                    FROM promotion_decisions pd 
+                    FROM promotions pd 
                     INNER JOIN students s ON s.id = pd.student_id 
                     WHERE pd.is_active = 1 {$filter} 
                     GROUP BY pd.decision";
@@ -712,7 +712,7 @@ class PromotionEngine {
             $sql = "SELECT AVG(pd.academic_score) AS avg_academic,
                            AVG(pd.behavior_score) AS avg_behavior,
                            AVG(pd.attendance_score) AS avg_attendance
-                    FROM promotion_decisions pd 
+                    FROM promotions pd 
                     INNER JOIN students s ON s.id = pd.student_id 
                     WHERE pd.is_active = 1 {$filter}";
             $stmt = $this->db->query($sql);
@@ -735,7 +735,7 @@ class PromotionEngine {
     public function getStudentHistory($studentId) {
         try {
             $sql = "SELECT pd.*, ay.name AS year_name, sem.name_ar AS semester_name
-                    FROM promotion_decisions pd
+                    FROM promotions pd
                     INNER JOIN academic_years ay ON ay.id = pd.academic_year_id
                     INNER JOIN semesters sem ON sem.id = pd.semester_id
                     WHERE pd.student_id = :student_id AND pd.is_active = 1
@@ -845,7 +845,7 @@ class PromotionEngine {
                 $d['attendance_score'] ?? 'غير متوفر',
                 $d['attendance_pass'] ? 'نعم' : 'لا',
                 $this->decisionLabels[$d['decision']] ?? $d['decision'],
-                $d['decided_at'],
+                $d['created_at'],
             ]);
         }
         

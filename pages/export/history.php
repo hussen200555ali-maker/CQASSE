@@ -6,10 +6,10 @@
  * ============================================================
  */
 
-$pageTitle = 'سجل التصدير';
-$breadcrumb = ['مركز التصدير' => 'index.php', 'سجل التصدير' => null];
-
-require_once __DIR__ . '/../../includes/header.php';
+// Include required files BEFORE any output
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
 require_once __DIR__ . '/../../includes/export.php';
 
 // التحقق من الصلاحيات
@@ -17,6 +17,26 @@ if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
 }
+
+// معالجة إعادة التنزيل (يجب أن يكون قبل header.php لتجنب headers already sent)
+if (isset($_GET['download'])) {
+    $downloadId = (int)$_GET['download'];
+    $stmt = $db->prepare("SELECT * FROM export_history WHERE id = ?");
+    $stmt->execute([$downloadId]);
+    $file = $stmt->fetch();
+    if ($file && file_exists($file['file_path'])) {
+        downloadExportFile($file['file_path'], $file['file_name']);
+    } else {
+        setFlash('الملف غير موجود أو تم حذفه', 'danger');
+        redirect('history.php');
+    }
+}
+
+// Now include header
+$pageTitle = 'سجل التصدير';
+$breadcrumb = ['مركز التصدير' => 'index.php', 'سجل التصدير' => null];
+require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/filters.php';
 
 // فلاتر
 $filterType = $_GET['type'] ?? '';
@@ -72,20 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
         setFlash('تم حذف سجل التصدير بنجاح', 'success');
     }
     redirect('history.php');
-}
-
-// معالجة إعادة التنزيل
-if (isset($_GET['download'])) {
-    $downloadId = (int)$_GET['download'];
-    $stmt = $db->prepare("SELECT * FROM export_history WHERE id = ?");
-    $stmt->execute([$downloadId]);
-    $file = $stmt->fetch();
-    if ($file && file_exists($file['file_path'])) {
-        downloadExportFile($file['file_path'], $file['file_name']);
-    } else {
-        setFlash('الملف غير موجود أو تم حذفه', 'danger');
-        redirect('history.php');
-    }
 }
 
 // معالجة التنظيف التلقائي
@@ -149,30 +155,36 @@ $statsFailed = 0;
 $statsTotalSize = 0;
 $statsByFormat = [];
 
-$stmt = $db->query("SELECT status, COUNT(*) as cnt, COALESCE(SUM(file_size), 0) as total_size FROM export_history GROUP BY status");
-while ($row = $stmt->fetch()) {
-    $statsTotal += $row['cnt'];
-    if ($row['status'] === 'completed') $statsCompleted = $row['cnt'];
-    if ($row['status'] === 'failed') $statsFailed = $row['cnt'];
-    $statsTotalSize += $row['total_size'];
-}
+try {
+    $stmt = $db->query("SELECT status, COUNT(*) as cnt, COALESCE(SUM(file_size), 0) as total_size FROM export_history GROUP BY status");
+    while ($row = $stmt->fetch()) {
+        $statsTotal += $row['cnt'];
+        if ($row['status'] === 'completed') $statsCompleted = $row['cnt'];
+        if ($row['status'] === 'failed') $statsFailed = $row['cnt'];
+        $statsTotalSize += $row['total_size'];
+    }
+} catch (Exception $e) {}
 
 // توزيع الصيغ
-$stmt = $db->query("SELECT
-    CASE
-        WHEN file_name LIKE '%.xlsx' THEN 'XLSX'
-        WHEN file_name LIKE '%.csv' THEN 'CSV'
-        WHEN file_name LIKE '%.pdf' THEN 'PDF'
-        WHEN file_name LIKE '%.html' THEN 'HTML'
-        ELSE 'أخرى'
-    END as fmt,
-    COUNT(*) as cnt,
-    COALESCE(SUM(file_size), 0) as total_size
-    FROM export_history
-    WHERE status = 'completed'
-    GROUP BY fmt
-    ORDER BY cnt DESC");
-$formatStats = $stmt->fetchAll();
+try {
+    $stmt = $db->query("SELECT
+        CASE
+            WHEN file_name LIKE '%.xlsx' THEN 'XLSX'
+            WHEN file_name LIKE '%.csv' THEN 'CSV'
+            WHEN file_name LIKE '%.pdf' THEN 'PDF'
+            WHEN file_name LIKE '%.html' THEN 'HTML'
+            ELSE 'أخرى'
+        END as fmt,
+        COUNT(*) as cnt,
+        COALESCE(SUM(file_size), 0) as total_size
+        FROM export_history
+        WHERE status = 'completed'
+        GROUP BY fmt
+        ORDER BY cnt DESC");
+    $formatStats = $stmt->fetchAll();
+} catch (Exception $e) {
+    $formatStats = [];
+}
 
 $formatLabels = [];
 $formatCounts = [];
@@ -187,8 +199,11 @@ foreach ($formatStats as $fs) {
 }
 
 // إحصائيات حسب النوع
-$stmt = $db->query("SELECT export_type, COUNT(*) as cnt FROM export_history GROUP BY export_type ORDER BY cnt DESC LIMIT 7");
-$typeStats = $stmt->fetchAll();
+$typeStats = [];
+try {
+    $stmt = $db->query("SELECT export_type, COUNT(*) as cnt FROM export_history GROUP BY export_type ORDER BY cnt DESC LIMIT 7");
+    $typeStats = $stmt->fetchAll();
+} catch (Exception $e) {}
 
 // تنظيف الملفات القديمة
 $cleanedCount = cleanupOldExports(7);
@@ -374,7 +389,7 @@ $cleanedCount = cleanupOldExports(7);
             <div style="padding:10px 16px;background:rgba(220,53,69,0.08);border-radius:var(--radius-md);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
                 <span class="text-sm font-semibold">🗑️ تم تحديد <span id="selected-count">0</span> سجل للحذف</span>
                 <div style="display:flex;gap:6px;">
-                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من الحذف الجماعي؟ لا يمكن التراجع.');">确认 حذف المحدد</button>
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('هل أنت متأكد من الحذف الجماعي؟ لا يمكن التراجع.');">تأكيد حذف المحدد</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleBulkDelete()">إلغاء</button>
                 </div>
             </div>

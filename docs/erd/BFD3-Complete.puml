@@ -1,0 +1,61 @@
+@startuml BFD3
+skinparam linetype ortho
+hide circle
+
+entity "attendance_daily" as attendance_daily {
+  id : INT UNSIGNED <<PK>>
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  semester_id : INT UNSIGNED <<FK>> [to semesters.id] [BFD2]
+  date : DATE
+  period_number : TINYINT(3) UNSIGNED
+  status : ENUM(present,absent,late,excused)
+  notes : TEXT
+  amendment_log : LONGTEXT
+  recorded_by : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "behavior_categories" as behavior_categories {
+  id : INT UNSIGNED <<PK>>
+  name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  type : ENUM(positive,negative)
+  points : DECIMAL(5,2)
+  school_id : INT UNSIGNED <<FK>> [to schools.id] [BFD2]
+  is_active : TINYINT(1)
+}
+
+entity "behavior_incidents" as behavior_incidents {
+  id : INT UNSIGNED <<PK>>
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  category_id : INT UNSIGNED <<FK>> [to behavior_categories.id] [BFD3]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  semester_id : INT UNSIGNED <<FK>> [to semesters.id] [BFD2]
+  incident_date : DATE
+  description : TEXT
+  points : DECIMAL(5,2)
+  reported_by : INT UNSIGNED <<FK>> [to users.id] [BFD1]
+  is_active : TINYINT(1)
+  created_at : DATETIME
+}
+
+entity "behavior_scores" as behavior_scores {
+  id : INT UNSIGNED <<PK>>
+  student_id : INT UNSIGNED <<FK>> [to students.id] [BFD2]
+  class_id : INT UNSIGNED <<FK>> [to classes.id] [BFD2]
+  academic_year_id : INT UNSIGNED <<FK>> [to academic_years.id] [BFD2]
+  semester_id : INT UNSIGNED <<FK>> [to semesters.id] [BFD2]
+  starting_points : DECIMAL(5,2)
+  earned_points : DECIMAL(5,2)
+  deducted_points : DECIMAL(5,2)
+  current_percentage : DECIMAL(5,2)
+  is_passing : TINYINT(1)
+  is_active : TINYINT(1)
+  updated_at : DATETIME
+}
+
+@enduml

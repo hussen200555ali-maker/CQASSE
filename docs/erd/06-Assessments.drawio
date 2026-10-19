@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-18T05:00:00.000Z" agent="Python-ERD-Generator" version="21.0.0">
+  <diagram name="06-Assessments" id="diagram_06">
+    <mxGraphModel dx="1500" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="التقييمات والاختبارات - Assessments" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#333333;fontSize=20;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="1000" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Database ERD - 6 Tables, 6 Relationships" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="200" y="55" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="100" value="assessment_forms" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="50" y="120" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="101" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="155" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="102" value="form_key (enum(&apos;behavior_eval&apos;,&apos;ski...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="177" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="103" value="name_ar (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="199" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="104" value="name_en (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="221" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="105" value="category (enum(&apos;behavior&apos;,&apos;skills&apos;,...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="243" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="106" value="target (enum(&apos;student&apos;,&apos;teacher&apos;,...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="265" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="107" value="description (text...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="287" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="108" value="is_system (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="309" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="109" value="is_default (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="331" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="110" value="version (varchar(50)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="353" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="111" value="... +2 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="50" y="375" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="112" value="assessment_responses" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="470" y="120" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="113" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="470" y="155" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="114" value="evaluation_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="177" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="115" value="form_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="199" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="116" value="item_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="221" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="117" value="student_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="243" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="118" value="teacher_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="265" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="119" value="school_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="287" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="120" value="class_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="309" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="121" value="academic_year_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="331" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="122" value="semester_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="353" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="123" value="... +5 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="470" y="375" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="124" value="assessment_structure" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="890" y="120" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="125" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="890" y="155" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="126" value="form_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="177" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="127" value="parent_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="199" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="128" value="type (enum(&apos;criteria&apos;,&apos;item&apos;)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="221" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="129" value="name_ar (varchar(200))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="243" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="130" value="name_en (varchar(200))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="265" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="131" value="text_ar (text)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="287" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="132" value="text_en (text)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="309" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="133" value="tool_type (enum(&apos;likert_5&apos;,&apos;frequenc...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="331" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="134" value="weight (decimal(5,2)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="353" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="135" value="... +4 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="890" y="375" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="136" value="assessment_types" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="50" y="400" width="380" height="189" as="geometry" />
+        </mxCell>
+        <mxCell id="137" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="50" y="435" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="138" value="name_ar (varchar(100)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="457" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="139" value="name_en (varchar(100)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="479" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="140" value="code (varchar(20)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="501" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="141" value="weight_default (decimal(5,2)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="523" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="142" value="sort_order (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="545" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="143" value="is_active (tinyint(1)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="50" y="567" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="144" value="tests" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="470" y="400" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="145" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="470" y="435" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="146" value="subject_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="457" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="147" value="class_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="479" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="148" value="assessment_type_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="501" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="149" value="academic_year_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="523" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="150" value="semester_id (int(10)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="470" y="545" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="151" value="title_ar (varchar(200)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="567" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="152" value="max_grade (decimal(5,2)...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="589" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="153" value="test_date (date...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="611" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="154" value="status (enum(&apos;draft&apos;,&apos;published&apos;,...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="633" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="155" value="... +3 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="470" y="655" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="156" value="evaluations" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=35;fillColor=#7030A0;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fontColor=#FFFFFF;fontStyle=1;fontSize=14" vertex="1" parent="1">
+          <mxGeometry x="890" y="400" width="380" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="157" value="id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#E7E6E6;fontStyle=1;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="890" y="435" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="158" value="eval_type (enum(&apos;teaching_summary&apos;,&apos;...)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="457" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="159" value="teacher_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="479" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="160" value="student_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="501" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="161" value="class_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="523" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="162" value="school_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="545" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="163" value="academic_year_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="567" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="164" value="semester_id (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fillColor=#F2F2F2;fontColor=#006600;fontStyle=2" vertex="1" parent="1">
+          <mxGeometry x="890" y="589" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="165" value="evaluated_by (int(10))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="611" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="166" value="self_score (decimal(5,2))" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="890" y="633" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="167" value="... +13 more columns" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#888888;fontStyle=2;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="890" y="655" width="380" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_2_0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="890" y="220" />
+              <mxPoint x="470" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_2_0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="890" y="220" />
+              <mxPoint x="470" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_2_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="890" y="220" />
+              <mxPoint x="890" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_1_2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="850" y="220" />
+              <mxPoint x="870" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_4_3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="470" y="500" />
+              <mxPoint x="260" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_4_3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C00000;strokeWidth=2;endArrow=classic;endFill=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="470" y="500" />
+              <mxPoint x="260" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

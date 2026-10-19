@@ -1,0 +1,19 @@
+{
+  "name": "eqas",
+  "version": "1.0.0",
+  "description": "## نظرة عامة نظام متكامل لتقييم جودة التعليم المدرسي في الجمهورية ة، يهدف إلى توفير أدوات شاملة لتقييم وتحسين جودة العملية التعليمية من خلال مؤشرات كمية ونوعية مبنية على معايير علمية.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

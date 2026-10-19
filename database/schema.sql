@@ -39,6 +39,8 @@ CREATE TABLE `activity_logs` (
   `action` varchar(100) NOT NULL,
   `entity_type` varchar(50) DEFAULT NULL,
   `entity_id` int(10) unsigned DEFAULT NULL,
+  `status` enum('completed','failed','pending') NOT NULL DEFAULT 'completed',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `description` text DEFAULT NULL,
   `details_json` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details_json`)),
   `ip_address` varchar(45) DEFAULT NULL,
@@ -97,10 +99,12 @@ CREATE TABLE `assessment_forms` (
   `target` enum('student','teacher','school') NOT NULL COMMENT 'هدف التقييم',
   `description` text DEFAULT NULL COMMENT 'وصف النموذج',
   `is_system` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل نموذج نظام',
+  `is_default` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'استمارة افتراضية',
+  `version` varchar(50) DEFAULT NULL COMMENT 'رقم الإصدار/الوصف',
   `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل النموذج نشط',
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الإنشاء',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_assessment_forms_key` (`form_key`),
+  KEY `idx_assessment_forms_key` (`form_key`),
   KEY `idx_assessment_forms_category` (`category`),
   KEY `idx_assessment_forms_target` (`target`),
   KEY `idx_assessment_forms_active` (`is_active`)
@@ -280,6 +284,36 @@ CREATE TABLE `behavior_incidents` (
   CONSTRAINT `fk_behavior_incidents_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `fk_behavior_incidents_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=5200 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول السلوكيات المسجلة';
+
+-- -----------------------------------------------------------
+-- Table: behavior_scores
+-- جداول درجات السلوك المحسوبة لكل طالب
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `behavior_scores`;
+CREATE TABLE `behavior_scores` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` int(10) unsigned NOT NULL COMMENT 'رقم الطالب',
+  `class_id` int(10) unsigned NOT NULL COMMENT 'رقم الفصل',
+  `academic_year_id` int(10) unsigned NOT NULL COMMENT 'رقم السنة الدراسية',
+  `semester_id` int(10) unsigned NOT NULL COMMENT 'رقم الفصل الدراسي',
+  `starting_points` decimal(5,2) NOT NULL DEFAULT 100.00 COMMENT 'النقاط الابتدائية',
+  `earned_points` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'النقاط المكتسبة',
+  `deducted_points` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'النقاط المخصومة',
+  `current_percentage` decimal(5,2) NOT NULL DEFAULT 100.00 COMMENT 'النسبة الحالية',
+  `is_passing` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السلوك مقبول',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'تاريخ التحديث',
+  PRIMARY KEY (`id`),
+  KEY `idx_behavior_scores_student` (`student_id`),
+  KEY `idx_behavior_scores_class` (`class_id`),
+  KEY `idx_behavior_scores_academic_year` (`academic_year_id`),
+  KEY `idx_behavior_scores_semester` (`semester_id`),
+  KEY `idx_behavior_scores_active` (`is_active`),
+  CONSTRAINT `fk_behavior_scores_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_behavior_scores_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_behavior_scores_academic_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_behavior_scores_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول درجات السلوك';
 
 -- -----------------------------------------------------------
 -- Table: classes
@@ -750,6 +784,33 @@ CREATE TABLE `schools` (
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول المدارس';
 
 -- -----------------------------------------------------------
+-- Table: school_context
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `school_context`;
+CREATE TABLE `school_context` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `school_id` int(10) unsigned NOT NULL COMMENT 'رقم المدرسة',
+  `academic_year_id` int(10) unsigned DEFAULT NULL COMMENT 'ربط اختياري بسنة دراسية',
+  `location_type` enum('urban','suburban','rural') DEFAULT NULL COMMENT 'نوع المنطقة',
+  `total_students` int(10) unsigned DEFAULT NULL COMMENT 'إجمالي عدد الطلاب',
+  `student_teacher_ratio` decimal(5,1) DEFAULT NULL COMMENT 'نسبة الطلاب إلى المعلمين',
+  `socioeconomic_index` decimal(5,1) DEFAULT NULL COMMENT 'المؤشر الاقتصادي الاجتماعي (0-100)',
+  `parent_education_level` decimal(5,1) DEFAULT NULL COMMENT 'مستوى تعليم أولياء الأمور (0-100)',
+  `students_with_special_needs_pct` decimal(5,1) DEFAULT NULL COMMENT 'نسبة الطلاب ذوي الاحتياجات الخاصة (%)',
+  `infrastructure_score` decimal(5,1) DEFAULT NULL COMMENT 'درجة جودة البنية التحتية (0-100)',
+  `student_mobility_rate` decimal(5,1) DEFAULT NULL COMMENT 'معدل تنقل الطلاب (0-100)',
+  `challenge_index` decimal(5,1) DEFAULT 0.0 COMMENT 'مؤشر التحدي السياقي المحسوب (0-100)',
+  `notes` text DEFAULT NULL COMMENT 'ملاحظات',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'حالة التفعيل',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الإنشاء',
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp() COMMENT 'تاريخ التحديث',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_school_context` (`school_id`),
+  KEY `idx_school_context_school` (`school_id`),
+  KEY `idx_school_context_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='السياق المدرسي لعوامل التعديل السياقي';
+
+-- -----------------------------------------------------------
 -- Table: semesters
 -- -----------------------------------------------------------
 DROP TABLE IF EXISTS `semesters`;
@@ -814,6 +875,9 @@ CREATE TABLE `student_notes` (
   `title_ar` varchar(200) NOT NULL COMMENT 'عنوان الملاحظة بالعربية',
   `content_ar` text NOT NULL COMMENT 'محتوى الملاحظة بالعربية',
   `priority` enum('low','medium','high','urgent') NOT NULL DEFAULT 'medium' COMMENT 'الأولوية',
+  `is_pinned` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل الملاحظة مثبتة',
+  `is_draft` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل هي مسودة',
+  `attachment_id` int(10) unsigned DEFAULT NULL COMMENT 'رقم المرفق المرجعي',
   `created_by` int(10) unsigned NOT NULL COMMENT 'رقم المستخدم المنشئ',
   `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل الملاحظة نشطة',
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الإنشاء',
@@ -1102,6 +1166,30 @@ CREATE TABLE `users` (
   KEY `idx_users_lockout` (`lockout_until`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `fk_users_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول المستخدمين';
+
+-- -----------------------------------------------------------
+-- Table: export_history
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `export_history`;
+CREATE TABLE `export_history` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned DEFAULT NULL COMMENT 'رقم المستخدم',
+  `export_type` varchar(50) NOT NULL COMMENT 'نوع التصدير',
+  `file_name` varchar(255) NOT NULL COMMENT 'اسم الملف',
+  `file_path` varchar(500) NOT NULL COMMENT 'مسار الملف',
+  `file_size` int(10) unsigned DEFAULT 0 COMMENT 'حجم الملف بالبايت',
+  `row_count` int(10) unsigned DEFAULT 0 COMMENT 'عدد الصفوف',
+  `filters` json DEFAULT NULL COMMENT 'فلاتر التصدير',
+  `status` enum('completed','failed','deleted') NOT NULL DEFAULT 'completed' COMMENT 'حالة التصدير',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'تاريخ الإنشاء',
+  PRIMARY KEY (`id`),
+  KEY `idx_export_history_user` (`user_id`),
+  KEY `idx_export_history_type` (`export_type`),
+  KEY `idx_export_history_status` (`status`),
+  KEY `idx_export_history_created` (`created_at`),
+  CONSTRAINT `fk_export_history_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='سجل ملفات التصدير';
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول المستخدمين';
 
 -- -----------------------------------------------------------

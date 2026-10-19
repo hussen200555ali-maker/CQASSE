@@ -27,6 +27,20 @@ if (!hasPermission('teacher')) {
 
 $academicYearId = getCurrentAcademicYearId($db);
 $schoolId = $_SESSION['user']['school_id'] ?? 0;
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
+
+// شرط تقييد الفصول للمعلم
+$teacherClassWhere = '';
+$teacherClassParams = [];
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!empty($allowedIds)) {
+        $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+        $teacherClassWhere = " AND c.id IN ($ph)";
+        $teacherClassParams = $allowedIds;
+    }
+}
 
 // ============================================================
 // جلب الإحصائيات
@@ -35,28 +49,30 @@ $schoolId = $_SESSION['user']['school_id'] ?? 0;
 // عدد المواد
 $subjectsCount = $db->query("SELECT COUNT(*) FROM subjects WHERE is_active = 1")->fetchColumn();
 
-// عدد الاختبارات
+// عدد الاختبارات — للمعلم: فقط فصوله
 $testsCount = 0;
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT COUNT(*) FROM tests t
-        INNER JOIN classes c ON c.id = t.class_id
-        WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    $sql = "SELECT COUNT(*) FROM tests t
+            INNER JOIN classes c ON c.id = t.class_id
+            WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1";
+    $params = [$schoolId, $academicYearId];
+    if ($userRole === 'teacher') { $sql .= $teacherClassWhere; $params = array_merge($params, $teacherClassParams); }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $testsCount = $stmt->fetchColumn();
 }
 
 // عدد الدرجات المسجلة
 $gradesCount = 0;
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT COUNT(*) FROM grades g
-        INNER JOIN tests t ON t.id = g.test_id
-        INNER JOIN classes c ON c.id = t.class_id
-        WHERE c.school_id = ? AND t.academic_year_id = ? AND g.is_active = 1
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    $sql = "SELECT COUNT(*) FROM grades g
+            INNER JOIN tests t ON t.id = g.test_id
+            INNER JOIN classes c ON c.id = t.class_id
+            WHERE c.school_id = ? AND t.academic_year_id = ? AND g.is_active = 1";
+    $params = [$schoolId, $academicYearId];
+    if ($userRole === 'teacher') { $sql .= $teacherClassWhere; $params = array_merge($params, $teacherClassParams); }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $gradesCount = $stmt->fetchColumn();
 }
 
@@ -65,13 +81,14 @@ $draftTests = 0;
 $publishedTests = 0;
 $lockedTests = 0;
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT t.status, COUNT(*) AS cnt FROM tests t
-        INNER JOIN classes c ON c.id = t.class_id
-        WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1
-        GROUP BY t.status
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    $sql = "SELECT t.status, COUNT(*) AS cnt FROM tests t
+            INNER JOIN classes c ON c.id = t.class_id
+            WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1";
+    $params = [$schoolId, $academicYearId];
+    if ($userRole === 'teacher') { $sql .= $teacherClassWhere; $params = array_merge($params, $teacherClassParams); }
+    $sql .= " GROUP BY t.status";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     while ($row = $stmt->fetch()) {
         switch ($row['status']) {
             case 'draft': $draftTests = $row['cnt']; break;
@@ -84,40 +101,39 @@ if ($schoolId) {
 // آخر نشاط إدخال درجات
 $recentActivity = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT g.updated_at, g.graded_by, t.title_ar AS test_title, s.full_name_ar AS student_name,
-               u.full_name_ar AS grader_name
-        FROM grades g
-        INNER JOIN tests t ON t.id = g.test_id
-        INNER JOIN students s ON s.id = g.student_id
-        LEFT JOIN users u ON u.id = g.graded_by
-        INNER JOIN classes c ON c.id = t.class_id
-        WHERE c.school_id = ? AND t.academic_year_id = ? AND g.is_active = 1
-        ORDER BY g.updated_at DESC
-        LIMIT 10
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    $sql = "SELECT g.updated_at, g.graded_by, t.title_ar AS test_title, s.full_name_ar AS student_name,
+                   u.full_name_ar AS grader_name
+            FROM grades g
+            INNER JOIN tests t ON t.id = g.test_id
+            INNER JOIN students s ON s.id = g.student_id
+            LEFT JOIN users u ON u.id = g.graded_by
+            INNER JOIN classes c ON c.id = t.class_id
+            WHERE c.school_id = ? AND t.academic_year_id = ? AND g.is_active = 1";
+    $params = [$schoolId, $academicYearId];
+    if ($userRole === 'teacher') { $sql .= $teacherClassWhere; $params = array_merge($params, $teacherClassParams); }
+    $sql .= " ORDER BY g.updated_at DESC LIMIT 10";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $recentActivity = $stmt->fetchAll();
 }
 
 // فصول تحتاج درجات (اختبارات بدون درجات)
 $classesNeedingGrades = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT c.id AS class_id, c.name_ar AS class_name, gl.name_ar AS grade_name,
-               sub.name_ar AS subject_name, t.title_ar, t.id AS test_id
-        FROM tests t
-        INNER JOIN classes c ON c.id = t.class_id
-        INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
-        INNER JOIN subjects sub ON sub.id = t.subject_id
-        LEFT JOIN grades g ON g.test_id = t.id AND g.is_active = 1
-        WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1
-            AND t.status != 'locked' AND g.id IS NULL
-        GROUP BY t.id
-        ORDER BY gl.level_number, c.name_ar
-        LIMIT 10
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    $sql = "SELECT c.id AS class_id, c.name_ar AS class_name, gl.name_ar AS grade_name,
+                   sub.name_ar AS subject_name, t.title_ar, t.id AS test_id
+            FROM tests t
+            INNER JOIN classes c ON c.id = t.class_id
+            INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            INNER JOIN subjects sub ON sub.id = t.subject_id
+            LEFT JOIN grades g ON g.test_id = t.id AND g.is_active = 1
+            WHERE c.school_id = ? AND t.academic_year_id = ? AND t.is_active = 1
+                AND t.status != 'locked' AND g.id IS NULL";
+    $params = [$schoolId, $academicYearId];
+    if ($userRole === 'teacher') { $sql .= $teacherClassWhere; $params = array_merge($params, $teacherClassParams); }
+    $sql .= " GROUP BY t.id ORDER BY gl.level_number, c.name_ar LIMIT 10";
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $classesNeedingGrades = $stmt->fetchAll();
 }
 ?>

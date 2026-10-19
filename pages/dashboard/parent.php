@@ -1,41 +1,41 @@
-﻿<?php
+<?php
 /**
  * ============================================================
- * EQAS - ظ„ظˆط­ط© ظˆظ„ظٹ ط§ظ„ط£ظ…ط±
- * ظ†ط¸ط§ظ… ط§ظ„طھظ‚ظٹظٹظ… ط§ظ„ط´ط§ظ…ظ„ - Parent Dashboard with Live Alerts
+ * EQAS - لوحة ولي الأمر
+ * نظام التقييم الشامل - Parent Dashboard with Live Alerts
  * ============================================================
- * ظ„ظˆط­ط© طھط­ظƒظ… ظˆظ„ظٹ ط§ظ„ط£ظ…ط± ظ…ط¹:
- * - ط§ط®طھظٹط§ط± ط§ظ„ط·ط§ظ„ط¨ (ط¥ط°ط§ ظƒط§ظ† ظ„ط¯ظٹظ‡ ط£ظƒط«ط± ظ…ظ† ط·ط§ظ„ط¨)
- * - طھظ†ط¨ظٹظ‡ط§طھ ظپظˆط±ظٹط© ظ…ط±ظ…ط²ط© ط¨ط§ظ„ط£ظ„ظˆط§ظ† ط­ط³ط¨ ط§ظ„ط®ط·ظˆط±ط©
- * - ظ…ظ„ط®طµ ط£ط¯ط§ط، ط§ظ„ط·ط§ظ„ط¨ (ط£ظƒط§ط¯ظٹظ…ظٹطŒ ط³ظ„ظˆظƒطŒ ط­ط¶ظˆط±طŒ طھط±ظپظٹط¹)
- * - ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط©
- * - ط±ط³ظ… ط¨ظٹط§ظ†ظٹ ظ„ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ
- * - طھظ‚ظˆظٹظ… ط§ظ„ط­ط¶ظˆط± ط§ظ„ط´ظ‡ط±ظٹ
- * - ظ…ط¤ط´ط± ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ ط§ظ„ط¨طµط±ظٹ
- * - ط§ظ„ظپط¹ط§ظ„ظٹط§طھ ظˆط§ظ„ط§ط®طھط¨ط§ط±ط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط©
- * - ظ…ظ‚ط§ط±ظ†ط© ط¨ظٹظ† ط§ظ„ط£ط¨ظ†ط§ط،
- * - ط¥ط¹ظ„ط§ظ†ط§طھ ط§ظ„ظ…ط¯ط±ط³ط©
- * - طھط­ط¯ظٹط« طھظ„ظ‚ط§ط¦ظٹ ظƒظ„ 60 ط«ط§ظ†ظٹط©
- * - طھطµظ…ظٹظ… ظ…طھط¬ط§ظˆط¨ ظ„ظ„ط¬ظˆط§ظ„
+ * لوحة تحكم ولي الأمر مع:
+ * - اختيار الطالب (إذا كان لديه أكثر من طالب)
+ * - تنبيهات فورية مرمزة بالألوان حسب الخطورة
+ * - ملخص أداء الطالب (أكاديمي، سلوك، حضور، ترفيع)
+ * - الإقرارات المعلقة
+ * - رسم بياني لاتجاه الدرجات
+ * - تقويم الحضور الشهري
+ * - مؤشر درجة السلوك البصري
+ * - الفعاليات والاختبارات القادمة
+ * - مقارنة بين الأبناء
+ * - إعلانات المدرسة
+ * - تحديث تلقائي كل 60 ثانية
+ * - تصميم متجاوب للجوال
  * ============================================================
  */
 
-$pageTitle = 'ظ„ظˆط­ط© ظˆظ„ظٹ ط§ظ„ط£ظ…ط±';
-$breadcrumb = ['ظ„ظˆط­ط© ظˆظ„ظٹ ط§ظ„ط£ظ…ط±' => null];
+$pageTitle = 'لوحة ولي الأمر';
+$breadcrumb = ['لوحة ولي الأمر' => null];
 
 require_once __DIR__ . '/../../includes/header.php';
 
-// ط§ظ„طھط­ظ‚ظ‚ ظ…ظ† ط§ظ„ط¯ظˆط±
+// التحقق من الدور
 if (!hasPermission('parent')) {
-    setFlash('ظ‡ط°ظ‡ ط§ظ„طµظپط­ط© ظ…ط®طµطµط© ظ„ط£ظˆظ„ظٹط§ط، ط§ظ„ط£ظ…ظˆط± ظپظ‚ط·.', 'danger');
+    setFlash('هذه الصفحة مخصصة لأولياء الأمور فقط.', 'danger');
     redirect(baseUrl('index.php'));
 }
 
 $userId = $_SESSION['user']['id'];
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¬ظ„ط¨ ط£ط¨ظ†ط§ط، ظˆظ„ظٹ ط§ظ„ط£ظ…ط±
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// جلب أبناء ولي الأمر
+// ═══════════════════════════════════════════
 $stmt = $db->prepare("
     SELECT s.id, s.full_name_ar, s.student_number, s.grade_level_id,
            gl.name_ar as grade_name, sc.name_ar as school_name,
@@ -50,7 +50,7 @@ $stmt = $db->prepare("
 $stmt->execute([$userId]);
 $children = $stmt->fetchAll();
 
-// ط§ط®طھظٹط§ط± ط§ظ„ط·ط§ظ„ط¨ ط§ظ„ط­ط§ظ„ظٹ
+// اختيار الطالب الحالي
 $selectedStudentId = $_GET['student_id'] ?? '';
 if ($selectedStudentId) {
     $selectedStudentId = (int)$selectedStudentId;
@@ -58,7 +58,7 @@ if ($selectedStudentId) {
     $selectedStudentId = $children[0]['id'];
 }
 
-// ط¨ظٹط§ظ†ط§طھ ط§ظ„ط·ط§ظ„ط¨ ط§ظ„ظ…ط­ط¯ط¯
+// بيانات الطالب المحدد
 $currentChild = null;
 if ($selectedStudentId) {
     foreach ($children as $child) {
@@ -69,49 +69,52 @@ if ($selectedStudentId) {
     }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¬ظ„ط¨ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ ط§ظ„ظپظˆط±ظٹط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// جلب التنبيهات الفورية
+// ═══════════════════════════════════════════
 $alerts = [];
 $unreadAlertCount = 0;
 if ($currentChild) {
-    // ط¬ظ„ط¨ ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ ظ…ظ† ط¬ط¯ظˆظ„ alerts
+    // جلب التنبيهات من جدول alerts
     $stmt = $db->prepare("
         SELECT id, alert_type, severity, title_ar, message_ar, created_at, is_read
         FROM alerts
-        WHERE student_id = ? AND is_active = 1
+        WHERE student_id = ? AND is_resolved = 0
         ORDER BY created_at DESC
         LIMIT 20
     ");
     $stmt->execute([$selectedStudentId]);
     $alerts = $stmt->fetchAll();
 
-    // ط¬ظ„ط¨ ط¥ط´ط¹ط§ط±ط§طھ ط§ظ„ط؛ظٹط§ط¨
-    $stmt = $db->prepare("
-        SELECT 'absence' as alert_type, 'warning' as severity,
-               CONCAT('ط؛ظٹط§ط¨ ظ…طھطھط§ظ„ظٹ: ', days_absent, ' ظٹظˆظ…') as title_ar,
-               CONCAT('طھظ… طھط³ط¬ظٹظ„ ط؛ظٹط§ط¨ ط§ظ„ط·ط§ظ„ط¨ ظ„ظ…ط¯ط© ', days_absent, ' ظٹظˆظ… ظ…طھطھط§ظ„ظٹ') as message_ar,
-               notification_date as created_at, is_read
-        FROM absence_notifications
-        WHERE student_id = ? AND is_active = 1
-        ORDER BY notification_date DESC
-        LIMIT 10
-    ");
-    $stmt->execute([$selectedStudentId]);
-    $absenceNotifs = $stmt->fetchAll();
+    // جلب إشعارات الغياب (إذا كان الجدول موجوداً)
+    $absenceNotifs = [];
+    try {
+        $stmt = $db->prepare("
+            SELECT 'absence' as alert_type, 'warning' as severity,
+                   CONCAT('غياب متتالي: ', days_absent, ' يوم') as title_ar,
+                   CONCAT('تم تسجيل غياب الطالب لمدة ', days_absent, ' يوم متتالي') as message_ar,
+                   notification_date as created_at, is_read
+            FROM absence_notifications
+            WHERE student_id = ? AND is_active = 1
+            ORDER BY notification_date DESC
+            LIMIT 10
+        ");
+        $stmt->execute([$selectedStudentId]);
+        $absenceNotifs = $stmt->fetchAll();
+    } catch (Exception $e) {}
 
-    // ط¯ظ…ط¬ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ
+    // دمج الإشعارات
     $alerts = array_merge($alerts, $absenceNotifs);
 
-    // طھط±طھظٹط¨ ط²ظ…ظ†ظٹ (ط§ظ„ط£ط­ط¯ط« ط£ظˆظ„ط§ظ‹)
+    // ترتيب زمني (الأحدث أولاً)
     usort($alerts, function($a, $b) {
         return strtotime($b['created_at']) - strtotime($a['created_at']);
     });
 
-    // ط¹ط¯ط¯ ط؛ظٹط± ط§ظ„ظ…ظ‚ط±ظˆط،ط©
+    // عدد غير المقروءة
     $unreadAlertCount = count(array_filter($alerts, function($a) { return empty($a['is_read']); }));
 
-    // طھطµظپظٹط© ط­ط³ط¨ ط§ظ„ظ†ظˆط¹
+    // تصفية حسب النوع
     $filterSeverity = $_GET['severity'] ?? '';
     if ($filterSeverity) {
         $alerts = array_filter($alerts, function($a) use ($filterSeverity) {
@@ -120,9 +123,9 @@ if ($currentChild) {
     }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ظ…ظ„ط®طµ ط£ط¯ط§ط، ط§ظ„ط·ط§ظ„ط¨
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// ملخص أداء الطالب
+// ═══════════════════════════════════════════
 $academicData = null;
 $behaviorScore = null;
 $attendanceRate = null;
@@ -131,7 +134,7 @@ $promotionStatus = null;
 if ($currentChild) {
     $academicYearId = currentAcademicYearId();
 
-    // ظ…طھظˆط³ط· ط§ظ„ط¯ط±ط¬ط§طھ ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹط©
+    // متوسط الدرجات الأكاديمية
     try {
         $stmt = $db->prepare("
             SELECT AVG(g.percentage) as avg_percentage
@@ -146,13 +149,13 @@ if ($currentChild) {
         $academicData = null;
     }
 
-    // ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ
+    // درجة السلوك
     try {
         $stmt = $db->prepare("
-            SELECT e.current_percentage as behavior_pct
-            FROM evaluations e
-            WHERE e.eval_type = 'behavior_score' AND e.student_id = ? AND e.is_active = 1
-            ORDER BY e.id DESC LIMIT 1
+            SELECT be.percentage as behavior_pct
+            FROM behavior_scores be
+            WHERE be.student_id = ? AND be.is_active = 1
+            ORDER BY be.evaluated_at DESC LIMIT 1
         ");
         $stmt->execute([$selectedStudentId]);
         $behaviorRow = $stmt->fetch();
@@ -161,13 +164,13 @@ if ($currentChild) {
         $behaviorScore = null;
     }
 
-    // ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±
+    // نسبة الحضور
     try {
         $stmt = $db->prepare("
             SELECT attendance_rate
             FROM v_attendance_summary
-            WHERE student_id = ?
-            ORDER BY student_id DESC LIMIT 1
+            WHERE student_id = ? AND is_active = 1
+            ORDER BY academic_year_id DESC, semester_id DESC LIMIT 1
         ");
         $stmt->execute([$selectedStudentId]);
         $attRow = $stmt->fetch();
@@ -176,7 +179,7 @@ if ($currentChild) {
         $attendanceRate = null;
     }
 
-    // ط­ط§ظ„ط© ط§ظ„طھط±ظپظٹط¹
+    // حالة الترفيع
     try {
         $stmt = $db->prepare("
             SELECT decision, status
@@ -192,18 +195,21 @@ if ($currentChild) {
     }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// الإقرارات المعلقة
+// ═══════════════════════════════════════════
 $pendingAcknowledgments = [];
 if ($currentChild) {
     try {
         $stmt = $db->prepare("
-            SELECT pa.*, pd.decision, pd.status as promo_status
-            FROM parent_acknowledgments pa
-            JOIN promotions pd ON pa.entity_id = pd.id
-            WHERE pa.parent_id = ? AND pa.is_active = 1 AND pa.acknowledged_at IS NULL
-            ORDER BY pa.created_at DESC
+            SELECT ps.id, s.full_name_ar as student_name,
+                   ps.ack_grade, ps.ack_behavior, ps.ack_attendance, ps.ack_promotion,
+                   ps.last_ack_at, ps.created_at
+            FROM parent_students ps
+            JOIN students s ON s.id = ps.student_id
+            WHERE ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1
+            AND (ps.ack_grade = 0 OR ps.ack_behavior = 0 OR ps.ack_attendance = 0 OR ps.ack_promotion = 0)
+            ORDER BY ps.created_at DESC
             LIMIT 10
         ");
         $stmt->execute([$userId]);
@@ -213,9 +219,9 @@ if ($currentChild) {
     }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ ط§ظ„ط£ط®ظٹط±ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// الإشعارات الأخيرة
+// ═══════════════════════════════════════════
 $recentNotifications = [];
 try {
     $stmt = $db->prepare("
@@ -230,9 +236,9 @@ try {
     $recentNotifications = [];
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ (ط®ط· ط²ظ…ظ†ظٹ)
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// اتجاه الدرجات (خط زمني)
+// ═══════════════════════════════════════════
 $gradesTrend = ['labels' => [], 'values' => []];
 if ($currentChild) {
     try {
@@ -252,9 +258,9 @@ if ($currentChild) {
     } catch (Exception $e) { }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// طھظ‚ظˆظٹظ… ط§ظ„ط­ط¶ظˆط± ط§ظ„ط´ظ‡ط±ظٹ (ط§ظ„ط´ظ‡ط± ط§ظ„ط­ط§ظ„ظٹ)
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// تقويم الحضور الشهري (الشهر الحالي)
+// ═══════════════════════════════════════════
 $attendanceCalendar = [];
 if ($currentChild) {
     try {
@@ -272,9 +278,9 @@ if ($currentChild) {
     } catch (Exception $e) { }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط§ظ„ط§ط®طھط¨ط§ط±ط§طھ ظˆط§ظ„ظپط¹ط§ظ„ظٹط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// الاختبارات والفعاليات القادمة
+// ═══════════════════════════════════════════
 $upcomingEvents = [];
 if ($currentChild) {
     try {
@@ -293,9 +299,9 @@ if ($currentChild) {
     } catch (Exception $e) { }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ظ…ظ‚ط§ط±ظ†ط© ط¨ظٹظ† ط§ظ„ط£ط¨ظ†ط§ط،
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// مقارنة بين الأبناء
+// ═══════════════════════════════════════════
 $childComparison = [];
 if (count($children) > 1) {
     foreach ($children as $child) {
@@ -308,13 +314,13 @@ if (count($children) > 1) {
             if ($r && $r['avg_pct'] !== null) $cData['academic'] = round($r['avg_pct'], 1);
         } catch (Exception $e) {}
         try {
-            $stmt = $db->prepare("SELECT current_percentage as behavior_pct FROM evaluations WHERE eval_type = 'behavior_score' AND student_id = ? AND is_active = 1 ORDER BY id DESC LIMIT 1");
+            $stmt = $db->prepare("SELECT current_percentage as behavior_pct FROM behavior_scores WHERE student_id = ? AND is_active = 1 ORDER BY id DESC LIMIT 1");
             $stmt->execute([$cId]);
             $r = $stmt->fetch();
             if ($r) $cData['behavior'] = round($r['behavior_pct'], 1);
         } catch (Exception $e) {}
         try {
-            $stmt = $db->prepare("SELECT attendance_rate FROM v_attendance_summary WHERE student_id = ? ORDER BY student_id DESC LIMIT 1");
+            $stmt = $db->prepare("SELECT attendance_rate FROM v_attendance_summary WHERE student_id = ? AND is_active = 1 ORDER BY academic_year_id DESC, semester_id DESC LIMIT 1");
             $stmt->execute([$cId]);
             $r = $stmt->fetch();
             if ($r && $r['attendance_rate'] !== null) $cData['attendance'] = round($r['attendance_rate'], 1);
@@ -323,9 +329,9 @@ if (count($children) > 1) {
     }
 }
 
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-// ط¥ط¹ظ„ط§ظ†ط§طھ ط§ظ„ظ…ط¯ط±ط³ط©
-// â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
+// ═══════════════════════════════════════════
+// إعلانات المدرسة
+// ═══════════════════════════════════════════
 $schoolAnnouncements = [];
 if ($currentChild) {
     try {
@@ -341,18 +347,18 @@ if ($currentChild) {
     } catch (Exception $e) { }
 }
 
-// ط£ظ„ظˆط§ظ† ط§ظ„ط®ط·ظˆط±ط©
+// ألوان الخطورة
 $severityColors = [
-    'critical' => ['bg' => '#ffebee', 'border' => '#c62828', 'icon' => 'ًںڑ¨', 'text' => '#b71c1c'],
-    'danger'   => ['bg' => '#fff3e0', 'border' => '#e65100', 'icon' => 'âڑ ï¸ڈ', 'text' => '#bf360c'],
-    'warning'  => ['bg' => '#fff8e1', 'border' => '#f57f17', 'icon' => 'âڑ،', 'text' => '#e65100'],
-    'info'     => ['bg' => '#e3f2fd', 'border' => '#1565c0', 'icon' => 'â„¹ï¸ڈ', 'text' => '#0d47a1'],
+    'critical' => ['bg' => '#ffebee', 'border' => '#c62828', 'icon' => '🚨', 'text' => '#b71c1c'],
+    'danger'   => ['bg' => '#fff3e0', 'border' => '#e65100', 'icon' => '⚠️', 'text' => '#bf360c'],
+    'warning'  => ['bg' => '#fff8e1', 'border' => '#f57f17', 'icon' => '⚡', 'text' => '#e65100'],
+    'info'     => ['bg' => '#e3f2fd', 'border' => '#1565c0', 'icon' => 'ℹ️', 'text' => '#0d47a1'],
 ];
-$severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'warning' => 'طھط­ط°ظٹط±', 'info' => 'ظ…ط¹ظ„ظˆظ…ط§طھ'];
+$severityLabels = ['critical' => 'حرج', 'danger' => 'خطر', 'warning' => 'تحذير', 'info' => 'معلومات'];
 ?>
 
 <style>
-/* طھظ†ط³ظٹظ‚ط§طھ ط®ط§طµط© ط¨ظ„ظˆط­ط© ظˆظ„ظٹ ط§ظ„ط£ظ…ط± */
+/* تنسيقات خاصة بلوحة ولي الأمر */
 .alert-card {
     padding: 12px 16px;
     border-radius: var(--radius-md);
@@ -488,25 +494,25 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
 
 <div class="section">
     <?php if (empty($children)): ?>
-    <!-- ظ„ط§ ظٹظˆط¬ط¯ ط£ط¨ظ†ط§ط، ظ…ط³ط¬ظ„ظٹظ† -->
+    <!-- لا يوجد أبناء مسجلين -->
     <div class="card">
         <div class="card-body" style="text-align:center;padding:60px 20px;">
-            <div style="font-size:64px;margin-bottom:16px;">ًں‘¨â€چًں‘©â€چًں‘§â€چًں‘¦</div>
-            <h3>ظ„ط§ ظٹظˆط¬ط¯ ط£ط¨ظ†ط§ط، ظ…ط³ط¬ظ„ظٹظ†</h3>
-            <p style="color:var(--text-secondary);">ظ„ظ… ظٹطھظ… ط±ط¨ط· ط­ط³ط§ط¨ظƒ ط¨ط£ظٹ ط·ط§ظ„ط¨ ط¨ط¹ط¯. ظٹط±ط¬ظ‰ ط§ظ„طھظˆط§طµظ„ ظ…ط¹ ط¥ط¯ط§ط±ط© ط§ظ„ظ…ط¯ط±ط³ط©.</p>
+            <div style="font-size:64px;margin-bottom:16px;">👨‍👩‍👧‍👦</div>
+            <h3>لا يوجد أبناء مسجلين</h3>
+            <p style="color:var(--text-secondary);">لم يتم ربط حسابك بأي طالب بعد. يرجى التواصل مع إدارة المدرسة.</p>
         </div>
     </div>
     <?php else: ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط§ط®طھظٹط§ط± ط§ظ„ط·ط§ظ„ط¨
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         اختيار الطالب
+         ═══════════════════════════════════════════ -->
     <?php if (count($children) > 1): ?>
     <div class="child-selector">
         <?php foreach ($children as $child): ?>
         <a href="?student_id=<?= $child['id'] ?>"
            class="child-tab <?= $child['id'] == $selectedStudentId ? 'active' : '' ?>">
-            ًں‘¤ <?= e($child['full_name_ar']) ?>
+            👤 <?= e($child['full_name_ar']) ?>
             <span style="font-size:11px;opacity:0.8;"><?= e($child['grade_name']) ?></span>
         </a>
         <?php endforeach; ?>
@@ -515,31 +521,31 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
 
     <?php if ($currentChild): ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ظ‚ط³ظ… ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ ط§ظ„ظپظˆط±ظٹط©
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         قسم التنبيهات الفورية
+         ═══════════════════════════════════════════ -->
     <div class="card mb-6">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;">
-                <h3 class="card-title">ًں”” ط§ظ„طھظ†ط¨ظٹظ‡ط§طھ ط§ظ„ظپظˆط±ظٹط©</h3>
+                <h3 class="card-title">🔔 التنبيهات الفورية</h3>
                 <?php if ($unreadAlertCount > 0): ?>
                 <span style="background:var(--accent);color:white;padding:2px 10px;border-radius:var(--radius-full);font-size:12px;font-weight:bold;">
-                    <?= $unreadAlertCount ?> ط¬ط¯ظٹط¯
+                    <?= $unreadAlertCount ?> جديد
                 </span>
                 <?php endif; ?>
             </div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                <a href="?student_id=<?= $selectedStudentId ?>" class="severity-filter-btn <?= !$filterSeverity ? 'active' : '' ?>">ط§ظ„ظƒظ„</a>
-                <a href="?student_id=<?= $selectedStudentId ?>&severity=critical" class="severity-filter-btn <?= $filterSeverity === 'critical' ? 'active' : '' ?>">ًںڑ¨ ط­ط±ط¬</a>
-                <a href="?student_id=<?= $selectedStudentId ?>&severity=warning" class="severity-filter-btn <?= $filterSeverity === 'warning' ? 'active' : '' ?>">âڑ، طھط­ط°ظٹط±</a>
-                <a href="?student_id=<?= $selectedStudentId ?>&severity=info" class="severity-filter-btn <?= $filterSeverity === 'info' ? 'active' : '' ?>">â„¹ï¸ڈ ظ…ط¹ظ„ظˆظ…ط§طھ</a>
+                <a href="?student_id=<?= $selectedStudentId ?>" class="severity-filter-btn <?= !$filterSeverity ? 'active' : '' ?>">الكل</a>
+                <a href="?student_id=<?= $selectedStudentId ?>&severity=critical" class="severity-filter-btn <?= $filterSeverity === 'critical' ? 'active' : '' ?>">🚨 حرج</a>
+                <a href="?student_id=<?= $selectedStudentId ?>&severity=warning" class="severity-filter-btn <?= $filterSeverity === 'warning' ? 'active' : '' ?>">⚡ تحذير</a>
+                <a href="?student_id=<?= $selectedStudentId ?>&severity=info" class="severity-filter-btn <?= $filterSeverity === 'info' ? 'active' : '' ?>">ℹ️ معلومات</a>
             </div>
         </div>
         <div class="card-body">
             <?php if (empty($alerts)): ?>
             <div style="text-align:center;padding:30px;color:var(--text-muted);">
-                <div style="font-size:40px;margin-bottom:8px;">âœ…</div>
-                <p>ظ„ط§ طھظˆط¬ط¯ طھظ†ط¨ظٹظ‡ط§طھ ط­ط§ظ„ظٹط§ظ‹</p>
+                <div style="font-size:40px;margin-bottom:8px;">✅</div>
+                <p>لا توجد تنبيهات حالياً</p>
             </div>
             <?php else: ?>
             <div style="max-height:400px;overflow-y:auto;" id="alerts-container">
@@ -566,17 +572,17 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
         </div>
     </div>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط¨ط·ط§ظ‚ط§طھ ظ…ظ„ط®طµ ط£ط¯ط§ط، ط§ظ„ط·ط§ظ„ط¨
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         بطاقات ملخص أداء الطالب
+         ═══════════════════════════════════════════ -->
     <div class="grid grid-4 mb-6" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
-        <!-- ط§ظ„ط£ط¯ط§ط، ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹ -->
+        <!-- الأداء الأكاديمي -->
         <div class="stat-card" style="border-top:4px solid var(--primary);">
-            <div class="stat-icon">ًں“ٹ</div>
+            <div class="stat-icon">📊</div>
             <div class="stat-value" style="color:var(--primary);">
                 <?= $academicData && $academicData['avg_percentage'] !== null ? number_format($academicData['avg_percentage'], 1) . '%' : '-' ?>
             </div>
-            <div class="stat-label">ط§ظ„ط£ط¯ط§ط، ط§ظ„ط£ظƒط§ط¯ظٹظ…ظٹ</div>
+            <div class="stat-label">الأداء الأكاديمي</div>
             <div style="margin-top:8px;">
                 <?php if ($academicData && $academicData['avg_percentage'] !== null):
                     $avg = $academicData['avg_percentage'];
@@ -589,13 +595,13 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
             </div>
         </div>
 
-        <!-- ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ -->
+        <!-- درجة السلوك -->
         <div class="stat-card" style="border-top:4px solid var(--secondary);">
-            <div class="stat-icon">ًں“‹</div>
+            <div class="stat-icon">📋</div>
             <div class="stat-value" style="color:var(--secondary);">
                 <?= $behaviorScore !== null ? number_format($behaviorScore, 1) . '%' : '-' ?>
             </div>
-            <div class="stat-label">ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ</div>
+            <div class="stat-label">درجة السلوك</div>
             <div style="margin-top:8px;">
                 <?php if ($behaviorScore !== null):
                     $barColor = $behaviorScore >= 70 ? 'var(--success)' : ($behaviorScore >= 50 ? 'var(--warning)' : 'var(--danger)');
@@ -607,13 +613,13 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
             </div>
         </div>
 
-        <!-- ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط± -->
+        <!-- نسبة الحضور -->
         <div class="stat-card" style="border-top:4px solid var(--info);">
-            <div class="stat-icon">ًں“…</div>
+            <div class="stat-icon">📅</div>
             <div class="stat-value" style="color:var(--info);">
                 <?= $attendanceRate !== null ? number_format($attendanceRate, 1) . '%' : '-' ?>
             </div>
-            <div class="stat-label">ظ†ط³ط¨ط© ط§ظ„ط­ط¶ظˆط±</div>
+            <div class="stat-label">نسبة الحضور</div>
             <div style="margin-top:8px;">
                 <?php if ($attendanceRate !== null):
                     $barColor = $attendanceRate >= 85 ? 'var(--success)' : ($attendanceRate >= 70 ? 'var(--warning)' : 'var(--danger)');
@@ -625,23 +631,23 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
             </div>
         </div>
 
-        <!-- ط­ط§ظ„ط© ط§ظ„طھط±ظپظٹط¹ -->
+        <!-- حالة الترفيع -->
         <div class="stat-card" style="border-top:4px solid <?= $promotionStatus ? ($promotionStatus['decision'] === 'promoted' ? 'var(--success)' : ($promotionStatus['decision'] === 'repeated' ? 'var(--danger)' : 'var(--warning)')) : 'var(--border)' ?>;">
-            <div class="stat-icon">ًںژ“</div>
+            <div class="stat-icon">🎓</div>
             <div class="stat-value" style="font-size:18px;">
                 <?php
                 if ($promotionStatus) {
-                    $decisionLabels = ['promoted' => 'ظ…ط±ظپط¹', 'repeated' => 'ظ…ط¹ظٹط¯', 'conditional' => 'ظ…ط´ط±ظˆط·', 'under_review' => 'ظ‚ظٹط¯ ط§ظ„ظ…ط±ط§ط¬ط¹ط©'];
+                    $decisionLabels = ['promoted' => 'مرفع', 'repeated' => 'معيد', 'conditional' => 'مشروط', 'under_review' => 'قيد المراجعة'];
                     echo e($decisionLabels[$promotionStatus['decision']] ?? $promotionStatus['decision']);
                 } else {
                     echo '-';
                 }
                 ?>
             </div>
-            <div class="stat-label">ط­ط§ظ„ط© ط§ظ„طھط±ظپظٹط¹</div>
+            <div class="stat-label">حالة الترفيع</div>
             <div style="margin-top:8px;">
                 <?php if ($promotionStatus):
-                    $statusLabel = $promotionStatus['status'] === 'approved' ? 'ظ…ط¹طھظ…ط¯ âœ…' : ($promotionStatus['status'] === 'rejected' ? 'ظ…ط±ظپظˆط¶ â‌Œ' : 'ظ…ظ‚طھط±ط­ âڈ³');
+                    $statusLabel = $promotionStatus['status'] === 'approved' ? 'معتمد ✅' : ($promotionStatus['status'] === 'rejected' ? 'مرفوض ❌' : 'مقترح ⏳');
                 ?>
                 <span style="font-size:11px;color:var(--text-muted);"><?= $statusLabel ?></span>
                 <?php endif; ?>
@@ -649,59 +655,59 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
         </div>
     </div>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط©
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         الإقرارات المعلقة
+         ═══════════════════════════════════════════ -->
     <?php if (!empty($pendingAcknowledgments)): ?>
     <div class="card mb-6" style="border-right:4px solid var(--warning);">
         <div class="card-header">
-            <h3 class="card-title">ًں“‌ ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ ط§ظ„ظ…ط¹ظ„ظ‚ط© <span style="background:var(--warning);color:var(--text-primary);padding:1px 8px;border-radius:var(--radius-full);font-size:11px;"><?= count($pendingAcknowledgments) ?></span></h3>
+            <h3 class="card-title">📝 الإقرارات المعلقة <span style="background:var(--warning);color:var(--text-primary);padding:1px 8px;border-radius:var(--radius-full);font-size:11px;"><?= count($pendingAcknowledgments) ?></span></h3>
         </div>
         <div class="card-body">
             <?php foreach ($pendingAcknowledgments as $ack): ?>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
                 <div>
-                    <strong>ط¥ظ‚ط±ط§ط± ظ‚ط±ط§ط± طھط±ظپظٹط¹</strong><br>
-                    <span style="font-size:12px;color:var(--text-muted);">طھط§ط±ظٹط® ط§ظ„ط¥ط±ط³ط§ظ„: <?= formatDateAr($ack['created_at'], 'medium') ?></span>
+                    <strong>إقرار قرار ترفيع</strong><br>
+                    <span style="font-size:12px;color:var(--text-muted);">تاريخ الإرسال: <?= formatDateAr($ack['created_at'], 'medium') ?></span>
                 </div>
-                <a href="../parent_ack/acknowledge.php?id=<?= $ack['id'] ?>" class="btn btn-primary btn-sm">ط¹ط±ط¶ ظˆط§ظ„ط¥ظ‚ط±ط§ط±</a>
+                <a href="../parent_ack/acknowledge.php?id=<?= $ack['id'] ?>" class="btn btn-primary btn-sm">عرض والإقرار</a>
             </div>
             <?php endforeach; ?>
         </div>
     </div>
     <?php endif; ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ + ظ…ط¤ط´ط± ط§ظ„ط³ظ„ظˆظƒ
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         اتجاه الدرجات + مؤشر السلوك
+         ═══════════════════════════════════════════ -->
     <div class="grid grid-2" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
-        <!-- ط±ط³ظ… ط¨ظٹط§ظ†ظٹ ظ„ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ -->
+        <!-- رسم بياني لاتجاه الدرجات -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“ˆ ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ</h3>
+                <h3 class="card-title">📈 اتجاه الدرجات</h3>
             </div>
             <div class="card-body" style="height:300px;">
                 <?php if (!empty($gradesTrend['labels'])): ?>
                 <canvas id="gradesTrendChart"></canvas>
                 <?php else: ?>
                 <div style="text-align:center;padding:40px;color:var(--text-muted);">
-                    <div style="font-size:40px;margin-bottom:8px;">ًں“ˆ</div>
-                    <p>ظ„ط§ طھظˆط¬ط¯ ط¯ط±ط¬ط§طھ ظ…ط³ط¬ظ„ط© ط¨ط¹ط¯</p>
+                    <div style="font-size:40px;margin-bottom:8px;">📈</div>
+                    <p>لا توجد درجات مسجلة بعد</p>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
 
-        <!-- ظ…ط¤ط´ط± ط¯ط±ط¬ط© ط§ظ„ط³ظ„ظˆظƒ ط§ظ„ط¨طµط±ظٹ -->
+        <!-- مؤشر درجة السلوك البصري -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“‹ ظ…ط¤ط´ط± ط§ظ„ط³ظ„ظˆظƒ</h3>
+                <h3 class="card-title">📋 مؤشر السلوك</h3>
             </div>
             <div class="card-body" style="text-align:center;">
                 <?php if ($behaviorScore !== null):
                     $behColor = $behaviorScore >= 80 ? 'var(--success)' : ($behaviorScore >= 60 ? 'var(--warning)' : 'var(--danger)');
-                    $behLabel = $behaviorScore >= 80 ? 'ظ…ظ…طھط§ط²' : ($behaviorScore >= 60 ? 'ظ…ظ‚ط¨ظˆظ„' : 'ظٹط­طھط§ط¬ طھط­ط³ظٹظ†');
-                    $behIcon = $behaviorScore >= 80 ? 'ًںکٹ' : ($behaviorScore >= 60 ? 'ًںکگ' : 'ًںکں');
+                    $behLabel = $behaviorScore >= 80 ? 'ممتاز' : ($behaviorScore >= 60 ? 'مقبول' : 'يحتاج تحسين');
+                    $behIcon = $behaviorScore >= 80 ? '😊' : ($behaviorScore >= 60 ? '😐' : '😟');
                 ?>
                 <div style="margin-bottom:16px;">
                     <div class="behavior-ring" style="border-color:<?= $behColor ?>;color:<?= $behColor ?>;">
@@ -715,27 +721,27 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
                         <div style="width:<?= min(100, $behaviorScore) ?>%;height:100%;background:<?= $behColor ?>;border-radius:var(--radius-full);transition:width 1s;"></div>
                     </div>
                     <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-top:4px;">
-                        <span>ط¶ط¹ظٹظپ</span><span>ظ…ظ‚ط¨ظˆظ„</span><span>ظ…ظ…طھط§ط²</span>
+                        <span>ضعيف</span><span>مقبول</span><span>ممتاز</span>
                     </div>
                 </div>
                 <?php else: ?>
                 <div style="padding:30px;color:var(--text-muted);">
-                    <div style="font-size:40px;margin-bottom:8px;">ًں“‹</div>
-                    <p>ظ„ظ… ظٹطھظ… طھظ‚ظٹظٹظ… ط§ظ„ط³ظ„ظˆظƒ ط¨ط¹ط¯</p>
+                    <div style="font-size:40px;margin-bottom:8px;">📋</div>
+                    <p>لم يتم تقييم السلوك بعد</p>
                 </div>
                 <?php endif; ?>
             </div>
         </div>
     </div>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         طھظ‚ظˆظٹظ… ط§ظ„ط­ط¶ظˆط± + ط§ظ„ط§ط®طھط¨ط§ط±ط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط©
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         تقويم الحضور + الاختبارات القادمة
+         ═══════════════════════════════════════════ -->
     <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(380px,1fr));">
-        <!-- طھظ‚ظˆظٹظ… ط§ظ„ط­ط¶ظˆط± ط§ظ„ط´ظ‡ط±ظٹ -->
+        <!-- تقويم الحضور الشهري -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“… طھظ‚ظˆظٹظ… ط§ظ„ط­ط¶ظˆط± - <?= formatDateAr(date('Y-m-d'), 'month') ?></h3>
+                <h3 class="card-title">📅 تقويم الحضور - <?= formatDateAr(date('Y-m-d'), 'month') ?></h3>
             </div>
             <div class="card-body">
                 <?php
@@ -743,8 +749,8 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
                 $currentYear = date('Y');
                 $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $currentMonth, $currentYear);
                 $firstDayOfWeek = (date('w', mktime(0,0,0,$currentMonth,1,$currentYear)) + 6) % 7; // Monday=0
-                $dayNames = ['ط£ط­ط¯', 'ط¥ط«ظ†', 'ط«ظ„ط§', 'ط£ط±ط¨', 'ط®ظ…ظٹ', 'ط¬ظ…ط¹', 'ط³ط¨طھ'];
-                $statusLabels = ['present' => 'ط­ط§ط¶ط±', 'absent' => 'ط؛ط§ط¦ط¨', 'late' => 'ظ…طھط£ط®ط±', 'excused' => 'ط¨ط¹ط°ط±'];
+                $dayNames = ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'];
+                $statusLabels = ['present' => 'حاضر', 'absent' => 'غائب', 'late' => 'متأخر', 'excused' => 'بعذر'];
                 $statusColors = ['present' => 'present', 'absent' => 'absent', 'late' => 'late', 'excused' => 'excused'];
                 ?>
                 <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;margin-bottom:8px;">
@@ -767,26 +773,26 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
                     </div>
                     <?php endfor; ?>
                 </div>
-                <!-- ط¯ظ„ظٹظ„ ط§ظ„ط£ظ„ظˆط§ظ† -->
+                <!-- دليل الألوان -->
                 <div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:11px;">
-                    <span><span class="cal-day present" style="width:16px;height:16px;font-size:9px;">âœ“</span> ط­ط§ط¶ط±</span>
-                    <span><span class="cal-day absent" style="width:16px;height:16px;font-size:9px;">âœ—</span> ط؛ط§ط¦ط¨</span>
-                    <span><span class="cal-day late" style="width:16px;height:16px;font-size:9px;">âڈ°</span> ظ…طھط£ط®ط±</span>
-                    <span><span class="cal-day excused" style="width:16px;height:16px;font-size:9px;">!</span> ط¨ط¹ط°ط±</span>
+                    <span><span class="cal-day present" style="width:16px;height:16px;font-size:9px;">✓</span> حاضر</span>
+                    <span><span class="cal-day absent" style="width:16px;height:16px;font-size:9px;">✗</span> غائب</span>
+                    <span><span class="cal-day late" style="width:16px;height:16px;font-size:9px;">⏰</span> متأخر</span>
+                    <span><span class="cal-day excused" style="width:16px;height:16px;font-size:9px;">!</span> بعذر</span>
                 </div>
             </div>
         </div>
 
-        <!-- ط§ظ„ط§ط®طھط¨ط§ط±ط§طھ ظˆط§ظ„ظپط¹ط§ظ„ظٹط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط© -->
+        <!-- الاختبارات والفعاليات القادمة -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">ًں“‹ ط§ظ„ط§ط®طھط¨ط§ط±ط§طھ ط§ظ„ظ‚ط§ط¯ظ…ط©</h3>
+                <h3 class="card-title">📋 الاختبارات القادمة</h3>
             </div>
             <div class="card-body" style="padding:0;">
                 <?php if (empty($upcomingEvents)): ?>
                 <div style="text-align:center;padding:30px;color:var(--text-muted);">
-                    <div style="font-size:40px;margin-bottom:8px;">ًں“‹</div>
-                    <p>ظ„ط§ طھظˆط¬ط¯ ط§ط®طھط¨ط§ط±ط§طھ ظ‚ط§ط¯ظ…ط©</p>
+                    <div style="font-size:40px;margin-bottom:8px;">📋</div>
+                    <p>لا توجد اختبارات قادمة</p>
                 </div>
                 <?php else: ?>
                 <div style="max-height:320px;overflow-y:auto;">
@@ -798,12 +804,12 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
                         <div style="display:flex;justify-content:space-between;align-items:center;">
                             <div>
                                 <div style="font-size:13px;font-weight:600;"><?= e($evt['title_ar']) ?></div>
-                                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><?= e($evt['subject_name']) ?> | ط§ظ„ط¯ط±ط¬ط© ط§ظ„ظ‚طµظˆظ‰: <?= $evt['max_grade'] ?></div>
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;"><?= e($evt['subject_name']) ?> | الدرجة القصوى: <?= $evt['max_grade'] ?></div>
                             </div>
                             <div style="text-align:left;">
                                 <div style="font-size:12px;color:<?= $urgencyColor ?>;font-weight:600;"><?= formatDateAr($evt['test_date'], 'short') ?></div>
                                 <?php if ($daysLeft <= 7): ?>
-                                <div style="font-size:10px;color:var(--text-muted);">ط¨ط¹ط¯ <?= $daysLeft ?> ظٹظˆظ…</div>
+                                <div style="font-size:10px;color:var(--text-muted);">بعد <?= $daysLeft ?> يوم</div>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -815,10 +821,10 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
         </div>
     </div>
 
-    <!-- ط±ط³ظ… ط¨ظٹط§ظ†ظٹ ظ„ظ„ط­ط¶ظˆط± -->
+    <!-- رسم بياني للحضور -->
     <?php if (!empty($children)): ?>
     <?php
-    // ط¬ظ…ط¹ ط¨ظٹط§ظ†ط§طھ ط§ظ„ط£ط¨ظ†ط§ط، ظ„ظ„ط±ط³ظ… ط§ظ„ط¨ظٹط§ظ†ظٹ
+    // جمع بيانات الأبناء للرسم البياني
     $childChartData = [];
     foreach ($children as $child) {
         $cId = $child['id'];
@@ -830,13 +836,13 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
             if ($r && $r['avg_pct'] !== null) $cAcademic = round($r['avg_pct'], 1);
         } catch (Exception $e) {}
         try {
-            $stmt = $db->prepare("SELECT current_percentage as behavior_pct FROM evaluations WHERE eval_type = 'behavior_score' AND student_id = ? AND is_active = 1 ORDER BY id DESC LIMIT 1");
+            $stmt = $db->prepare("SELECT current_percentage as behavior_pct FROM behavior_scores WHERE student_id = ? AND is_active = 1 ORDER BY id DESC LIMIT 1");
             $stmt->execute([$cId]);
             $r = $stmt->fetch();
             if ($r) $cBehavior = round($r['behavior_pct'], 1);
         } catch (Exception $e) {}
         try {
-            $stmt = $db->prepare("SELECT attendance_rate FROM v_attendance_summary WHERE student_id = ? ORDER BY student_id DESC LIMIT 1");
+            $stmt = $db->prepare("SELECT attendance_rate FROM v_attendance_summary WHERE student_id = ? AND is_active = 1 ORDER BY academic_year_id DESC, semester_id DESC LIMIT 1");
             $stmt->execute([$cId]);
             $r = $stmt->fetch();
             if ($r && $r['attendance_rate'] !== null) $cAttendance = round($r['attendance_rate'], 1);
@@ -851,7 +857,7 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     ?>
     <div class="card mt-6">
         <div class="card-header">
-            <h3 class="card-title">ًں“ٹ ظ†ط¸ط±ط© ط¹ط§ظ…ط© ط¹ظ„ظ‰ ط§ظ„ط£ط¨ظ†ط§ط،</h3>
+            <h3 class="card-title">📊 نظرة عامة على الأبناء</h3>
         </div>
         <div class="card-body" style="height:300px;">
             <canvas id="parentOverviewChart"></canvas>
@@ -859,7 +865,7 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     </div>
 
     <script>
-    // ظ†ط¸ط±ط© ط¹ط§ظ…ط© ط¹ظ„ظ‰ ط§ظ„ط£ط¨ظ†ط§ط،
+    // نظرة عامة على الأبناء
     var childLabels = [];
     var childAcademic = [];
     var childBehavior = [];
@@ -874,21 +880,21 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     eqasBarChart('parentOverviewChart', '',
         childLabels,
         [
-            {label: 'ط£ظƒط§ط¯ظٹظ…ظٹ', data: childAcademic, backgroundColor: '#1a5632'},
-            {label: 'ط³ظ„ظˆظƒ', data: childBehavior, backgroundColor: '#c8a951'},
-            {label: 'ط­ط¶ظˆط±', data: childAttendance, backgroundColor: '#17a2b8'}
+            {label: 'أكاديمي', data: childAcademic, backgroundColor: '#1a5632'},
+            {label: 'سلوك', data: childBehavior, backgroundColor: '#c8a951'},
+            {label: 'حضور', data: childAttendance, backgroundColor: '#17a2b8'}
         ]
     );
     </script>
     <?php endif; ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ظ…ظ‚ط§ط±ظ†ط© ط¨ظٹظ† ط§ظ„ط£ط¨ظ†ط§ط، (طھظپطµظٹظ„ظٹط©)
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         مقارنة بين الأبناء (تفصيلية)
+         ═══════════════════════════════════════════ -->
     <?php if (count($children) > 1 && !empty($childComparison)): ?>
     <div class="card mt-6">
         <div class="card-header">
-            <h3 class="card-title">ًں“ٹ ظ…ظ‚ط§ط±ظ†ط© ط¨ظٹظ† ط§ظ„ط£ط¨ظ†ط§ط،</h3>
+            <h3 class="card-title">📊 مقارنة بين الأبناء</h3>
         </div>
         <div class="card-body" style="height:300px;">
             <canvas id="childComparisonChart"></canvas>
@@ -910,23 +916,23 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     eqasBarChart('childComparisonChart', '',
         compLabels,
         [
-            {label: 'ط£ظƒط§ط¯ظٹظ…ظٹ', data: compAcademic, backgroundColor: '#1a5632'},
-            {label: 'ط³ظ„ظˆظƒ', data: compBehavior, backgroundColor: '#c8a951'},
-            {label: 'ط­ط¶ظˆط±', data: compAttendance, backgroundColor: '#17a2b8'}
+            {label: 'أكاديمي', data: compAcademic, backgroundColor: '#1a5632'},
+            {label: 'سلوك', data: compBehavior, backgroundColor: '#c8a951'},
+            {label: 'حضور', data: compAttendance, backgroundColor: '#17a2b8'}
         ]
     );
     </script>
     <?php endif; ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط±ط³ظ… ط¨ظٹط§ظ†ظٹ ظ„ط§طھط¬ط§ظ‡ ط§ظ„ط¯ط±ط¬ط§طھ
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         رسم بياني لاتجاه الدرجات
+         ═══════════════════════════════════════════ -->
     <?php if (!empty($gradesTrend['labels'])): ?>
     <script>
     eqasLineChart('gradesTrendChart', '',
         <?= json_encode($gradesTrend['labels'], JSON_UNESCAPED_UNICODE) ?>,
         [{
-            label: 'ط§ظ„ط¯ط±ط¬ط©',
+            label: 'الدرجة',
             data: <?= json_encode($gradesTrend['values']) ?>,
             borderColor: '#1a5632',
             fill: true,
@@ -938,19 +944,19 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     </script>
     <?php endif; ?>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ ط§ظ„ط£ط®ظٹط±ط© ظˆط§ظ„ط±ظˆط§ط¨ط· ط§ظ„ط³ط±ظٹط¹ط©
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         الإشعارات الأخيرة والروابط السريعة
+         ═══════════════════════════════════════════ -->
     <div class="grid grid-2 mt-6" style="grid-template-columns:repeat(auto-fill,minmax(350px,1fr));">
-        <!-- ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ ط§ظ„ط£ط®ظٹط±ط© -->
+        <!-- الإشعارات الأخيرة -->
         <div class="card">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
-                <h3 class="card-title">ًں“¨ ط¢ط®ط± ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ</h3>
-                <a href="../notifications/index.php" class="btn btn-sm btn-light">ط¹ط±ط¶ ط§ظ„ظƒظ„</a>
+                <h3 class="card-title">📨 آخر الإشعارات</h3>
+                <a href="../notifications/index.php" class="btn btn-sm btn-light">عرض الكل</a>
             </div>
             <div class="card-body" style="padding:0;">
                 <?php if (empty($recentNotifications)): ?>
-                <div style="text-align:center;padding:30px;color:var(--text-muted);">ظ„ط§ طھظˆط¬ط¯ ط¥ط´ط¹ط§ط±ط§طھ</div>
+                <div style="text-align:center;padding:30px;color:var(--text-muted);">لا توجد إشعارات</div>
                 <?php else: ?>
                 <div style="max-height:300px;overflow-y:auto;">
                     <?php foreach ($recentNotifications as $notif): ?>
@@ -968,50 +974,50 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
             </div>
         </div>
 
-        <!-- ط§ظ„ط±ظˆط§ط¨ط· ط§ظ„ط³ط±ظٹط¹ط© -->
+        <!-- الروابط السريعة -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">âڑ، ط±ظˆط§ط¨ط· ط³ط±ظٹط¹ط©</h3>
+                <h3 class="card-title">⚡ روابط سريعة</h3>
             </div>
             <div class="card-body">
                 <div class="grid grid-2" style="gap:12px;">
                     <a href="../grade_sheets/parent_view.php?student_id=<?= $selectedStudentId ?>" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">ًں“ٹ</div>
-                        <div style="font-size:13px;">ط¹ط±ط¶ ط§ظ„ط¯ط±ط¬ط§طھ</div>
+                        <div style="font-size:24px;margin-bottom:4px;">📊</div>
+                        <div style="font-size:13px;">عرض الدرجات</div>
                     </a>
                     <a href="../parent_ack/index.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">âœ…</div>
-                        <div style="font-size:13px;">ط§ظ„ط¥ظ‚ط±ط§ط±ط§طھ</div>
+                        <div style="font-size:24px;margin-bottom:4px;">✅</div>
+                        <div style="font-size:13px;">الإقرارات</div>
                     </a>
-                    <a href="../attendance/summary.php?student_id=<?= $selectedStudentId ?>" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">ًں“…</div>
-                        <div style="font-size:13px;">ط³ط¬ظ„ ط§ظ„ط­ط¶ظˆط±</div>
+                    <a href="../grade_sheets/parent_view.php?student_id=<?= $selectedStudentId ?>&section=attendance" class="btn btn-light" style="text-align:center;padding:16px;">
+                        <div style="font-size:24px;margin-bottom:4px;">📅</div>
+                        <div style="font-size:13px;">سجل الحضور</div>
                     </a>
-                    <a href="../behavior/scores.php?student_id=<?= $selectedStudentId ?>" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">ًں“‹</div>
-                        <div style="font-size:13px;">طھظ‚ظٹظٹظ… ط§ظ„ط³ظ„ظˆظƒ</div>
+                    <a href="../grade_sheets/parent_view.php?student_id=<?= $selectedStudentId ?>&section=behavior" class="btn btn-light" style="text-align:center;padding:16px;">
+                        <div style="font-size:24px;margin-bottom:4px;">📋</div>
+                        <div style="font-size:13px;">تقييم السلوك</div>
                     </a>
                     <a href="../notifications/preferences.php" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">ًں””</div>
-                        <div style="font-size:13px;">طھظپط¶ظٹظ„ط§طھ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ</div>
+                        <div style="font-size:24px;margin-bottom:4px;">🔔</div>
+                        <div style="font-size:13px;">تفضيلات الإشعارات</div>
                     </a>
-                    <a href="../skills/view.php?student_id=<?= $selectedStudentId ?>" class="btn btn-light" style="text-align:center;padding:16px;">
-                        <div style="font-size:24px;margin-bottom:4px;">ًںژ¯</div>
-                        <div style="font-size:13px;">طھظ‚ظٹظٹظ… ط§ظ„ظ…ظ‡ط§ط±ط§طھ</div>
+                    <a href="../grade_sheets/parent_view.php?student_id=<?= $selectedStudentId ?>&section=skills" class="btn btn-light" style="text-align:center;padding:16px;">
+                        <div style="font-size:24px;margin-bottom:4px;">🎯</div>
+                        <div style="font-size:13px;">تقييم المهارات</div>
                     </a>
                 </div>
 
-                <!-- ظ…ط¹ظ„ظˆظ…ط§طھ ط§ظ„ط·ط§ظ„ط¨ -->
+                <!-- معلومات الطالب -->
                 <div style="margin-top:16px;padding:12px;background:var(--background);border-radius:var(--radius-md);">
-                    <h4 style="font-size:14px;margin-bottom:8px;">ًں‘¤ ظ…ط¹ظ„ظˆظ…ط§طھ ط§ظ„ط·ط§ظ„ط¨</h4>
+                    <h4 style="font-size:14px;margin-bottom:8px;">👤 معلومات الطالب</h4>
                     <div style="font-size:13px;color:var(--text-secondary);line-height:1.8;">
-                        <div><strong>ط§ظ„ط§ط³ظ…:</strong> <?= e($currentChild['full_name_ar']) ?></div>
-                        <div><strong>ط§ظ„ط±ظ‚ظ…:</strong> <?= e($currentChild['student_number']) ?></div>
-                        <div><strong>ط§ظ„طµظپ:</strong> <?= e($currentChild['grade_name']) ?></div>
-                        <div><strong>ط§ظ„ظ…ط¯ط±ط³ط©:</strong> <?= e($currentChild['school_name']) ?></div>
-                        <div><strong>طµظ„ط© ط§ظ„ظ‚ط±ط§ط¨ط©:</strong>
+                        <div><strong>الاسم:</strong> <?= e($currentChild['full_name_ar']) ?></div>
+                        <div><strong>الرقم:</strong> <?= e($currentChild['student_number']) ?></div>
+                        <div><strong>الصف:</strong> <?= e($currentChild['grade_name']) ?></div>
+                        <div><strong>المدرسة:</strong> <?= e($currentChild['school_name']) ?></div>
+                        <div><strong>صلة القرابة:</strong>
                             <?php
-                            $relLabels = ['father' => 'ط£ط¨', 'mother' => 'ط£ظ…', 'guardian' => 'ظˆطµظٹ', 'other' => 'ط£ط®ط±ظ‰'];
+                            $relLabels = ['father' => 'أب', 'mother' => 'أم', 'guardian' => 'وصي', 'other' => 'أخرى'];
                             echo e($relLabels[$currentChild['relationship']] ?? $currentChild['relationship']);
                             ?>
                         </div>
@@ -1021,13 +1027,13 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
         </div>
     </div>
 
-    <!-- â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ
-         ط¥ط¹ظ„ط§ظ†ط§طھ ط§ظ„ظ…ط¯ط±ط³ط©
-         â•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گâ•گ -->
+    <!-- ═══════════════════════════════════════════
+         إعلانات المدرسة
+         ═══════════════════════════════════════════ -->
     <?php if (!empty($schoolAnnouncements)): ?>
     <div class="card mt-6">
         <div class="card-header">
-            <h3 class="card-title">ًں“¢ ط¥ط¹ظ„ط§ظ†ط§طھ ط§ظ„ظ…ط¯ط±ط³ط©</h3>
+            <h3 class="card-title">📢 إعلانات المدرسة</h3>
         </div>
         <div class="card-body" style="padding:0;">
             <?php foreach ($schoolAnnouncements as $ann): ?>
@@ -1048,8 +1054,8 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
     <?php else: ?>
     <div class="card">
         <div class="card-body" style="text-align:center;padding:40px;">
-            <div style="font-size:48px;margin-bottom:16px;">ًں‘¤</div>
-            <p>ظٹط±ط¬ظ‰ ط§ط®طھظٹط§ط± ط·ط§ظ„ط¨ ظ…ظ† ط§ظ„ظ‚ط§ط¦ظ…ط© ط£ط¹ظ„ط§ظ‡</p>
+            <div style="font-size:48px;margin-bottom:16px;">👤</div>
+            <p>يرجى اختيار طالب من القائمة أعلاه</p>
         </div>
     </div>
     <?php endif; ?>
@@ -1058,9 +1064,9 @@ $severityLabels = ['critical' => 'ط­ط±ط¬', 'danger' => 'ط®ط·ط±', 'wa
 </div>
 
 <?php
-// طھط­ط¯ظٹط« طھظ„ظ‚ط§ط¦ظٹ ظƒظ„ 60 ط«ط§ظ†ظٹط©
+// تحديث تلقائي كل 60 ثانية
 $pageJs = "
-// طھط­ط¯ظٹط« طھظ„ظ‚ط§ط¦ظٹ ظ„ظ„طھظ†ط¨ظٹظ‡ط§طھ
+// تحديث تلقائي للتنبيهات
 setInterval(function() {
     var studentId = '{$selectedStudentId}';
     if (!studentId) return;
@@ -1074,10 +1080,10 @@ setInterval(function() {
                 if (data.success && data.alerts_html) {
                     document.getElementById('alerts-container').innerHTML = data.alerts_html;
                 }
-                // طھط­ط¯ظٹط« ط¹ط¯ط§ط¯ ط؛ظٹط± ط§ظ„ظ…ظ‚ط±ظˆط،
+                // تحديث عداد غير المقروء
                 if (data.unread_count !== undefined) {
                     var badges = document.querySelectorAll('.header-action-badge');
-                    // طھط­ط¯ظٹط« ط§ظ„ط´ط§ط±ط© ظپظٹ ط§ظ„ط±ط£ط³ظٹط©
+                    // تحديث الشارة في الرأسية
                 }
             } catch(e) {}
         }

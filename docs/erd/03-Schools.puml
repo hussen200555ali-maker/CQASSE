@@ -1,0 +1,30 @@
+@startuml 03-Schools
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "schools" as schools {
+  id : int(10)
+  name_ar : varchar(200)
+  name_en : varchar(200)
+  reference_code : varchar(5)
+  address : text
+  governorate : varchar(100)
+  district : varchar(100)
+  school_type : enum('basic','secondary','combined')
+  principal_name : varchar(200)
+  phone : varchar(20)
+}
+
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+schools ||--o{ schools
+@enduml

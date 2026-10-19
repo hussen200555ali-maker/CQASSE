@@ -8,6 +8,8 @@
  * المستوى 2: نسخة قبل العمليات الحساسة
  * المستوى 3: تصدير يدوي (المستخدم يختار الجداول)
  * ============================================================
+ * Note: Uses activity_logs table with action='backup'
+ * ============================================================
  */
 
 class BackupManager {
@@ -28,51 +30,70 @@ class BackupManager {
         $this->db = $db;
         $this->backupDir = defined('EQAS_BACKUPS') ? EQAS_BACKUPS : __DIR__ . '/../backups';
 
-        // التأكد من وجود المجلد
         if (!is_dir($this->backupDir)) {
             mkdir($this->backupDir, 0755, true);
         }
     }
 
     /**
+     * تحويل صف من activity_logs إلى تنسيق backup_logs
+     */
+    private function normalizeBackupRow($row) {
+        if (!$row) return null;
+        $details = [];
+        if (!empty($row['details_json'])) {
+            $d = json_decode($row['details_json'], true);
+            if (is_array($d)) $details = $d;
+        }
+        $row['backup_type'] = $row['entity_type'] ?? '';
+        $row['school_id'] = $details['school_id'] ?? null;
+        $row['file_path'] = $details['file_path'] ?? $row['description'] ?? '';
+        $row['file_size'] = $details['file_size'] ?? 0;
+        $row['tables_count'] = $details['tables_count'] ?? 0;
+        $row['rows_count'] = $details['rows_count'] ?? 0;
+        $row['error_message'] = $details['error_message'] ?? null;
+        $row['created_by'] = $row['user_id'];
+        return $row;
+    }
+
+    /**
      * المستوى 1: إنشاء نسخة احتياطية كاملة
-     * تُنفذ يومياً عند تسجيل دخول المدير
-     * @param int $createdBy رقم المستخدم المنشئ
-     * @param int|null $schoolId رقم المدرسة (اختياري)
-     * @return array معلومات النسخة الاحتياطية
      */
     public function createFullBackup($createdBy, $schoolId = null) {
         $timestamp = date('Ymd_His');
         $fileName = "full_{$timestamp}.sql.gz";
         $filePath = $this->backupDir . '/' . $fileName;
 
-        // التحقق من عدم وجود نسخة كاملة اليوم
         $today = date('Y-m-d');
-        $stmt = $this->db->prepare("SELECT id FROM backup_logs WHERE backup_type = 'full' AND DATE(created_at) = ? AND status = 'completed'");
+        $stmt = $this->db->prepare("SELECT id FROM activity_logs WHERE action = 'backup' AND entity_type = 'full' AND DATE(created_at) = ? AND status = 'completed' AND is_active = 1");
         $stmt->execute([$today]);
         if ($stmt->fetch()) {
             return ['success' => false, 'message' => 'تم إنشاء نسخة احتياطية كاملة اليوم بالفعل'];
         }
 
-        // الحصول على جميع الجداول
         $tables = $this->getAllTables();
         $schoolIdVal = $schoolId ?? $_SESSION['user']['school_id'] ?? null;
 
-        // تسجيل بداية النسخ الاحتياطي
-        $stmt = $this->db->prepare("INSERT INTO backup_logs (school_id, backup_type, file_path, file_size, tables_count, rows_count, status, created_by, created_at) VALUES (?, 'full', ?, 0, ?, 0, 'pending', ?, NOW())");
-        $stmt->execute([$schoolIdVal, $filePath, count($tables), $createdBy]);
+        $detailsJson = json_encode([
+            'school_id' => $schoolIdVal,
+            'file_path' => $filePath,
+            'file_size' => 0,
+            'tables_count' => count($tables),
+            'rows_count' => 0
+        ], JSON_UNESCAPED_UNICODE);
+
+        $stmt = $this->db->prepare("INSERT INTO activity_logs (user_id, action, entity_type, description, details_json, status, is_active, created_at) VALUES (?, 'backup', 'full', ?, ?, 'pending', 1, NOW())");
+        $stmt->execute([$createdBy, $filePath, $detailsJson]);
         $backupId = $this->db->lastInsertId();
 
         try {
-            // إنشاء النسخة
             $sqlDump = $this->generateSQLDump($tables);
             $gzipResult = $this->writeGzipFile($filePath, $sqlDump);
 
             $fileSize = filesize($filePath);
             $rowsCount = $this->countRowsInDump($sqlDump);
 
-            // تحديث السجل
-            $stmt = $this->db->prepare("UPDATE backup_logs SET file_size = ?, rows_count = ?, status = 'completed' WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'completed', details_json = JSON_SET(details_json, '$.file_size', ?, '$.rows_count', ?) WHERE id = ?");
             $stmt->execute([$fileSize, $rowsCount, $backupId]);
 
             return [
@@ -85,8 +106,7 @@ class BackupManager {
                 'rows_count' => $rowsCount
             ];
         } catch (Exception $e) {
-            // تحديث السجل بالفشل
-            $stmt = $this->db->prepare("UPDATE backup_logs SET status = 'failed', error_message = ? WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'failed', details_json = JSON_SET(COALESCE(details_json, '{}'), '$.error_message', ?) WHERE id = ?");
             $stmt->execute([$e->getMessage(), $backupId]);
 
             return ['success' => false, 'message' => 'فشل إنشاء النسخة الاحتياطية: ' . $e->getMessage()];
@@ -95,11 +115,6 @@ class BackupManager {
 
     /**
      * المستوى 2: إنشاء نسخة احتياطية قبل عملية حساسة
-     * @param string $operation اسم العملية
-     * @param int $createdBy رقم المستخدم
-     * @param array $tables الجداول المتأثرة
-     * @param int|null $schoolId رقم المدرسة
-     * @return array معلومات النسخة
      */
     public function createPreOperationBackup($operation, $createdBy, $tables = [], $schoolId = null) {
         $timestamp = date('Ymd_His');
@@ -107,16 +122,23 @@ class BackupManager {
         $fileName = "preop_{$timestamp}_{$safeOpName}.sql.gz";
         $filePath = $this->backupDir . '/' . $fileName;
 
-        // إذا لم تحدد الجداول، استخدم الجداول المتأثرة حسب العملية
         if (empty($tables)) {
             $tables = $this->getOperationTables($operation);
         }
 
         $schoolIdVal = $schoolId ?? $_SESSION['user']['school_id'] ?? null;
 
-        // تسجيل بداية النسخ
-        $stmt = $this->db->prepare("INSERT INTO backup_logs (school_id, backup_type, file_path, file_size, tables_count, rows_count, status, created_by, created_at) VALUES (?, 'pre_operation', ?, 0, ?, 0, 'pending', ?, NOW())");
-        $stmt->execute([$schoolIdVal, $filePath, count($tables), $createdBy]);
+        $detailsJson = json_encode([
+            'school_id' => $schoolIdVal,
+            'file_path' => $filePath,
+            'file_size' => 0,
+            'tables_count' => count($tables),
+            'rows_count' => 0,
+            'operation' => $operation
+        ], JSON_UNESCAPED_UNICODE);
+
+        $stmt = $this->db->prepare("INSERT INTO activity_logs (user_id, action, entity_type, description, details_json, status, is_active, created_at) VALUES (?, 'backup', 'pre_operation', ?, ?, 'pending', 1, NOW())");
+        $stmt->execute([$createdBy, $filePath, $detailsJson]);
         $backupId = $this->db->lastInsertId();
 
         try {
@@ -126,7 +148,7 @@ class BackupManager {
             $fileSize = filesize($filePath);
             $rowsCount = $this->countRowsInDump($sqlDump);
 
-            $stmt = $this->db->prepare("UPDATE backup_logs SET file_size = ?, rows_count = ?, status = 'completed' WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'completed', details_json = JSON_SET(details_json, '$.file_size', ?, '$.rows_count', ?) WHERE id = ?");
             $stmt->execute([$fileSize, $rowsCount, $backupId]);
 
             return [
@@ -139,7 +161,7 @@ class BackupManager {
                 'rows_count' => $rowsCount
             ];
         } catch (Exception $e) {
-            $stmt = $this->db->prepare("UPDATE backup_logs SET status = 'failed', error_message = ? WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'failed', details_json = JSON_SET(COALESCE(details_json, '{}'), '$.error_message', ?) WHERE id = ?");
             $stmt->execute([$e->getMessage(), $backupId]);
 
             return ['success' => false, 'message' => 'فشل إنشاء النسخة الاحتياطية: ' . $e->getMessage()];
@@ -148,17 +170,12 @@ class BackupManager {
 
     /**
      * المستوى 3: إنشاء نسخة احتياطية يدوية
-     * @param array $tables الجداول المحددة من المستخدم
-     * @param int $createdBy رقم المستخدم
-     * @param int|null $schoolId رقم المدرسة
-     * @return array معلومات النسخة
      */
     public function createManualBackup($tables, $createdBy, $schoolId = null) {
         $timestamp = date('Ymd_His');
         $fileName = "manual_{$timestamp}.sql.gz";
         $filePath = $this->backupDir . '/' . $fileName;
 
-        // التحقق من الجداول
         $availableTables = $this->getAllTables();
         $tables = array_intersect($tables, $availableTables);
 
@@ -168,9 +185,16 @@ class BackupManager {
 
         $schoolIdVal = $schoolId ?? $_SESSION['user']['school_id'] ?? null;
 
-        // تسجيل بداية النسخ
-        $stmt = $this->db->prepare("INSERT INTO backup_logs (school_id, backup_type, file_path, file_size, tables_count, rows_count, status, created_by, created_at) VALUES (?, 'manual', ?, 0, ?, 0, 'pending', ?, NOW())");
-        $stmt->execute([$schoolIdVal, $filePath, count($tables), $createdBy]);
+        $detailsJson = json_encode([
+            'school_id' => $schoolIdVal,
+            'file_path' => $filePath,
+            'file_size' => 0,
+            'tables_count' => count($tables),
+            'rows_count' => 0
+        ], JSON_UNESCAPED_UNICODE);
+
+        $stmt = $this->db->prepare("INSERT INTO activity_logs (user_id, action, entity_type, description, details_json, status, is_active, created_at) VALUES (?, 'backup', 'manual', ?, ?, 'pending', 1, NOW())");
+        $stmt->execute([$createdBy, $filePath, $detailsJson]);
         $backupId = $this->db->lastInsertId();
 
         try {
@@ -180,7 +204,7 @@ class BackupManager {
             $fileSize = filesize($filePath);
             $rowsCount = $this->countRowsInDump($sqlDump);
 
-            $stmt = $this->db->prepare("UPDATE backup_logs SET file_size = ?, rows_count = ?, status = 'completed' WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'completed', details_json = JSON_SET(details_json, '$.file_size', ?, '$.rows_count', ?) WHERE id = ?");
             $stmt->execute([$fileSize, $rowsCount, $backupId]);
 
             return [
@@ -193,7 +217,7 @@ class BackupManager {
                 'rows_count' => $rowsCount
             ];
         } catch (Exception $e) {
-            $stmt = $this->db->prepare("UPDATE backup_logs SET status = 'failed', error_message = ? WHERE id = ?");
+            $stmt = $this->db->prepare("UPDATE activity_logs SET status = 'failed', details_json = JSON_SET(COALESCE(details_json, '{}'), '$.error_message', ?) WHERE id = ?");
             $stmt->execute([$e->getMessage(), $backupId]);
 
             return ['success' => false, 'message' => 'فشل إنشاء النسخة الاحتياطية: ' . $e->getMessage()];
@@ -202,33 +226,24 @@ class BackupManager {
 
     /**
      * استعادة من نسخة احتياطية
-     * @param string $filePath مسار ملف النسخة
-     * @param int $restoredBy رقم المستخدم
-     * @return array نتيجة الاستعادة
      */
     public function restoreBackup($filePath, $restoredBy) {
-        // التحقق من وجود الملف
         if (!file_exists($filePath)) {
             return ['success' => false, 'message' => 'ملف النسخة الاحتياطية غير موجود'];
         }
 
-        // تحذير للنسخ الكبيرة
         $fileSizeMB = filesize($filePath) / (1024 * 1024);
         if ($fileSizeMB > $this->largeBackupThreshold) {
-            // تم التحقق مسبقاً من تأكيد المستخدم
         }
 
-        // إنشاء نسخة احتياطية قبل الاستعادة
         $preRestoreResult = $this->createPreOperationBackup('restore', $restoredBy);
         if (!$preRestoreResult['success']) {
             return ['success' => false, 'message' => 'فشل إنشاء نسخة احتياطية قبل الاستعادة: ' . $preRestoreResult['message']];
         }
 
         try {
-            // تنفيذ ملف SQL
             $result = $this->executeSQLFile($filePath);
 
-            // تسجيل النشاط
             if (function_exists('logActivity')) {
                 logActivity($this->db, $restoredBy, 'backup_restore', 'استعادة من نسخة احتياطية: ' . basename($filePath), 'backup', null);
             }
@@ -247,82 +262,83 @@ class BackupManager {
 
     /**
      * قائمة النسخ الاحتياطية
-     * @param array $filters عوامل التصفية
-     * @return array قائمة النسخ
      */
     public function listBackups($filters = []) {
-        $sql = "SELECT bl.*, u.full_name_ar as creator_name
-                FROM backup_logs bl
-                LEFT JOIN users u ON bl.created_by = u.id
-                WHERE bl.is_active = 1";
+        $sql = "SELECT al.*, u.full_name_ar as creator_name
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE al.action = 'backup' AND al.is_active = 1";
 
         $params = [];
 
-        // تصفية حسب النوع
         if (!empty($filters['backup_type'])) {
-            $sql .= " AND bl.backup_type = ?";
+            $sql .= " AND al.entity_type = ?";
             $params[] = $filters['backup_type'];
         }
 
-        // تصفية حسب الحالة
         if (!empty($filters['status'])) {
-            $sql .= " AND bl.is_active = ?";
-            $params[] = $filters['status'] == 'active' ? 1 : 0;
+            $sql .= " AND al.status = ?";
+            $params[] = $filters['status'];
         }
 
-        // تصفية حسب التاريخ
         if (!empty($filters['date_from'])) {
-            $sql .= " AND bl.created_at >= ?";
+            $sql .= " AND al.created_at >= ?";
             $params[] = $filters['date_from'] . ' 00:00:00';
         }
         if (!empty($filters['date_to'])) {
-            $sql .= " AND bl.created_at <= ?";
+            $sql .= " AND al.created_at <= ?";
             $params[] = $filters['date_to'] . ' 23:59:59';
         }
 
-        $sql .= " ORDER BY bl.created_at DESC";
+        $sql .= " ORDER BY al.created_at DESC";
 
-        // حد النتائج
         if (!empty($filters['limit'])) {
             $sql .= " LIMIT " . (int)$filters['limit'];
         }
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+
+        return array_map([$this, 'normalizeBackupRow'], $rows);
     }
 
     /**
      * حذف نسخة احتياطية
-     * @param int $backupId رقم النسخة
-     * @return array نتيجة الحذف
      */
     public function deleteBackup($backupId) {
-        // الحصول على معلومات النسخة
-        $stmt = $this->db->prepare("SELECT * FROM backup_logs WHERE id = ? AND is_active = 1");
+        $stmt = $this->db->prepare("SELECT * FROM activity_logs WHERE id = ? AND action = 'backup' AND is_active = 1");
         $stmt->execute([$backupId]);
-        $backup = $stmt->fetch();
+        $backup = $this->normalizeBackupRow($stmt->fetch());
 
         if (!$backup) {
             return ['success' => false, 'message' => 'النسخة الاحتياطية غير موجودة'];
         }
 
-        // حذف الملف
         if (file_exists($backup['file_path'])) {
             @unlink($backup['file_path']);
         }
 
-        // حذف السجل (حذف ناعم)
-        $stmt = $this->db->prepare("UPDATE backup_logs SET is_active = 0 WHERE id = ?");
+        $stmt = $this->db->prepare("UPDATE activity_logs SET is_active = 0 WHERE id = ?");
         $stmt->execute([$backupId]);
 
         return ['success' => true, 'message' => 'تم حذف النسخة الاحتياطية بنجاح'];
     }
 
     /**
+     * الحصول على نسخة احتياطية واحدة (للاستخدام من الصفحات)
+     */
+    public function getBackupById($backupId) {
+        $stmt = $this->db->prepare("SELECT al.*, u.full_name_ar as creator_name
+                                    FROM activity_logs al
+                                    LEFT JOIN users u ON al.user_id = u.id
+                                    WHERE al.id = ? AND al.action = 'backup' AND al.is_active = 1");
+        $stmt->execute([$backupId]);
+        return $this->normalizeBackupRow($stmt->fetch());
+    }
+
+    /**
      * الحصول على معلومات النسخة الاحتياطية
-     * @param string $filePath مسار الملف
-     * @return array معلومات النسخة
      */
     public function getBackupInfo($filePath) {
         if (!file_exists($filePath)) {
@@ -337,23 +353,20 @@ class BackupManager {
             'created_at' => date('Y-m-d H:i:s', filemtime($filePath))
         ];
 
-        // محاولة قراءة معلومات من الملف المضغوط
         try {
             $gz = gzopen($filePath, 'r');
             if ($gz) {
                 $content = '';
-                $maxRead = 1024 * 1024; // قراءة أول 1MB فقط
+                $maxRead = 1024 * 1024;
                 while (!gzeof($gz) && strlen($content) < $maxRead) {
                     $content .= gzread($gz, 8192);
                 }
                 gzclose($gz);
 
-                // عد الجداول
                 preg_match_all('/CREATE TABLE.*?`(\w+)`/si', $content, $tableMatches);
                 $info['tables'] = $tableMatches[1] ?? [];
                 $info['tables_count'] = count($info['tables']);
 
-                // عد الصفوف تقريبياً
                 preg_match_all('/^INSERT INTO/sim', $content, $insertMatches);
                 $info['estimated_rows'] = count($insertMatches[0] ?? []);
             }
@@ -366,25 +379,20 @@ class BackupManager {
 
     /**
      * تنظيف النسخ القديمة تلقائياً
-     * @param int $daysToKeep عدد أيام الاحتفاظ
-     * @return int عدد النسخ المحذوفة
      */
     public function cleanupOldBackups($daysToKeep = 30) {
         $cutoffDate = date('Y-m-d H:i:s', time() - ($daysToKeep * 86400));
 
-        // الحصول على النسخ القديمة (لا تحذف آخر نسخة كاملة)
-        $stmt = $this->db->prepare("SELECT * FROM backup_logs WHERE created_at < ? AND is_active = 1 ORDER BY created_at ASC");
+        $stmt = $this->db->prepare("SELECT * FROM activity_logs WHERE action = 'backup' AND created_at < ? AND is_active = 1 ORDER BY created_at ASC");
         $stmt->execute([$cutoffDate]);
-        $oldBackups = $stmt->fetchAll();
+        $oldBackups = array_map([$this, 'normalizeBackupRow'], $stmt->fetchAll());
 
         $deleted = 0;
         $lastFullBackup = null;
 
-        // الاحتفاظ بآخر نسخة كاملة (الأحدث - لأن الترتيب ASC)
         foreach ($oldBackups as $backup) {
             if ($backup['backup_type'] === 'full' && $backup['status'] === 'completed') {
                 if ($lastFullBackup !== null) {
-                    // حذف النسخة الكاملة السابقة (الأقدم) والاحتفاظ بالأحدث
                     $this->deleteBackup($lastFullBackup);
                     $deleted++;
                 }
@@ -400,7 +408,6 @@ class BackupManager {
 
     /**
      * الحصول على جميع الجداول
-     * @return array أسماء الجداول
      */
     private function getAllTables() {
         $stmt = $this->db->query("SHOW TABLES");
@@ -413,17 +420,15 @@ class BackupManager {
 
     /**
      * الحصول على الجداول المتأثرة بعملية معينة
-     * @param string $operation اسم العملية
-     * @return array أسماء الجداول
      */
     private function getOperationTables($operation) {
         $operationTables = [
-            'promotion' => ['promotion_decisions', 'students', 'student_enrollments', 'grades', 'behavior_scores', 'attendance_summaries'],
+            'promotion' => ['promotions', 'students', 'student_enrollments', 'grades', 'behavior_scores', 'v_attendance_summary'],
             'restore' => $this->getAllTables(),
-            'semester_close' => ['semesters', 'grades', 'assessment_responses', 'behavior_scores', 'attendance', 'attendance_summaries'],
+            'semester_close' => ['semesters', 'grades', 'assessment_responses', 'behavior_scores', 'attendance', 'v_attendance_summary'],
             'eqi_calculate' => ['equi_results', 'eqi_dimension_weights'],
             'bulk_grades' => ['grades'],
-            'bulk_attendance' => ['attendance', 'attendance_summaries'],
+            'bulk_attendance' => ['attendance', 'v_attendance_summary'],
             'settings_change' => ['system_settings', 'school_settings'],
             'user_management' => ['users', 'roles', 'role_permissions', 'permissions'],
         ];
@@ -433,8 +438,6 @@ class BackupManager {
 
     /**
      * توليد ملف SQL كامل
-     * @param array $tables الجداول المطلوبة
-     * @return string محتوى SQL
      */
     private function generateSQLDump($tables) {
         $sql = "-- ============================================================\n";
@@ -452,7 +455,6 @@ class BackupManager {
         foreach ($tables as $table) {
             $table = trim($table, '`');
 
-            // CREATE TABLE
             $sql .= "-- -----------------------------------------------------------\n";
             $sql .= "-- جدول: `{$table}`\n";
             $sql .= "-- -----------------------------------------------------------\n";
@@ -469,7 +471,6 @@ class BackupManager {
                 continue;
             }
 
-            // INSERT statements
             try {
                 $stmt = $this->db->query("SELECT * FROM `{$table}`");
                 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -493,7 +494,6 @@ class BackupManager {
                         $valuesList[] = '(' . implode(', ', $values) . ')';
                     }
 
-                    // تقسيم لإدراجات صغيرة (100 صف لكل INSERT)
                     $chunks = array_chunk($valuesList, 100);
                     foreach ($chunks as $i => $chunk) {
                         $sql .= implode(",\n", $chunk);
@@ -518,9 +518,6 @@ class BackupManager {
 
     /**
      * كتابة ملف gzip
-     * @param string $filePath مسار الملف
-     * @param string $content المحتوى
-     * @return bool نجاح الكتابة
      */
     private function writeGzipFile($filePath, $content) {
         $gz = gzopen($filePath, 'w9');
@@ -528,7 +525,6 @@ class BackupManager {
             throw new Exception('فشل فتح ملف gzip للكتابة');
         }
 
-        // كتابة المحتوى على أجزاء
         $offset = 0;
         $chunkSize = 8192;
         $length = strlen($content);
@@ -545,11 +541,8 @@ class BackupManager {
 
     /**
      * تنفيذ ملف SQL من نسخة احتياطية
-     * @param string $filePath مسار ملف النسخة
-     * @return array نتيجة التنفيذ
      */
     private function executeSQLFile($filePath) {
-        // قراءة المحتوى المضغوط
         $gz = gzopen($filePath, 'r');
         if (!$gz) {
             throw new Exception('فشل فتح ملف النسخة الاحتياطية');
@@ -561,7 +554,6 @@ class BackupManager {
         }
         gzclose($gz);
 
-        // تقسيم الاستعلامات
         $queries = $this->splitSQL($content);
 
         $executed = 0;
@@ -584,7 +576,6 @@ class BackupManager {
                     'query' => mb_substr($query, 0, 200),
                     'error' => $e->getMessage()
                 ];
-                // لا نتوقف عند الأخطاء، نستمر
             }
         }
 
@@ -598,14 +589,10 @@ class BackupManager {
 
     /**
      * تقسيم نص SQL إلى استعلامات منفصلة
-     * @param string $sql نص SQL
-     * @return array الاستعلامات
      */
     private function splitSQL($sql) {
-        // إزالة التعليقات متعددة الأسطر
         $sql = preg_replace('/\/\*.*?\*\//s', '', $sql);
 
-        // تقسيم بفواصل المنقوطة (مع تجاهل تلك داخل النصوص)
         $queries = [];
         $current = '';
         $inString = false;
@@ -643,8 +630,6 @@ class BackupManager {
 
     /**
      * عد الصفوف في ملف SQL
-     * @param string $sqlDump محتوى SQL
-     * @return int عدد الصفوف
      */
     private function countRowsInDump($sqlDump) {
         preg_match_all('/^INSERT INTO/sim', $sqlDump, $matches);
@@ -653,7 +638,6 @@ class BackupManager {
 
     /**
      * الحصول على إحصائيات النسخ الاحتياطي
-     * @return array الإحصائيات
      */
     public function getBackupStats() {
         $stats = [
@@ -666,29 +650,25 @@ class BackupManager {
             'last_backup_date' => null
         ];
 
-        // إجمالي النسخ
-        $stmt = $this->db->query("SELECT COUNT(*) as total, COALESCE(SUM(file_size), 0) as total_size FROM backup_logs WHERE is_active = 1 AND status = 'completed'");
+        $stmt = $this->db->query("SELECT COUNT(*) as total, COALESCE(CAST(JSON_EXTRACT(details_json, '$.file_size') AS UNSIGNED), 0) as total_size FROM activity_logs WHERE action = 'backup' AND is_active = 1 AND status = 'completed'");
         $row = $stmt->fetch();
         $stats['total_backups'] = $row['total'];
         $stats['total_size'] = $row['total_size'];
 
-        // عدد حسب النوع
-        $stmt = $this->db->query("SELECT backup_type, COUNT(*) as cnt FROM backup_logs WHERE is_active = 1 AND status = 'completed' GROUP BY backup_type");
+        $stmt = $this->db->query("SELECT entity_type, COUNT(*) as cnt FROM activity_logs WHERE action = 'backup' AND is_active = 1 AND status = 'completed' GROUP BY entity_type");
         while ($row = $stmt->fetch()) {
-            switch ($row['backup_type']) {
+            switch ($row['entity_type']) {
                 case 'full': $stats['full_count'] = $row['cnt']; break;
                 case 'pre_operation': $stats['preop_count'] = $row['cnt']; break;
                 case 'manual': $stats['manual_count'] = $row['cnt']; break;
             }
         }
 
-        // آخر نسخة كاملة
-        $stmt = $this->db->query("SELECT created_at FROM backup_logs WHERE backup_type = 'full' AND is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
+        $stmt = $this->db->query("SELECT created_at FROM activity_logs WHERE action = 'backup' AND entity_type = 'full' AND is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
         $row = $stmt->fetch();
         $stats['last_full_date'] = $row ? $row['created_at'] : null;
 
-        // آخر نسخة
-        $stmt = $this->db->query("SELECT created_at FROM backup_logs WHERE is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
+        $stmt = $this->db->query("SELECT created_at FROM activity_logs WHERE action = 'backup' AND is_active = 1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1");
         $row = $stmt->fetch();
         $stats['last_backup_date'] = $row ? $row['created_at'] : null;
 
@@ -697,7 +677,6 @@ class BackupManager {
 
     /**
      * الحصول على قائمة الجداول مع عدد الصفوف
-     * @return array معلومات الجداول
      */
     public function getTablesWithRowCounts() {
         $tables = $this->getAllTables();

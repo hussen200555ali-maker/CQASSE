@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt Chart</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #fff; padding: 24px 16px; }
+h1 { font-size: 20px; color: #1a2744; text-align: center; margin-bottom: 4px; }
+.sub { text-align: center; color: #6b7280; font-size: 12px; margin-bottom: 14px; }
+.legend { display: flex; justify-content: center; gap: 20px; margin-bottom: 14px; font-size: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+.wrap { width: 1700px; margin: 0 auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #1a2744; color: #fff; padding: 8px 4px; font-weight: 700; text-align: center; font-size: 11px; border: 1px solid #1a2744; }
+th:first-child { text-align: right; padding-right: 12px; width: 310px; min-width: 310px; font-size: 12px; }
+th.sub { background: #f1f5f9; color: #334155; font-size: 10px; padding: 5px 3px; font-weight: 700; }
+td { padding: 3px 4px; border: 1px solid #d1d5db; height: 34px; vertical-align: middle; }
+td:first-child { font-weight: 700; color: #0f172a; padding-right: 12px; white-space: nowrap; font-size: 12.5px; }
+.bar { height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 10px; font-weight: 800; padding: 0 6px; }
+.p1 { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+.p2 { background: linear-gradient(135deg, #059669, #10b981); }
+.p3 { background: linear-gradient(135deg, #d97706, #f59e0b); }
+.gap { background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 4px, #e5e7eb 4px, #e5e7eb 8px); color: #6b7280; font-size: 9px; font-weight: 600; }
+.doc { background: linear-gradient(135deg, #7c3aed, #a78bfa); font-size: 10px; font-weight: 700; }
+.row-gap td { background: #fafbfc; }
+.row-doc td { background: #f5f3ff; }
+.row-doc td:first-child { color: #7c3aed; font-weight: 800; }
+.row-gap td:first-child { color: #9ca3af; font-style: italic; font-weight: 400; }
+.sep td { background: #f1f5f9; border-top: 2px solid #cbd5e1; height: 4px; padding: 0; }
+.sep td:first-child { background: #f1f5f9; }
+</style>
+</head>
+<body>
+<h1>مخطط جانت — الخطة الزمنية للمشروع</h1>
+<p class="sub">28 يونيو 2025م — 5 مايو 2026م (44 أسبوعًا / 311 يومًا)</p>
+<div class="legend">
+<span><i style="background:#2563eb;"></i> الفصل الأول — التخطيط والتصميم</span>
+<span><i style="background:#059669;"></i> الفصل الثاني — التنفيذ والاختبار</span>
+<span><i style="background:#d97706;"></i> فترة التسليم النهائي</span>
+<span><i style="background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 3px,#e5e7eb 3px,#e5e7eb 6px); border:1px solid #9ca3af;"></i> فجوة بين الفصلين</span>
+<span><i style="background:linear-gradient(135deg,#7c3aed,#a78bfa);"></i> التوثيق المستمر (طوال المشروع)</span>
+</div>
+<div class="wrap">
+<table>
+<thead>
+<tr><th rowspan="2">المرحلة</th><th colspan="4">يوليو 2025</th><th colspan="2">أغسطس</th><th colspan="2">سبتمبر</th><th colspan="2">أكتوبر</th><th colspan="2">نوفمبر</th><th colspan="2">ديسمبر</th><th colspan="2">يناير 2026</th><th colspan="2">فبراير</th><th colspan="2">مارس</th><th colspan="2">أبريل</th><th>مايو</th></tr>
+<tr>
+<th class="sub">28/6<br>— 4/7</th><th class="sub">5/7<br>— 11/7</th><th class="sub">12/7<br>— 18/7</th><th class="sub">19/7<br>— 25/7</th>
+<th class="sub">26/7<br>— 8/8</th><th class="sub">9/8<br>— 22/8</th>
+<th class="sub">23/8<br>— 5/9</th><th class="sub">6/9<br>— 19/9</th>
+<th class="sub">20/9<br>— 3/10</th><th class="sub">4/10<br>— 16/10</th>
+<th class="sub">17/10<br>— 14/11</th><th class="sub">15/11<br>— 28/11</th>
+<th class="sub">29/11<br>— 12/12</th><th class="sub">13/12<br>— 26/12</th>
+<th class="sub">27/12<br>— 9/1</th><th class="sub">10/1<br>— 23/1</th>
+<th class="sub">24/1<br>— 6/2</th><th class="sub">7/2<br>— 20/2</th>
+<th class="sub">21/2<br>— 5/3</th><th class="sub">6/3<br>— 20/3</th>
+<th class="sub">21/3<br>— 10/4</th><th class="sub">11/4<br>— 30/4</th>
+<th class="sub">1/5<br>— 5/5</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>S1-P1: الدراسة النظرية وجمع المتطلبات</td><td><div class="bar p1"></div></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P2: تحليل الدراسات السابقة والفجوة</td><td></td><td></td><td><div class="bar p1"></div></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P3: تحليل النظام ووثيقة SRS</td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P4: تصميم قاعدة البيانات والمعمارية</td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P5: تصميم واجهات المستخدم</td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P6: وثيقة تصميم النظام</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P7: مراجعة والمصادقة على التصميم</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S1-P8: التوثيق وعرض الفصل الأول</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p1"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="sep"><td colspan="24"></td></tr>
+<tr class="row-gap"><td>فجوة بين الفصلين</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar gap"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr class="sep"><td colspan="24"></td></tr>
+<tr><td>S2-P1: التأسيس — قاعدة البيانات والمصادقة</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P2: إدارة المستخدمين وبيانات المدرسة</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P3: وحدات الحضور والسلوك</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P4: نماذج التقييم الديناميكية</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P5: محرك حساب الدرجات</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P6: جودة التدريس والمناخ المدرسي</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P7: التقارير ولوحات المعلومات</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td><td></td></tr>
+<tr><td>S2-P8: الاختبار والنشر الأولي</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p2"></div></td><td></td><td></td><td></td><td></td></tr>
+<tr class="sep"><td colspan="24"></td></tr>
+<tr><td>F-P1: الاختبار النهائي وتحسين النظام</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p3"></div></td><td></td><td></td><td></td></tr>
+<tr><td>F-P2: إعداد التوثيق النهائي ودليل المستخدم</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p3"></div></td><td></td><td></td></tr>
+<tr><td>F-P3: المراجعة النهائية وتحضير العرض</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td><div class="bar p3"></div></td><td><div class="bar p3"></div></td></tr>
+<tr class="row-doc"><td>التوثيق المستمر (طوال المشروع)</td><td colspan="23"><div class="bar doc">التوثيق المستمر</div></td></tr>
+</tbody>
+</table>
+</div>
+</body>
+</html>

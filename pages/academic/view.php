@@ -41,26 +41,46 @@ $stmt = $db->prepare("SELECT s.*, u.full_name_ar AS locked_by_name FROM semester
 $stmt->execute([$yearId]);
 $semesters = $stmt->fetchAll();
 
-// إحصائيات
+// إحصائيات — فلترة حسب المدرسة لغير group_admin
+$userRole = $_SESSION['user']['role'] ?? '';
+$userSchoolId = $_SESSION['user']['school_id'] ?? null;
 $studentCount = 0;
 $classCount = 0;
 $assessmentCount = 0;
 
 try {
-    $stmt = $db->prepare("SELECT COUNT(DISTINCT se.student_id) FROM student_enrollments se JOIN classes c ON se.class_id = c.id WHERE c.academic_year_id = ? AND se.is_active = 1");
-    $stmt->execute([$yearId]);
+    $sql = "SELECT COUNT(DISTINCT se.student_id) FROM student_enrollments se JOIN classes c ON se.class_id = c.id WHERE c.academic_year_id = ? AND se.is_active = 1";
+    $params = [$yearId];
+    if ($userSchoolId && $userRole !== 'group_admin') {
+        $sql .= " AND c.school_id = ?";
+        $params[] = $userSchoolId;
+    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $studentCount = $stmt->fetchColumn();
 } catch (Exception $e) {}
 
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM classes WHERE academic_year_id = ? AND is_active = 1");
-    $stmt->execute([$yearId]);
+    $sql = "SELECT COUNT(*) FROM classes WHERE academic_year_id = ? AND is_active = 1";
+    $params = [$yearId];
+    if ($userSchoolId && $userRole !== 'group_admin') {
+        $sql .= " AND school_id = ?";
+        $params[] = $userSchoolId;
+    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $classCount = $stmt->fetchColumn();
 } catch (Exception $e) {}
 
 try {
-    $stmt = $db->prepare("SELECT COUNT(*) FROM assessment_responses WHERE academic_year_id = ? AND is_active = 1");
-    $stmt->execute([$yearId]);
+    $sql = "SELECT COUNT(*) FROM assessment_responses WHERE academic_year_id = ? AND is_active = 1";
+    $params = [$yearId];
+    if ($userSchoolId && $userRole !== 'group_admin') {
+        $sql .= " AND school_id = ?";
+        $params[] = $userSchoolId;
+    }
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
     $assessmentCount = $stmt->fetchColumn();
 } catch (Exception $e) {}
 

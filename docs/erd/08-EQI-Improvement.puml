@@ -1,0 +1,44 @@
+@startuml 08-EQI-Improvement
+skinparam linetype ortho
+skinparam rectangle {+ backgroundColor White }
+
+entity "eqi_results" as eqi_results {
+  id : int(10)
+  * school_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  academic_score : decimal(5,2)
+  teaching_score : decimal(5,2)
+  climate_score : decimal(5,2)
+  behavior_score : decimal(5,2)
+  skills_score : decimal(5,2)
+  attendance_score : decimal(5,2)
+}
+
+entity "improvement_plans" as improvement_plans {
+  id : int(10)
+  plan_type : enum('student','school','teacher')
+  * student_id : int(10)
+  * school_id : int(10)
+  * teacher_id : int(10)
+  trigger_type : enum('climate','facility','both','low_score','behavior')
+  weaknesses : text
+  goals : text
+  strategies : text
+  timeline : varchar(200)
+}
+
+entity "school_improvement_plans" as school_improvement_plans {
+  id : int(10)
+  * school_id : int(10)
+  * academic_year_id : int(10)
+  * semester_id : int(10)
+  trigger_type : enum('climate','facility','both')
+  weaknesses : text
+  goals : text
+  strategies : text
+  timeline : varchar(200)
+  * responsible_user_id : int(10)
+}
+
+@enduml

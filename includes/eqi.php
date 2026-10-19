@@ -712,8 +712,8 @@ class EQICalculator {
         try {
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM subject_teachers st
                 JOIN classes c ON c.id = st.classroom_id
-                WHERE c.school_id = ? AND c.academic_year_id = ? AND st.semester_id = ?");
-            $stmt->execute([$schoolId, $yearId, $semesterId]);
+                WHERE c.school_id = ? AND c.academic_year_id = ?");
+            $stmt->execute([$schoolId, $yearId]);
             $count = (int)$stmt->fetchColumn();
             $available = $count > 0;
             $checks['teaching'] = [

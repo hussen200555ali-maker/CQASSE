@@ -1698,7 +1698,7 @@ h6 { font-size: clamp(0.8125rem, 0.75rem + 0.125vw, 1rem); }
     .sidebar-logo .logo-icon {
         width: 40px;
         height: 40px;
-        font-size: 20px;
+        background: #1a5632;
     }
 
     /* Sidebar menu links: larger touch targets */

@@ -3,10 +3,6 @@
  * تعديل تقييم المهارات
  * ملاحظة: جدول skills_evaluations تم أرشفته في الترحيل v3.3.0
  */
-require_once __DIR__ . '/../../includes/header.php';
-setFlash('وحدة تعديل المهارات قيد التحديث.', 'warning');
-redirect(baseUrl('pages/assessment/index.php'));
-
 $pageTitle = 'تعديل تقييم المهارات';
 $breadcrumb = ['التقييمات' => '../assessment/index.php', 'قائمة المهارات' => 'index.php', 'تعديل التقييم' => null];
 
@@ -22,6 +18,7 @@ $engine = new AssessmentEngine($db);
 
 $userId = $_SESSION['user']['id'];
 $userRole = $_SESSION['user']['role'];
+$schoolId = $_SESSION['user']['school_id'] ?? null;
 
 $evalId = (int)($_GET['id'] ?? 0);
 if (!$evalId) {
@@ -33,18 +30,18 @@ if (!$evalId) {
 $evaluation = null;
 try {
     $stmt = $db->prepare("
-        SELECT se.*, s.full_name_ar as student_name, s.student_number,
+        SELECT e.*, s.full_name_ar as student_name, s.student_number,
                c.name_ar as class_name, gl.name_ar as grade_name,
                u.full_name_ar as evaluator_name,
                sem.name_ar as semester_name, ay.name as year_name
-        FROM skills_evaluations se
-        JOIN students s ON se.student_id = s.id
-        JOIN classes c ON se.class_id = c.id
+        FROM evaluations e
+        JOIN students s ON e.student_id = s.id
+        JOIN classes c ON e.class_id = c.id
         JOIN grade_levels gl ON c.grade_level_id = gl.id
-        JOIN users u ON se.evaluator_id = u.id
-        JOIN semesters sem ON se.semester_id = sem.id
-        JOIN academic_years ay ON se.academic_year_id = ay.id
-        WHERE se.id = ? AND se.is_active = 1
+        JOIN users u ON e.evaluated_by = u.id
+        JOIN semesters sem ON e.semester_id = sem.id
+        JOIN academic_years ay ON e.academic_year_id = ay.id
+        WHERE e.id = ? AND e.eval_type = 'skills_checklist' AND e.is_active = 1
     ");
     $stmt->execute([$evalId]);
     $evaluation = $stmt->fetch();
@@ -58,9 +55,24 @@ if (!$evaluation) {
 }
 
 // التحقق من الملكية: فقط المقيّم الأصلي أو المدير يمكنه التعديل
-if ($evaluation['evaluator_id'] != $userId && !hasPermission('group_admin')) {
+if ($evaluation['evaluated_by'] != $userId && !hasPermission('group_admin')) {
     setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
     redirect('view.php?id=' . $evalId);
+}
+
+// التحقق من ملكية المدرسة — لا يمكن تعديل تقييم من مدرسة أخرى
+if ($schoolId && $userRole !== 'group_admin' && $evaluation['school_id'] != $schoolId) {
+    setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
+    redirect('view.php?id=' . $evalId);
+}
+
+// التحقق من وصول المعلم — الفصل ضمن فصوله المسموحة
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!in_array((int)$evaluation['class_id'], $allowedIds)) {
+        setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
+        redirect('view.php?id=' . $evalId);
+    }
 }
 
 // التحقق من قفل الفصل الدراسي
@@ -83,12 +95,12 @@ $skillCategories = [
 $existingItems = [];
 try {
     $stmt = $db->prepare("
-        SELECT si.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
+        SELECT ar.numeric_value as score, ar.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
-        FROM skills_items si
-        JOIN assessment_structure ai ON si.item_id = ai.id
+        FROM assessment_responses ar
+        JOIN assessment_structure ai ON ar.item_id = ai.id
         JOIN assessment_structure ac ON ai.parent_id = ac.id
-        WHERE si.evaluation_id = ? AND si.is_active = 1
+        WHERE ar.evaluation_id = ? AND ar.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$evalId]);
@@ -100,7 +112,7 @@ try {
 // بناء مصفوفة القيم الحالية
 $currentValues = [];
 foreach ($existingItems as $ei) {
-    $currentValues[$ei['item_id']] = $ei['score'];
+    $currentValues[$ei['item_id']] = $ei['numeric_value'] ?? $ei['score'];
 }
 
 // جلب نموذج المهارات
@@ -108,7 +120,7 @@ $skillsForm = null;
 $skillsItems = [];
 $categoryGroups = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'skills_checklist' AND is_active = 1 LIMIT 1");
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'skills_checklist' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -164,30 +176,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // تحديث التقييم الرئيسي
             $stmt = $db->prepare("
-                UPDATE skills_evaluations
-                SET overall_score = ?, notes = ?, updated_at = NOW()
-                WHERE id = ?
+                UPDATE evaluations
+                SET combined_score = ?, current_percentage = ?, notes = ?, updated_at = NOW()
+                WHERE id = ? AND eval_type = 'skills_checklist'
             ");
-            $stmt->execute([$overallScore, $notes ?: null, $evalId]);
+            $stmt->execute([$overallScore, $overallScore, $notes ?: null, $evalId]);
 
             // تحديث عناصر التقييم
-            $stmtCheck = $db->prepare("SELECT id FROM skills_items WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
-            $stmtUpdate = $db->prepare("UPDATE skills_items SET score = ?, notes = ? WHERE evaluation_id = ? AND item_id = ?");
-            $stmtInsert = $db->prepare("INSERT INTO skills_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
+            $stmtCheck = $db->prepare("SELECT id FROM assessment_responses WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
+            $stmtUpdate = $db->prepare("UPDATE assessment_responses SET numeric_value = ?, responded_by = ?, response_date = NOW() WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
+            $stmtInsert = $db->prepare("INSERT INTO assessment_responses (form_id, evaluation_id, item_id, student_id, school_id, class_id, academic_year_id, semester_id, numeric_value, responded_by, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
 
             foreach ($itemScores as $itemId => $scores) {
                 $stmtCheck->execute([$evalId, $itemId]);
                 $existingRow = $stmtCheck->fetch();
 
                 if ($existingRow) {
-                    $stmtUpdate->execute([$scores['normalized'], null, $evalId, $itemId]);
+                    $stmtUpdate->execute([$scores['normalized'], $userId, $evalId, $itemId]);
                 } else {
-                    $stmtInsert->execute([$evalId, $itemId, $scores['normalized'], null]);
+                    $stmtInsert->execute([$formRow['id'], $evalId, $itemId, $evaluation['student_id'], $evaluation['school_id'], $evaluation['class_id'], $evaluation['academic_year_id'], $evaluation['semester_id'], $scores['normalized'], $userId]);
                 }
             }
 
             $db->commit();
-            logActivity($db, $userId, 'edit_skills_evaluation', 'تعديل تقييم مهارات - الدرجة: ' . number_format($overallScore, 1) . '% - الطالب: ' . $evaluation['student_name'], 'skills_evaluation', $evalId);
+            logActivity($db, $userId, 'edit_skills_evaluation', 'تعديل تقييم مهارات - الدرجة: ' . number_format($overallScore, 1) . '% - الطالب: ' . $evaluation['student_name'], 'evaluation', $evalId);
             setFlash('تم تحديث تقييم المهارات بنجاح - الدرجة الكلية: ' . number_format($overallScore, 1) . '%', 'success');
             redirect('view.php?id=' . $evalId);
         } catch (Exception $e) {
@@ -240,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-header">
                 <h3 class="card-title">📋 عناصر تقييم المهارات</h3>
                 <div style="font-size:18px; font-weight:700; color:var(--primary);">
-                    الدرجة الكلية: <span id="live-score"><?= number_format($evaluation['overall_score'] ?? 0, 1) ?></span>%
+                    الدرجة الكلية: <span id="live-score"><?= number_format($evaluation['combined_score'] ?? 0, 1) ?></span>%
                 </div>
             </div>
             <div class="card-body">

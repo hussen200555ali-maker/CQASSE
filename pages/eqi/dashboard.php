@@ -540,7 +540,7 @@ $executiveSummary .= " — " . e($selectedYearName) . " / " . e($selectedSemName
                         <?php foreach ($schoolPerformance as $sp): ?>
                         <?php
                             $rawEqi = (float)($sp['raw_eqi'] ?? 0);
-                            $adjustedData = $contextualService->calculateAdjustedSQIWithDetails((int)$sp['id'], $selectedYear, $rawEqi > 0 ? $rawEqi : null);
+                            $adjustedData = $contextualService->calculateAdjustedSQIWithDetails((int)$sp['id'], $rawEqi > 0 ? $rawEqi : null);
                             $adjustedEqi = $adjustedData ? $adjustedData['adjusted_sqi'] : $rawEqi;
                             $rating = $eqiCalc->getEQIRating($rawEqi);
                             $rowClass = $rating['class'] === 'excellent' ? 'row-excellent' : ($rating['class'] === 'very-good' ? 'row-good' : ($rating['class'] === 'fair' ? 'row-fair' : 'row-poor'));
@@ -680,7 +680,7 @@ $barColors = [];
 
 foreach ($schoolPerformance as $sp) {
     $rawEqi = (float)($sp['raw_eqi'] ?? 0);
-    $adjustedData = $contextualService->calculateAdjustedSQIWithDetails((int)$sp['id'], $selectedYear, $rawEqi > 0 ? $rawEqi : null);
+    $adjustedData = $contextualService->calculateAdjustedSQIWithDetails((int)$sp['id'], $rawEqi > 0 ? $rawEqi : null);
     $adjustedEqi = $adjustedData ? $adjustedData['adjusted_sqi'] : $rawEqi;
     $rating = $eqiCalc->getEQIRating($rawEqi);
 

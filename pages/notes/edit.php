@@ -94,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $noteType = $_POST['note_type'] ?? $note['note_type'];
     $priority = $_POST['priority'] ?? $note['priority'];
     $isPinned = isset($_POST['is_pinned']) ? 1 : 0;
+    $isDraft = isset($_POST['is_draft']) ? 1 : 0;
+    $attachmentId = (int)($_POST['attachment_id'] ?? 0);
 
     // التحقق من المدخلات
     if (empty($title)) $errors['title_ar'] = 'عنوان الملاحظة مطلوب';
@@ -106,10 +108,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             $stmt = $db->prepare("
                 UPDATE student_notes
-                SET title_ar = ?, content_ar = ?, note_type = ?, priority = ?, is_pinned = ?, updated_at = NOW()
+                SET title_ar = ?, content_ar = ?, note_type = ?, priority = ?, is_pinned = ?, is_draft = ?, attachment_id = ?, updated_at = NOW()
                 WHERE id = ?
             ");
-            $stmt->execute([$title, $content, $noteType, $priority, $isPinned, $noteId]);
+            $stmt->execute([$title, $content, $noteType, $priority, $isPinned, $isDraft, $attachmentId ?: null, $noteId]);
 
             logActivity($db, $userId, 'edit_student_note', 'تعديل ملاحظة: ' . $title . ' - الطالب: ' . $note['student_name'], 'student_note', $noteId);
             setFlash('تم تحديث الملاحظة بنجاح', 'success');
@@ -126,7 +128,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $note['note_type'] = $noteType;
     $note['priority'] = $priority;
     $note['is_pinned'] = $isPinned;
+    $note['is_draft'] = $isDraft;
+    $note['attachment_id'] = $attachmentId;
 }
+
+// جلب المرفقات
+$attachments = [];
+$schoolId = $_SESSION['user']['school_id'] ?? 0;
+$stmt = $db->prepare("SELECT id, file_name, file_type FROM attachments WHERE school_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 100");
+$stmt->execute([$schoolId ?: 0]);
+$attachments = $stmt->fetchAll();
 ?>
 
 <div class="card">
@@ -213,6 +224,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-check-label" for="is_pinned">📌 تثبيت الملاحظة</label>
                 </div>
             </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" name="is_draft" id="is_draft" class="form-check-input" value="1"
+                           <?= !empty($note['is_draft']) ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="is_draft">📂 مسودة</label>
+                </div>
+            </div>
+
+            <?php if (!empty($attachments)): ?>
+            <div class="form-group">
+                <label class="form-label">📎 مرفق مرجعي (اختياري)</label>
+                <select name="attachment_id" class="form-control">
+                    <option value="">بدون مرفق</option>
+                    <?php foreach ($attachments as $att): ?>
+                    <option value="<?= e($att['id']) ?>" <?= (($note['attachment_id'] ?? '') == $att['id']) ? 'selected' : '' ?>>
+                        📄 <?= e($att['file_name']) ?> (<?= e($att['file_type']) ?>)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
 
             <div class="divider"></div>
             <div class="flex gap-3">

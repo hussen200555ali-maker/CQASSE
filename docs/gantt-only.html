@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt Chart</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: #fff; padding: 30px 20px; }
+h1 { font-size: 24px; color: #1a2744; text-align: center; margin-bottom: 8px; }
+.subtitle { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+.legend { display: flex; justify-content: center; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #374151; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+.chart-wrap { width: 1100px; height: 680px; position: relative; }
+</style>
+</head>
+<body>
+<h1>مخطط جانت — الخطة الزمنية للمشروع</h1>
+<p class="subtitle">28 يونيو 2025م — 5 مايو 2026م (44 أسبوعًا / 311 يومًا)</p>
+<div class="legend">
+<div class="legend-item"><span class="legend-dot" style="background:#2563eb;"></span> الفصل الأول — التخطيط والتصميم</div>
+<div class="legend-item"><span class="legend-dot" style="background:#059669;"></span> الفصل الثاني — التنفيذ والاختبار</div>
+<div class="legend-item"><span class="legend-dot" style="background:#d97706;"></span> فترة التسليم النهائي</div>
+<div class="legend-item"><span class="legend-dot" style="background:#e5e7eb; border:1px solid #9ca3af;"></span> فجوة بين الفصلين</div>
+</div>
+<div class="chart-wrap"><canvas id="gantt"></canvas></div>
+<script>
+const tasks = [
+  { l:'S1-P1: الدراسة النظرية وجمع المتطلبات', s:'2025-06-28', e:'2025-07-11', g:1 },
+  { l:'S1-P2: تحليل الدراسات السابقة والفجوة', s:'2025-07-12', e:'2025-07-25', g:1 },
+  { l:'S1-P3: تحليل النظام ووثيقة SRS', s:'2025-07-26', e:'2025-08-08', g:1 },
+  { l:'S1-P4: تصميم قاعدة البيانات والمعمارية', s:'2025-08-09', e:'2025-08-22', g:1 },
+  { l:'S1-P5: تصميم واجهات المستخدم', s:'2025-08-23', e:'2025-09-05', g:1 },
+  { l:'S1-P6: وثيقة تصميم النظام', s:'2025-09-06', e:'2025-09-19', g:1 },
+  { l:'S1-P7: مراجعة والمصادقة على التصميم', s:'2025-09-20', e:'2025-10-03', g:1 },
+  { l:'S1-P8: التوثيق وعرض الفصل الأول', s:'2025-10-04', e:'2025-10-16', g:1 },
+  { l:'فجوة بين الفصلين (مراجعة وتحضير)', s:'2025-10-17', e:'2025-11-14', g:0 },
+  { l:'S2-P1: التأسيس — قاعدة البيانات والمصادقة', s:'2025-11-15', e:'2025-11-28', g:2 },
+  { l:'S2-P2: إدارة المستخدمين وبيانات المدرسة', s:'2025-11-29', e:'2025-12-12', g:2 },
+  { l:'S2-P3: وحدات الحضور والسلوك', s:'2025-12-13', e:'2025-12-26', g:2 },
+  { l:'S2-P4: نماذج التقييم الديناميكية', s:'2025-12-27', e:'2026-01-09', g:2 },
+  { l:'S2-P5: محرك حساب الدرجات', s:'2026-01-10', e:'2026-01-23', g:2 },
+  { l:'S2-P6: جودة التدريس والمناخ المدرسي', s:'2026-01-24', e:'2026-02-06', g:2 },
+  { l:'S2-P7: التقارير ولوحات المعلومات', s:'2026-02-07', e:'2026-02-20', g:2 },
+  { l:'S2-P8: الاختبار والنشر الأولي', s:'2026-02-21', e:'2026-03-05', g:2 },
+  { l:'F-P1: الاختبار النهائي وتحسين النظام', s:'2026-03-06', e:'2026-03-20', g:3 },
+  { l:'F-P2: إعداد التوثيق النهائي ودليل المستخدم', s:'2026-03-21', e:'2026-04-10', g:3 },
+  { l:'F-P3: المراجعة النهائية وتحضير العرض', s:'2026-04-11', e:'2026-05-05', g:3 },
+];
+const C = { 0:{bg:'rgba(229,231,235,0.5)',b:'#9ca3af'}, 1:{bg:'rgba(37,99,235,0.8)',b:'#2563eb'}, 2:{bg:'rgba(5,150,105,0.8)',b:'#059669'}, 3:{bg:'rgba(217,119,6,0.8)',b:'#d97706'} };
+const labels = tasks.map(t=>t.l);
+const ds = tasks.map(t=>({ data:[{x:[t.s,t.e],y:t.l}], backgroundColor:C[t.g].bg, borderColor:C[t.g].b, borderWidth:1, borderRadius:4, barThickness:22 }));
+new Chart(document.getElementById('gantt'),{ type:'bar', data:{ labels, datasets:ds }, options:{ indexAxis:'y', responsive:false, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:ctx=>{ const r=ctx.raw; if(r&&r.x){ const d=(a)=>new Date(a).toLocaleDateString('ar-SA'); return d(r.x[0])+' — '+d(r.x[1]); } return ''; }} } }, scales:{ x:{ type:'time', time:{unit:'month',displayFormats:{month:'MMM yyyy'},tooltipFormat:'dd/MM/yyyy'}, min:'2025-06-01', max:'2026-05-15', grid:{color:'rgba(0,0,0,0.06)'}, ticks:{font:{size:11,family:'Cairo'}} }, y:{ grid:{display:false}, ticks:{font:{size:11,family:'Cairo'},color:'#374151'} } } } });
+</script>
+</body>
+</html>

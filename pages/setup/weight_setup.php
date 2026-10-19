@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $totalWeight = array_sum($weights);
 
             if (abs($totalWeight - 100) > 0.01) {
-                setFlash("مجموع الأوزان必须是 100%. المجموع الحالي: {$totalWeight}%", 'danger');
+                setFlash("مجموع الأوزان يجب أن يكون 100%. المجموع الحالي: {$totalWeight}%", 'danger');
             } else {
                 try {
                     $db->beginTransaction();
@@ -70,11 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $templateData = json_encode($weights, JSON_UNESCAPED_UNICODE);
                     $stmt = $db->prepare("
-                        INSERT INTO system_settings (setting_key, setting_value, value_type, is_active, updated_at)
-                        VALUES (?, ?, 'json', 1, NOW())
-                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()
+                        INSERT INTO system_settings (setting_key, setting_value, value_type, is_active)
+                        VALUES (?, ?, 'json', 1)
+                        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
                     ");
-                    $stmt->prepare("INSERT INTO system_settings (setting_key, setting_value, value_type, is_active) VALUES (?, ?, 'json', 1) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
                     $stmt->execute(['weight_template_' . $templateName, $templateData]);
                     setFlash('تم حفظ القالب بنجاح.', 'success');
                 } catch (Exception $e) {
@@ -117,7 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // ═══════════════════════════════════════════
 // جلب البيانات
 // ═══════════════════════════════════════════
-$assessmentTypes = json_decode($db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'assessment_types'")->fetchColumn() ?: '[]', true);
+// جلب أنواع التقييمات (أولوية: system_settings JSON → احتياطي: جدول assessment_types)
+$settingsValue = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'assessment_types'")->fetchColumn();
+$assessmentTypes = json_decode($settingsValue ?: '[]', true);
+if (empty($assessmentTypes) || !is_array($assessmentTypes)) {
+    $stmt = $db->query("SELECT id, name_ar, name_en, code, weight_default, sort_order, is_active FROM assessment_types WHERE is_active = 1 ORDER BY sort_order");
+    $assessmentTypes = $stmt ? $stmt->fetchAll() : [];
+}
 
 $subjectGrades = $db->query("
     SELECT sgy.id, sgy.subject_id, sgy.grade_level_id, sgy.hours_per_week, sgy.passing_grade,
@@ -163,7 +168,10 @@ while ($row = $stmt->fetch()) {
             <?php foreach ($subjectGrades as $sg): ?>
             <?php
                 $existingWeights = $currentWeights[$sg['id']] ?? [];
-                $totalWeight = array_sum($existingWeights);
+                $totalWeight = 0;
+                foreach ($assessmentTypes as $at) {
+                    $totalWeight += $existingWeights[$at['id']] ?? $at['weight_default'] ?? 0;
+                }
                 $isComplete = abs($totalWeight - 100) < 0.01;
             ?>
             <div class="card mb-4" style="border-right:4px solid <?= $isComplete ? 'var(--success)' : 'var(--warning)' ?>;">

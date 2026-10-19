@@ -1,0 +1,1732 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام التقييم الشامل لجودة التعليم - EQAS</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    mermaid.initialize({ startOnLoad: true, theme: 'default', direction: 'rtl', rtl: true });
+});
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Cairo', 'Amiri', 'Traditional Arabic', sans-serif; color: #1a1a2e; background: #f0f2f5; line-height: 1.9; font-size: 16px; }
+.cover-page { background: linear-gradient(135deg, #0a1628 0%, #1a2744 40%, #0d3b66 100%); color: #fff; text-align: center; padding: 80px 40px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; page-break-after: always; position: relative; overflow: hidden; }
+.cover-page::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at 30% 40%, rgba(233,69,96,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(168,216,234,0.06) 0%, transparent 50%); }
+.cover-page > * { position: relative; z-index: 1; }
+.cover-badge { display: inline-block; font-size: 13px; letter-spacing: 6px; text-transform: uppercase; color: #e94560; margin-bottom: 30px; font-family: 'Cairo', sans-serif; border: 1px solid rgba(233,69,96,0.3); padding: 8px 24px; border-radius: 30px; }
+.cover-page h1 { font-size: 48px; margin-bottom: 8px; font-weight: 700; line-height: 1.3; font-family: 'Amiri', serif; }
+.cover-page .subtitle { font-size: 20px; color: #a8d8ea; margin-bottom: 50px; font-family: 'Cairo', sans-serif; font-weight: 400; }
+.cover-line { width: 100px; height: 3px; background: linear-gradient(90deg, #e94560, #a8d8ea); margin: 0 auto 50px; border-radius: 2px; }
+.cover-info { font-size: 17px; color: #b0b8c8; margin-bottom: 10px; font-family: 'Cairo', sans-serif; }
+.cover-info strong { color: #fff; font-weight: 600; }
+.page-content { max-width: 960px; margin: 30px auto; padding: 50px 40px; background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.06); border-radius: 12px; }
+@media print { body { background: #fff; } .page-content { box-shadow: none; max-width: 100%; padding: 20px; margin: 0; border-radius: 0; } .cover-page { min-height: 100vh; } }
+h1, h2, h3, h4, h5, h6 { font-family: 'Amiri', serif; font-weight: 700; color: #1a2744; margin-top: 2em; margin-bottom: 0.7em; line-height: 1.4; }
+h1 { font-size: 34px; border-bottom: 3px solid #e94560; padding-bottom: 12px; }
+h2 { font-size: 28px; border-bottom: 2px solid #e8ecf1; padding-bottom: 10px; }
+h3 { font-size: 22px; color: #0d3b66; }
+h4 { font-size: 18px; }
+p { margin-bottom: 1.2em; text-align: justify; }
+strong, b { color: #0d3b66; }
+a { color: #0d3b66; text-decoration: none; transition: color 0.2s; }
+a:hover { color: #e94560; }
+table { width: 100%; border-collapse: collapse; margin: 1.5em 0; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+table th, table td { border: 1px solid #e8ecf1; padding: 12px 14px; text-align: right; vertical-align: top; }
+table th { background: linear-gradient(135deg, #1a2744, #0d3b66); color: #fff; font-weight: 600; font-family: 'Cairo', sans-serif; }
+table tr:nth-child(even) { background: #f8f9fb; }
+table tr:hover { background: #eef2f7; }
+pre { background: linear-gradient(135deg, #1e1e2e, #2a2a3e); color: #cdd6f4; padding: 20px 24px; border-radius: 10px; overflow-x: auto; direction: ltr; text-align: left; font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace; font-size: 13px; line-height: 1.7; margin: 1.5em 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+code { background: #eef2f7; color: #e94560; padding: 2px 8px; border-radius: 4px; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 0.88em; direction: ltr; }
+pre code { background: transparent; color: inherit; padding: 0; border-radius: 0; }
+.mermaid { background: #f8f9fb; padding: 24px; border-radius: 10px; border: 1px solid #e8ecf1; margin: 1.5em 0; overflow-x: auto; text-align: center; }
+ul, ol { margin: 1em 0 1em 2em; }
+li { margin-bottom: 0.5em; }
+blockquote { border-right: 4px solid #0d3b66; padding: 14px 24px; margin: 1.5em 0; background: #f0f4f8; color: #333; border-radius: 0 10px 10px 0; }
+hr { border: none; border-top: 2px solid #e8ecf1; margin: 2.5em 0; }
+.page-break { page-break-before: always; }
+.toc { background: #f8f9fb; padding: 30px; border-radius: 10px; margin: 2em 0; border: 1px solid #e8ecf1; }
+.toc h2 { margin-top: 0; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc ol li { padding: 6px 0; border-bottom: 1px solid #eef2f7; }
+.toc ol li:last-child { border-bottom: none; }
+.toc ol li a { color: #1a2744; font-weight: 500; }
+.toc ol li a:hover { color: #e94560; }
+.toc ol ol { margin-right: 20px; margin-top: 4px; }
+.kpi-box { background: linear-gradient(135deg, #f8f9fb, #eef2f7); padding: 20px; border-radius: 10px; margin: 1em 0; border-right: 4px solid #0d3b66; }
+.status-ok { color: #22c55e; font-weight: 700; }
+.status-warn { color: #eab308; font-weight: 700; }
+.status-danger { color: #ef4444; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="cover-page">
+<div class="cover-badge">مشروع تخرج</div>
+<h1>نظام التقييم الشامل لجودة التعليم</h1>
+<div class="subtitle">Educational Quality Assessment System (EQAS)</div>
+<div class="cover-line"></div>
+<div class="cover-info"><strong>إعداد:</strong> فريق تطوير EQAS</div>
+<div class="cover-info"><strong>الإشراف:</strong> قسم علوم الحاسب</div>
+<div class="cover-info"><strong>العام الدراسي:</strong> 2026</div>
+<div class="cover-info"><strong>الإصدار:</strong> 3.1.0</div>
+</div>
+
+<div class="page-content">
+
+<h1>وثيقة متطلبات ومواصفات النظام (SRS)</h1>
+
+<h2>جدول المحتويات</h2>
+<div class="toc">
+<ol>
+<li><a href="#ch1">الفصل الأول: المقدمة</a>
+<ol>
+<li><a href="#1-1">1.1 خلفية المشروع</a></li>
+<li><a href="#1-2">1.2 مشكلة البحث</a></li>
+<li><a href="#1-3">1.3 أهمية المشروع</a></li>
+<li><a href="#1-4">1.4 أهداف المشروع</a></li>
+<li><a href="#1-5">1.5 نطاق المشروع</a></li>
+<li><a href="#1-6">1.6 الهيكل التنظيمي</a></li>
+</ol>
+</li>
+<li><a href="#ch2">الفصل الثاني: الدراسات السابقة</a>
+<ol>
+<li><a href="#2-1">2.1 مقدمة</a></li>
+<li><a href="#2-2">2.2 الدراسات السابقة</a></li>
+<li><a href="#2-3">2.3 الفجوة البحثية</a></li>
+<li><a href="#2-4">2.4 الجدوى من المشروع</a></li>
+<li><a href="#2-5">2.5 المخاطر والتحديات</a></li>
+</ol>
+</li>
+<li><a href="#ch3">الفصل الثالث: المتطلبات</a>
+<ol>
+<li><a href="#3-1">3.1 مقدمة</a></li>
+<li><a href="#3-2">3.2 المنهجية</a></li>
+<li><a href="#3-3">3.3 المتطلبات الوظيفية</a></li>
+<li><a href="#3-4">3.4 المتطلبات غير الوظيفية</a></li>
+<li><a href="#3-5">3.5 معالجة الأخطاء</a></li>
+<li><a href="#3-6">3.6 مخطط حالة النظام</a></li>
+<li><a href="#3-7">3.7 الخوارزميات</a></li>
+<li><a href="#3-8">3.8 مثال تطبيقي</a></li>
+<li><a href="#3-9">3.9 حالات خاصة</a></li>
+<li><a href="#3-10">3.10 الاختبار</a></li>
+<li><a href="#3-11">3.11 النشر</a></li>
+<li><a href="#3-12">3.12 الترحيل</a></li>
+<li><a href="#3-13">3.13 واجهة API</a></li>
+<li><a href="#3-14">3.14 قواعد التحقق</a></li>
+</ol>
+</li>
+<li><a href="#ch4">الفصل الرابع: التصميم</a>
+<ol>
+<li><a href="#4-1">4.1 مخططات تدفق البيانات</a></li>
+<li><a href="#4-2">4.2 مخطط العلاقات ERD</a></li>
+<li><a href="#4-3">4.3 قاموس البيانات</a></li>
+<li><a href="#4-4">4.4 حالات الاستخدام</a></li>
+<li><a href="#4-5">4.5 مخططات التتابع</a></li>
+<li><a href="#4-6">4.6 مخططات النشاط</a></li>
+<li><a href="#4-7">4.7 مخطط الفئات</a></li>
+</ol>
+</li>
+<li><a href="#ch5">الفصل الخامس: التصميم التفصيلي</a>
+<ol>
+<li><a href="#5-1">5.1 هندسة المعمارية</a></li>
+<li><a href="#5-2">5.2 تصميم واجهة المستخدم</a></li>
+<li><a href="#5-3">5.3 تصميم قاعدة البيانات</a></li>
+<li><a href="#5-4">5.4 تصميم الخدمات</a></li>
+<li><a href="#5-5">5.5 نظام الصلاحيات</a></li>
+<li><a href="#5-6">5.6 الخوارزميات الرئيسية</a></li>
+<li><a href="#5-7">5.7 إدارة الجلسات والأمان</a></li>
+<li><a href="#5-8">5.8 إدارة الأخطاء</a></li>
+</ol>
+</li>
+<li><a href="#ch6">الفصل السادس: التنفيذ والاختبار</a>
+<ol>
+<li><a href="#6-1">6.1 بيئة التطوير</a></li>
+<li><a href="#6-2">6.2 خطة التنفيذ</a></li>
+<li><a href="#6-3">6.3 خطة الاختبار</a></li>
+<li><a href="#6-4">6.4 الترحيل والنشر</a></li>
+<li><a href="#6-5">6.5 النتائج والتوصيات</a></li>
+</ol>
+</li>
+<li><a href="#ch7">الفصل السابع: الخاتمة</a>
+<ol>
+<li><a href="#7-1">7.1 ملخص المشروع</a></li>
+<li><a href="#7-2">7.2 الإنجازات</a></li>
+<li><a href="#7-3">7.3 الدروس المستفادة</a></li>
+<li><a href="#7-4">7.4 الخلاصة</a></li>
+</ol>
+</li>
+</ol>
+</div>
+<h1 id="ch1">الفصل الأول: المقدمة</h1>
+
+<h2 id="1-1">1.1 خلفية المشروع</h2>
+<p>في ظل التطور السريع الذي تشهده المنظومة التعليمية، أصبح من الضروري وجود أنظمة متكاملة لقياس وتقييم جودة التعليم بشكل شامل وموضوعي. تعتمد معظم المؤسسات التعليمية حالياً على أساليب تقليدية ومجزأة لتقييم الأداء، مما يؤدي إلى عدم القدرة على الحصول على صورة واضحة وشاملة عن جودة التعليم.</p>
+<p>نظام EQAS (Educational Quality Assessment System) هو نظام ويب متكامل تم تطويره لإدارة وتقييم جودة التعليم في مجموعة مدارس، حيث يجمع بين إدارة البيانات الأكاديمية، حساب مؤشرات الجودة، التحليلات المتقدمة، والتقارير الاحترافية في منصة واحدة.</p>
+
+<h2 id="1-2">1.2 مشكلة البحث</h2>
+<p>تواجه المؤسسات التعليمية عدة تحديات رئيسية:</p>
+<ul>
+<li><strong>تشتت البيانات:</strong> البيانات الأكاديمية موزعة على أنظمة متعددة وغير متكاملة</li>
+<li><strong>غياب المؤشرات الشاملة:</strong> عدم وجود مؤشر موحد يقيس جودة التعليم من أبعاد متعددة</li>
+<li><strong>التقييم الذاتي المحدود:</strong> الاعتماد على التقييمات اليدوية التي تفتقر للموضوعية</li>
+<li><strong>صعوبة المقارنة:</strong> عدم القدرة على مقارنة أداء المدارس بشكل منهجي</li>
+<li><strong>غياب التنبيهات الذكية:</strong> عدم اكتشاف المشكلات في وقت مبكر</li>
+<li><strong>التقارير اليدوية:</strong> إعداد التقارير بشكل يدوي يستغرق وقتاً طويلاً</li>
+</ul>
+
+<h2 id="1-3">1.3 أهمية المشروع</h2>
+<p>تكمن أهمية هذا المشروع في:</p>
+<ul>
+<li>توفير منصة موحدة وشاملة لإدارة جودة التعليم</li>
+<li>تمكين متخذي القرار من الحصول على بيانات دقيقة ومحدثة</li>
+<li>دعم التحسين المستمر من خلال مؤشرات أداء قابلة للقياس</li>
+<li>تسهيل عملية الاعتماد والجودة المدرسية</li>
+<li>توفير الوقت والجهد في إعداد التقارير والتحليلات</li>
+</ul>
+
+<h2 id="1-4">1.4 أهداف المشروع</h2>
+<h3>الهدف العام</h3>
+<p>تطوير نظام متكامل لإدارة وتقييم جودة التعليم في مجموعة مدارس يدعم 6 أدوار مختلفة ويحسب مؤشر جودة التعليم الشامل (EQI) من 5 أبعاد.</p>
+<h3>الأهداف الفرعية</h3>
+<ol>
+<li>بناء قاعدة بيانات موحدة لإدارة جميع البيانات الأكاديمية</li>
+<li>تطوير محرك حساب مؤشر جودة التعليم (EQI) من 5 أبعاد</li>
+<li>إنشاء لوحات تحليلات تفاعلية مع رسوم بيانية</li>
+<li>تطوير محرك تنبيهات ذكي لاكتشاف المشكلات مبكراً</li>
+<li>بناء نظام صلاحيات مرن ومتعدد المستويات</li>
+<li>توليد تقارير سنوية احترافية بصيغة PDF</li>
+<li>تطبيق التعديل السياقي لمراعاة ظروف كل مدرسة</li>
+</ol>
+
+<h2 id="1-5">1.5 نطاق المشروع</h2>
+<p>يشمل النظام الوحدات الرئيسية التالية:</p>
+<table>
+<tr><th>الوحدة</th><th>الوصف</th><th>المستخدمون</th></tr>
+<tr><td>إدارة المستخدمين</td><td>إنشاء وتعديل وحذف الحسابات والصلاحيات</td><td>مدير المجموعة، مدير المدرسة</td></tr>
+<tr><td>إدارة المدارس</td><td>إضافة وتعديل بيانات المدارس</td><td>مدير المجموعة</td></tr>
+<tr><td>إدارة الطلاب</td><td>تسجيل الطلاب وإدارة بياناتهم</td><td>مدير المدرسة</td></tr>
+<tr><td>إدارة الشعب والمواد</td><td>تنظيم الشعب الدراسية وتعيين المعلمين</td><td>مدير المدرسة</td></tr>
+<tr><td>إدارة الدرجات</td><td>إدخال وإدارة درجات الطلاب</td><td>المعلم، مدير المدرسة</td></tr>
+<tr><td>محرك EQI</td><td>حساب مؤشر جودة التعليم من 5 أبعاد</td><td>مدير المجموعة</td></tr>
+<tr><td>استبيانات المناخ</td><td>إدارة استبيانات المناخ المدرسي</td><td>جميع المستخدمين</td></tr>
+<tr><td>إدارة السلوك</td><td>تسجيل ومتابعة الحوادث السلوكية</td><td>المعلم، المرشد</td></tr>
+<tr><td>تقييم التدريس</td><td>تقييم أداء المعلمين بثلاثة أنواع</td><td>المشرف، المدير</td></tr>
+<tr><td>التحليلات</td><td>6 أدوات تحليلية مع رسوم بيانية</td><td>مدير المجموعة، مدير المدرسة</td></tr>
+<tr><td>التقارير</td><td>توليد تقارير سنوية PDF</td><td>مدير المجموعة</td></tr>
+<tr><td>التنبيهات</td><td>تنبيهات ذكية تلقائية</td><td>مدير المجموعة، مدير المدرسة</td></tr>
+</table>
+
+<h2 id="1-6">1.6 الهيكل التنظيمي</h2>
+<p>يدعم النظام 6 أدوار مختلفة:</p>
+<table>
+<tr><th>الدور</th><th>الوصف</th><th>النطاق</th></tr>
+<tr><td>super_admin</td><td>مدير النظام الأعلى</td><td>كامل النظام</td></tr>
+<tr><td>group_admin</td><td>مدير المجموعة</td><td>جميع المدارس</td></tr>
+<tr><td>school_admin</td><td>مدير المدرسة</td><td>مدرسته فقط</td></tr>
+<tr><td>teacher</td><td>المعلم</td><td>شعبه وطلبته</td></tr>
+<tr><td>student</td><td>الطالب</td><td>بياناته فقط</td></tr>
+<tr><td>parent</td><td>ولي الأمر</td><td>أبناؤه فقط</td></tr>
+</table>
+<h1 id="ch2">الفصل الثاني: الدراسات السابقة</h1>
+
+<h2 id="2-1">2.1 مقدمة</h2>
+<p>يعتمد نظام EQAS على مجموعة من المفاهيم والمعايير الدولية في مجال جودة التعليم، مع إضافة ابتكارات تقنية فريدة تجعله نظاماً متكاملاً وشاملاً.</p>
+
+<h2 id="2-2">2.2 الدراسات السابقة</h2>
+<h3>2.2.1 معايير الجودة الدولية</h3>
+<ul>
+<li><strong>ISO 21001:2018:</strong> معيار دولي لأنظمة إدارة المؤسسات التعليمية، يركز على تحسين نتائج التعلم</li>
+<li><strong>EFQM Excellence Model:</strong> نموذج التميز الأوروبي الذي يقيس الأداء من 7 معايير</li>
+<li><strong>Baldrige Framework:</strong> إطار أمريكي للتميز في الأداء التعليمي</li>
+</ul>
+
+<h3>2.2.2 الأنظمة التعليمية المشابهة</h3>
+<ul>
+<li><strong>نظام نور (السعودية):</strong> نظام إداري تعليمي شامل لكنه يفتقر لمؤشرات الجودة المتكاملة</li>
+<li><strong>Google Classroom:</strong> إدارة الفصول الدراسية فقط بدون تحليلات جودة</li>
+<li><strong>PowerSchool:</strong> نظام إدارة طلاب يفتقر للتقييم الشامل</li>
+</ul>
+
+<h2 id="2-3">2.3 الفجوة البحثية</h2>
+<p>رغم وجود أنظمة إدارة تعليمية متعددة، إلا أن هناك فجوة واضحة في:</p>
+<ul>
+<li>عدم وجود نظام يجمع بين إدارة البيانات الأكاديمية وحساب مؤشرات الجودة الشاملة</li>
+<li>غياب التعديل السياقي الذي يراعي ظروف كل مدرسة</li>
+<li>عدم وجود تنبيهات ذكية تعتمد على عتبات محددة</li>
+<li>نقص في التحليلات الاستكشافية المتكاملة</li>
+<li>عدم دعم التقييم ثلاثي الأبعاد للمعلمين (ذاتي، أقران، إداري)</li>
+</ul>
+
+<h2 id="2-4">2.4 الجدوى من المشروع</h2>
+<table>
+<tr><th>نوع الجدوى</th><th>التقييم</th><th>التفاصيل</th></tr>
+<tr><td>تقنية</td><td class="status-ok">مجدٍ</td><td>تقنيات ناضجة ومجانية (PHP, MySQL, Chart.js)</td></tr>
+<tr><td>اقتصادية</td><td class="status-ok">مجدٍ</td><td>تكاليف تشغيل منخفضة، عائد استثمار عالي</td></tr>
+<tr><td>تشغيلية</td><td class="status-ok">مجدٍ</td><td>واجهة عربية سهلة، تدريب محدود مطلوب</td></tr>
+<tr><td>زمنية</td><td class="status-ok">مجدٍ</td><td>12 أسبوعاً للتنفيذ الكامل</td></tr>
+</table>
+
+<h2 id="2-5">2.5 المخاطر والتحديات</h2>
+<table>
+<tr><th>المخاطر</th><th>الاحتمال</th><th>الأثر</th><th>خطة التخفيف</th></tr>
+<tr><td>فقدان البيانات</td><td class="status-warn">متوسط</td><td class="status-danger">عالي</td><td>نسخ احتياطي يومي + معاملات قاعدة بيانات</td></tr>
+<tr><td>ضعف الأداء</td><td class="status-warn">متوسط</td><td class="status-warn">متوسط</td><td>فهرسة + تحسين الاستعلامات</td></tr>
+<tr><td>مقاومة التغيير</td><td class="status-ok">منخفض</td><td class="status-warn">متوسط</td><td>تدريب + واجهة سهلة</td></tr>
+<tr><td>ثغرات أمنية</td><td class="status-warn">متوسط</td><td class="status-danger">عالي</td><td>اختبارات أمان + مراجعة دورية</td></tr>
+</table>
+<h1 id="ch3">الفصل الثالث: المتطلبات</h1>
+
+<h2 id="3-1">3.1 مقدمة</h2>
+<p>يحدد هذا الفصل جميع المتطلبات الوظيفية وغير الوظيفية للنظام، بالإضافة إلى متطلبات الأداء والأمان.</p>
+
+<h2 id="3-2">3.2 المنهجية</h2>
+<p>تم استخدام منهجية Agile (Scrum) في تطوير النظام مع دورات تطوير مدتها أسبوعان (Sprints). تم تقسيم المشروع إلى 3 مراحل رئيسية:</p>
+<ol>
+<li><strong>المرحلة 1 (الأسابيع 1-4):</strong> الأساس - المصادقة، الصلاحيات، إدارة المدارس</li>
+<li><strong>المرحلة 2 (الأسابيع 5-8):</strong> الوحدات الأكاديمية - الطلاب، الدرجات، السلوك</li>
+<li><strong>المرحلة 3 (الأسابيع 9-12):</strong> التحليلات والتقارير - EQI، التنبيهات، التقارير</li>
+</ol>
+
+<h2 id="3-3">3.3 المتطلبات الوظيفية</h2>
+
+<h3>الوحدة 1: إدارة المستخدمين والصلاحيات</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-001</td><td>تسجيل الدخول</td><td>المصادقة باسم المستخدم وكلمة المرور مع دعم会话 الآمنة</td><td>عالية</td></tr>
+<tr><td>FR-002</td><td>تسجيل الخروج</td><td>إنهاء الجلسة وحذف بيانات الجلسة</td><td>عالية</td></tr>
+<tr><td>FR-003</td><td>إجبار تغيير كلمة المرور</td><td>إجبار المستخدم على تغيير كلمة المرور عند أول دخول</td><td>عالية</td></tr>
+<tr><td>FR-004</td><td>إدارة المستخدمين</td><td>إنشاء وتعديل وحذف حسابات المستخدمين</td><td>عالية</td></tr>
+<tr><td>FR-005</td><td>توليد كلمة مرور</td><td>توليد كلمة مرور عشوائية آمنة للمستخدمين الجدد</td><td>عالية</td></tr>
+<tr><td>FR-006</td><td>إدارة الأدوار</td><td>إنشاء وتعديل الأدوار والصلاحيات</td><td>عالية</td></tr>
+<tr><td>FR-007</td><td>مصفوفة الصلاحيات</td><td>ربط الأدوار بالصلاحيات بشكل تفاعلي</td><td>متوسطة</td></tr>
+<tr><td>FR-008</td><td>فلترة حسب المدرسة</td><td>تقييد school_admin و teacher ببيانات مدرستهم فقط</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 2: إدارة المدارس</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-009</td><td>إضافة مدرسة</td><td>إنشاء مدرسة جديدة مع بياناتها الأساسية</td><td>عالية</td></tr>
+<tr><td>FR-010</td><td>تعديل مدرسة</td><td>تحديث بيانات المدرسة</td><td>عالية</td></tr>
+<tr><td>FR-011</td><td>أرشفة مدرسة</td><td>تعطيل مدرسة بدون حذف بياناتها</td><td>متوسطة</td></tr>
+<tr><td>FR-012</td><td>قائمة المدارس</td><td>عرض جميع المدارس مع إحصائيات</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 3: إدارة السنوات والفصول الأكاديمية</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-013</td><td>إدارة السنوات</td><td>إنشاء وتعديل وأرشفة السنوات الأكاديمية</td><td>عالية</td></tr>
+<tr><td>FR-014</td><td>إدارة الفصول</td><td>إنشاء وتعديل الفصول الدراسية (موحدة لجميع المدارس)</td><td>عالية</td></tr>
+<tr><td>FR-015</td><td>تعيين الفصل الحالي</td><td>تحديد الفصل الدراسي الحالي (إعداد عام)</td><td>عالية</td></tr>
+<tr><td>FR-016</td><td>القفل الإداري</td><td>قفل الفصل لمنع التعديلات (lock_level)</td><td>عالية</td></tr>
+<tr><td>FR-017</td><td>تعديل تواريخ الفصل</td><td>تعديل تواريخ البداية والنهاية مع فحص التداخل</td><td>متوسطة</td></tr>
+</table>
+
+<h3>الوحدة 4: إدارة الطلاب</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-018</td><td>إضافة طالب</td><td>تسجيل طالب جديد مع بياناته</td><td>عالية</td></tr>
+<tr><td>FR-019</td><td>تعديل طالب</td><td>تحديث بيانات الطالب</td><td>عالية</td></tr>
+<tr><td>FR-020</td><td>حذف طالب</td><td>حذف طالب مع التحقق من عدم وجود سجلات مرتبطة</td><td>عالية</td></tr>
+<tr><td>FR-021</td><td>استيراد طلاب</td><td>استيراد بيانات الطلاب من ملف Excel/CSV</td><td>عالية</td></tr>
+<tr><td>FR-022</td><td>بحث طلاب</td><td>البحث عن طلاب بالاسم أو الكود (AJAX)</td><td>عالية</td></tr>
+<tr><td>FR-023</td><td>ترقية طلاب</td><td>ترقية الطلاب للفصل الدراسي التالي</td><td>متوسطة</td></tr>
+</table>
+
+<h3>الوحدة 5: إدارة الشعب والمواد</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-024</td><td>إضافة شعبة</td><td>إنشاء شعبة جديدة مع تعيين المادة والمعلم</td><td>عالية</td></tr>
+<tr><td>FR-025</td><td>تعديل شعبة</td><td>تحديث بيانات الشعبة</td><td>عالية</td></tr>
+<tr><td>FR-026</td><td>إدارة المواد</td><td>إضافة وتعديل المواد الدراسية</td><td>عالية</td></tr>
+<tr><td>FR-027</td><td>تعيين معلمين</td><td>ربط المعلمين بالمواد والشعب</td><td>عالية</td></tr>
+<tr><td>FR-028</td><td>تسجيل طلاب في شعبة</td><td>إضافة الطلاب للشعب الدراسية</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 6: إدارة الدرجات</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-029</td><td>إدخال درجات</td><td>إدخال درجات الطلاب حسب نوع التقييم</td><td>عالية</td></tr>
+<tr><td>FR-030</td><td>تعديل درجات</td><td>تعديل الدرجات المدخلة</td><td>عالية</td></tr>
+<tr><td>FR-031</td><td>استيراد درجات</td><td>استيراد الدرجات من ملف Excel</td><td>عالية</td></tr>
+<tr><td>FR-032</td><td>حساب المعدلات</td><td>حساب متوسط الدرجات لكل طالب</td><td>عالية</td></tr>
+<tr><td>FR-033</td><td>كشوف الدرجات</td><td>عرض وطباعة كشوف الدرجات</td><td>متوسطة</td></tr>
+</table>
+
+<h3>الوحدة 7: إدارة السلوك</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-034</td><td>تسجيل حادث</td><td>تسجيل حادث سلوكي مع نوعه ووصفه</td><td>عالية</td></tr>
+<tr><td>FR-035</td><td>تعديل حادث</td><td>تعديل بيانات الحادث السلوكي</td><td>عالية</td></tr>
+<tr><td>FR-036</td><td>قائمة الحوادث</td><td>عرض الحوادث مع فلترة حسب الفصل والمدرسة</td><td>عالية</td></tr>
+<tr><td>FR-037</td><td>إحصائيات السلوك</td><td>عرض إحصائيات السلوك لكل طالب وشعبة</td><td>متوسطة</td></tr>
+</table>
+<h3>الوحدة 8: استبيانات المناخ المدرسي</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-038</td><td>إنشاء استبيان</td><td>إنشاء استبيان مناخ مدرسي جديد</td><td>عالية</td></tr>
+<tr><td>FR-039</td><td>ملء استبيان</td><td>ملء الاستبيان من قبل المعلمين والطلاب وأولياء الأمور</td><td>عالية</td></tr>
+<tr><td>FR-040</td><td>حساب درجات المناخ</td><td>حساب درجات الأبعاد الثلاثة (البيئة، العلاقات، السلامة)</td><td>عالية</td></tr>
+<tr><td>FR-041</td><td>لوحة معلومات المناخ</td><td>عرض لوحة معلومات المناخ مع رسوم بيانية</td><td>عالية</td></tr>
+<tr><td>FR-042</td><td>تحليل مدرسة</td><td>تحليل المناخ لمدرسة محددة مع Radar Chart</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 9: تقييم التدريس</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-043</td><td>إدارة نماذج التقييم</td><td>إنشاء نماذج تقييم التدريس مع المعايير</td><td>عالية</td></tr>
+<tr><td>FR-044</td><td>تقييم ذاتي</td><td>المعلم يقيّم أداءه الذاتي</td><td>عالية</td></tr>
+<tr><td>FR-045</td><td>تقييم أقران</td><td>المعلمون يقيّمون بعضهم البعض</td><td>عالية</td></tr>
+<tr><td>FR-046</td><td>تقييم إداري</td><td>الإدارة تقيّم أداء المعلمين</td><td>عالية</td></tr>
+<tr><td>FR-047</td><td>لوحة تقييم المعلمين</td><td>عرض لوحة أداء المعلمين مع Radar Chart ثلاثي</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 10: مؤشر جودة التعليم (EQI)</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-048</td><td>حساب EQI</td><td>حساب مؤشر جودة التعليم من 5 أبعاد</td><td>عالية</td></tr>
+<tr><td>FR-049</td><td>حساب جماعي</td><td>حساب EQI لجميع المدارس دفعة واحدة (حد أقصى 200)</td><td>عالية</td></tr>
+<tr><td>FR-050</td><td>مقارنة مدارس</td><td>مارنة EQI بين مدرستين أو أكثر</td><td>عالية</td></tr>
+<tr><td>FR-051</td><td>مركز القيادة</td><td>لوحة قيادة EQI مع KPI ورسوم بيانية</td><td>عالية</td></tr>
+<tr><td>FR-052</td><td>سجل تاريخي</td><td>عرض تاريخ EQI مع رسم بياني خطي</td><td>عالية</td></tr>
+<tr><td>FR-053</td><td>إدارة الأوزان</td><td>تعيين أوزان الأبعاد الخمسة</td><td>عالية</td></tr>
+<tr><td>FR-054</td><td>التعديل السياقي</td><td>تطبيق تعديل على EQI بناءً على عوامل سياق المدرسة</td><td>عالية</td></tr>
+<tr><td>FR-055</td><td>التوصيات التلقائية</td><td>توليد توصيات بناءً على نتائج EQI</td><td>متوسطة</td></tr>
+</table>
+
+<h3>الوحدة 11: التحليلات</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-056</td><td>بوابة التحليلات</td><td>صفحة رئيسية لاختيار أداة التحليل</td><td>عالية</td></tr>
+<tr><td>FR-057</td><td>تحليل مدرسة</td><td>تحليل شامل لمدرسة واحدة مع KPI ورسوم</td><td>عالية</td></tr>
+<tr><td>FR-058</td><td>تحليل شعبة</td><td>تحليل أداء شعبة مع توزيع درجات</td><td>عالية</td></tr>
+<tr><td>FR-059</td><td>تحليل مادة</td><td>تحليل أداء مادة عبر المدارس</td><td>عالية</td></tr>
+<tr><td>FR-060</td><td>مقارنة مدارس</td><td>مقارنة حتى 6 مدارس مع رسوم بيانية</td><td>عالية</td></tr>
+<tr><td>FR-061</td><td>اتجاهات زمنية</td><td>تحليل الاتجاهات عبر الفصول مع توصيات</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 12: التنبيهات</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-062</td><td>فحص عتبات EQI</td><td>3 قواعد: منخفض، تراجع حاد، تحسين كبير</td><td>عالية</td></tr>
+<tr><td>FR-063</td><td>فحص عتبات المناخ</td><td>قاعدتان: مناخ منخفض، مشاركة منخفضة</td><td>عالية</td></tr>
+<tr><td>FR-064</td><td>فحص عتبات التدريس</td><td>تقييمات أقل من المتوسط</td><td>عالية</td></tr>
+<tr><td>FR-065</td><td>إدارة التنبيهات</td><td>عرض وتحديد التنبيهات كمقروءة</td><td>عالية</td></tr>
+<tr><td>FR-066</td><td>تشغيل جميع الفحوصات</td><td>runAllChecks() لتشغيل جميع القواعد</td><td>عالية</td></tr>
+</table>
+
+<h3>الوحدة 13: التقارير والإعدادات</h3>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>الأولوية</th></tr>
+<tr><td>FR-067</td><td>التقرير السنوي</td><td>تقرير سنوي شامل بصيغة PDF</td><td>عالية</td></tr>
+<tr><td>FR-068</td><td>محرك القوالب</td><td>محرك قوالب PDF يدعم الغلاف والجداول والـ KPI</td><td>عالية</td></tr>
+<tr><td>FR-069</td><td>تصدير CSV</td><td>تصدير البيانات بصيغة CSV</td><td>متوسطة</td></tr>
+<tr><td>FR-070</td><td>سياسات المجموعة</td><td>إعداد ترميز EQI ونسب النجاح والإشعارات</td><td>عالية</td></tr>
+<tr><td>FR-071</td><td>إعدادات النظام</td><td>إعدادات عامة للنظام</td><td>عالية</td></tr>
+<tr><td>FR-072</td><td>سجل النشاط</td><td>تسجيل جميع العمليات الهامة</td><td>عالية</td></tr>
+<tr><td>FR-073</td><td>الملف الشخصي</td><td>عرض وتعديل بيانات المستخدم</td><td>عالية</td></tr>
+<tr><td>FR-074</td><td>تغيير كلمة المرور</td><td>تغيير كلمة المرور مع التحقق من القوة</td><td>عالية</td></tr>
+<tr><td>FR-075</td><td>خطط التحسين</td><td>إنشاء ومتابعة خطط تحسين المدرسة</td><td>عالية</td></tr>
+<tr><td>FR-076</td><td>لوحة القيادة</td><td>لوحات قيادة مخصصة لكل دور</td><td>عالية</td></tr>
+<tr><td>FR-077</td><td>الحفاظ على الجلسة</td><td>API للحفاظ على الجلسة نشطة</td><td>عالية</td></tr>
+<tr><td>FR-078</td><td>إشعارات</td><td>نظام إشعارات داخلي</td><td>متوسطة</td></tr>
+<tr><td>FR-079</td><td>استيراد/تصدير</td><td>استيراد وتصدير البيانات</td><td>متوسطة</td></tr>
+<tr><td>FR-080</td><td>الإشراف التربوي</td><td>لوحات تقييم المعلمين ومتابعة خطط التحسين</td><td>عالية</td></tr>
+<tr><td>FR-081</td><td>التعديل السياقي</td><td>إدارة عوامل السياق لكل مدرسة</td><td>عالية</td></tr>
+<tr><td>FR-082</td><td>الاتجاه السنوي</td><td>مقارنة الأداء مع نفس الفصل من العام السابق</td><td>عالية</td></tr>
+</table>
+<h2 id="3-4">3.4 المتطلبات غير الوظيفية</h2>
+<table>
+<tr><th>الرقم</th><th>المتطلب</th><th>الوصف</th><th>المعيار</th></tr>
+<tr><td>NFR-001</td><td>الأداء</td><td>زمن تحميل الصفحات أقل من 3 ثوانٍ</td><td>&lt; 3s للصفحات العادية</td></tr>
+<tr><td>NFR-002</td><td>الأمان</td><td>حماية من XSS, SQLi, CSRF</td><td>0 ثغرات قابلة للاستغلال</td></tr>
+<tr><td>NFR-003</td><td>التوافر</td><td>النظام متاح 99.5% من الوقت</td><td>99.5% uptime</td></tr>
+<tr><td>NFR-004</td><td>قابلية التوسع</td><td>دعم حتى 100 مدرسة و 50,000 طالب</td><td>أداء مستقر عند الحمل الأقصى</td></tr>
+<tr><td>NFR-005</td><td>سهولة الاستخدام</td><td>واجهة عربية سهلة وبديهية</td><td>تدريب أقل من يوم واحد</td></tr>
+<tr><td>NFR-006</td><td>التوافق</td><td>يعمل على جميع المتصفحات الحديثة</td><td>Chrome, Firefox, Edge, Safari</td></tr>
+<tr><td>NFR-007</td><td>التصميم المتجاوب</td><td>يعمل على جميع أحجام الشاشات</td><td>موبايل، تابلت، سطح مكتب</td></tr>
+<tr><td>NFR-008</td><td>الخصوصية</td><td>حماية بيانات الطلاب والمعلمين</td><td>تشفير كلمات المرور، فلترة الصلاحيات</td></tr>
+</table>
+
+<h2 id="3-5">3.5 معالجة الأخطاء</h2>
+<table>
+<tr><th>المستوى</th><th>الوصف</th><th>المعالجة</th><th>المثال</th></tr>
+<tr><td>INFO</td><td>معلومات عادية</td><td>تسجيل فقط في السجل</td><td>تسجيل دخول ناجح</td></tr>
+<tr><td>WARNING</td><td>تحذير غير حرج</td><td>تسجيل + إشعار</td><td>استخدام وكيل بدلاً من تقييم مباشر</td></tr>
+<tr><td>ERROR</td><td>خطأ في العملية</td><td>تسجيل + عرض رسالة للمستخدم</td><td>فشل في حفظ البيانات</td></tr>
+<tr><td>CRITICAL</td><td>خطأ حرج</td><td>تسجيل + إشعار فوري + تحويل</td><td>فشل الاتصال بقاعدة البيانات</td></tr>
+</table>
+
+<h2 id="3-6">3.6 مخطط حالة النظام (State Machine)</h2>
+<p>يصف مخطط الحالة دورة حياة الفصل الدراسي:</p>
+<div class="mermaid">
+stateDiagram-v2
+    [*] --> مفتوح: إنشاء الفصل
+    مفتوح --> مقفل_جزئياً: قفل جزئي (lock_level=1)
+    مفتوح --> مقفل_كليا: قفل كامل (lock_level=2)
+    مقفل_جزئيا --> مفتوح: إلغاء القفل
+    مقفل_كليا --> مفتوح: إلغاء القفل (group_admin فقط)
+    مقفل_جزئيا --> مقفل_كليا: تشديد القفل
+    مقفل_كليا --> مقفل_جزئيا: تخفيف القفل
+    مقفل_كليا --> مؤرشف: أرشفة السنة
+    مفتوح --> مؤرشف: أرشفة السنة
+    مؤرشف --> [*]
+</div>
+
+<h2 id="3-7">3.7 الخوارزميات الرئيسية</h2>
+
+<h3>3.7.1 خوارزمية حساب EQI</h3>
+<pre><code>function calculateEQI(school_id, semester_id):
+    weights = loadWeights()  // أوزان الأبعاد من system_settings
+
+    // حساب الأبعاد الخمسة
+    climate = calculateClimateScore(school_id, semester_id)
+    behavior = calculateBehaviorScore(school_id, semester_id)
+    teaching = calculateTeachingScore(school_id, semester_id)
+    attendance = calculateAttendanceScore(school_id, semester_id)
+    skills = calculateSkillsScore(school_id, semester_id)
+
+    // التجميع المرجح
+    raw_eqi = (climate * weights.climate) +
+              (behavior * weights.behavior) +
+              (teaching * weights.teaching) +
+              (attendance * weights.attendance) +
+              (skills * weights.skills)
+
+    // التعديل السياقي
+    context = getSchoolContext(school_id)
+    if context exists:
+        challenge_index = calculateChallengeIndex(context)
+        adjusted_eqi = raw_eqi + (challenge_index / 100) * max_adjustment
+        adjusted_eqi = min(100, max(0, adjusted_eqi))
+    else:
+        adjusted_eqi = raw_eqi
+
+    // الحفظ والتنبيهات
+    saveEQI(school_id, semester_id, raw_eqi, adjusted_eqi, ...)
+    checkAlerts(school_id, semester_id, adjusted_eqi)
+
+    return { raw_eqi, adjusted_eqi, dimensions }
+</code></pre>
+
+<h3>3.7.2 خوارزمية مؤشر التحدي</h3>
+<pre><code>function calculateChallengeIndex(factors):
+    weights = {
+        'socioeconomic': 0.20,
+        'parental_involvement': 0.15,
+        'teacher_experience': 0.15,
+        'student_teacher_ratio': 0.15,
+        'infrastructure': 0.10,
+        'special_needs': 0.15,
+        'turnover_rate': 0.10
+    }
+
+    challenge = 0
+    for factor, weight in weights:
+        normalized = normalize(factor.value, factor.min, factor.max)
+        challenge += normalized * weight
+
+    return round(challenge * 100)  // النتيجة: 0-100
+</code></pre>
+
+<h3>3.7.3 خوارزمية الاتجاه السنوي</h3>
+<pre><code>function calculateYearOverYear(current, previous):
+    if previous is null:
+        return { direction: '→', pct: null, label: 'لا توجد بيانات سابقة' }
+    if previous == 0:
+        return { direction: '→', pct: 0, label: 'مستقر' }
+
+    change = ((current - previous) / previous) * 100
+
+    if change > 2:
+        return { direction: '▲', pct: change, label: 'تحسن' }
+    else if change < -2:
+        return { direction: '▼', pct: abs(change), label: 'تراجع' }
+    else:
+        return { direction: '→', pct: abs(change), label: 'مستقر' }
+</code></pre>
+
+<h2 id="3-8">3.8 مثال تطبيقي</h2>
+<p>لحساب EQI لمدرسة "النهضة" في الفصل الدراسي الأول:</p>
+<table>
+<tr><th>البُعد</th><th>الدرجة الخام</th><th>الوزن</th><th>الدرجة المرجحة</th></tr>
+<tr><td>المناخ</td><td>75</td><td>25%</td><td>18.75</td></tr>
+<tr><td>السلوك</td><td>85</td><td>20%</td><td>17.00</td></tr>
+<tr><td>التدريس</td><td>70</td><td>20%</td><td>14.00</td></tr>
+<tr><td>الحضور</td><td>90</td><td>15%</td><td>13.50</td></tr>
+<tr><td>المهارات</td><td>80</td><td>20%</td><td>16.00</td></tr>
+<tr><td><strong>EQI الخام</strong></td><td>-</td><td><strong>100%</strong></td><td><strong>79.25</strong></td></tr>
+</table>
+<p>مع التعديل السياقي (مؤشر التحدي = 45، الحد الأقصى للتعديل = 10):</p>
+<p><code>adjusted_eqi = 79.25 + (45/100) × 10 = 79.25 + 4.5 = 83.75</code></p>
+
+<h2 id="3-9">3.9 حالات خاصة</h2>
+<table>
+<tr><th>الحالة</th><th>المعالجة</th></tr>
+<tr><td>بيانات بُعد غير متوفرة</td><td>درجة البُعد = 0 مع تسجيل تحذير</td></tr>
+<tr><td>تقييم التدريس غير موجود</td><td>استخدام وكيل من متوسط درجات الطلاب (proxy)</td></tr>
+<tr><td>مدرسة بدون سياق مسجل</td><td>EQI المعدل = EQI الخام (بدون تعديل)</td></tr>
+<tr><td>فصل مقفل</td><td>رفض أي عمليات حسابية أو تعديل</td></tr>
+<tr><td>سنة أكاديمية مؤرشفة</td><td>عرض البيانات للقراءة فقط</td></tr>
+<tr><td>لا بيانات للمقارنة السنوية</td><td>عرض "لا توجد بيانات سابقة" بدلاً من السهم</td></tr>
+</table>
+
+<h2 id="3-10">3.10 الاختبار</h2>
+<table>
+<tr><th>المرحلة</th><th>النوع</th><th>العدد</th><th>الحالة</th></tr>
+<tr><td>P1</td><td>Static Analysis</td><td>165 ملف</td><td class="status-ok">✅</td></tr>
+<tr><td>P2</td><td>Unit Tests</td><td>109</td><td class="status-ok">✅</td></tr>
+<tr><td>P3</td><td>Bug Fixes</td><td>13/15</td><td class="status-ok">✅</td></tr>
+<tr><td>P4</td><td>Unit Tests (جديدة)</td><td>3 ملفات</td><td class="status-ok">✅</td></tr>
+<tr><td>P5</td><td>Integration Tests</td><td>26</td><td class="status-ok">✅</td></tr>
+<tr><td>P6</td><td>Security Tests</td><td>33</td><td class="status-ok">✅</td></tr>
+<tr><td>P7</td><td>E2E Playwright</td><td>13</td><td class="status-ok">✅</td></tr>
+<tr><td>P8</td><td>Regression</td><td>الكل</td><td class="status-ok">✅</td></tr>
+<tr><td>P9</td><td>Documentation</td><td>test-results.md</td><td class="status-ok">✅</td></tr>
+</table>
+
+<h2 id="3-11">3.11 النشر</h2>
+<ol>
+<li>نسخ الملفات إلى خادم الإنتاج</li>
+<li>إنشاء قاعدة بيانات جديدة</li>
+<li>تشغيل schema.sql لإنشاء الجداول</li>
+<li>تشغيل سكريبتات الترحيل بالترتيب</li>
+<li>تشغيل demo_seed.sql للبيانات التجريبية</li>
+<li>تكوين ملف config.php ببيانات الإنتاج</li>
+<li>إنشاء حساب super_admin أول</li>
+<li>اختبار الاتصال والصلاحيات</li>
+</ol>
+
+<h2 id="3-12">3.12 الترحيل</h2>
+<table>
+<tr><th>الإصدار</th><th>الوصف</th></tr>
+<tr><td>migrate_v2.0.4.sql</td><td>إضافة أعمدة is_active, academic_year_id, school_id</td></tr>
+<tr><td>migrate_v2.0.5.sql</td><td>ترحيل alert_type ENUM، إضافة notes</td></tr>
+<tr><td>migrate_v2.1.0.sql</td><td>إضافة updated_at، نقل climate_survey_items</td></tr>
+<tr><td>migrate_v2.2.0.sql</td><td>إضافة climate و teaching إلى ENUM التنبيهات</td></tr>
+<tr><td>migrate_v3.0.0.sql</td><td>إعادة هيكلة تقييم التدريس</td></tr>
+<tr><td>migrate_v3.1.0.sql</td><td>إصلاح خطط التحسين</td></tr>
+</table>
+
+<h2 id="3-13">3.13 واجهة API</h2>
+<table>
+<tr><th>المسار</th><th>الطريقة</th><th>الوصف</th></tr>
+<tr><td>/api/v1/auth/login</td><td>POST</td><td>تسجيل الدخول</td></tr>
+<tr><td>/api/v1/auth/logout</td><td>POST</td><td>تسجيل الخروج</td></tr>
+<tr><td>/api/session/ping</td><td>GET/POST</td><td>الحفاظ على الجلسة</td></tr>
+<tr><td>/api/v1/users</td><td>GET</td><td>قائمة المستخدمين</td></tr>
+<tr><td>/api/v1/eqi/calculate</td><td>POST</td><td>حساب EQI</td></tr>
+<tr><td>/api/v1/eqi</td><td>GET</td><td>استعلام نتائج EQI</td></tr>
+<tr><td>/api/v1/eqi/compare</td><td>GET</td><td>مقارنة مدارس</td></tr>
+<tr><td>/api/v1/reports/annual</td><td>GET</td><td>التقرير السنوي</td></tr>
+<tr><td>/api/v1/students/search</td><td>GET</td><td>البحث عن طلاب</td></tr>
+</table>
+
+<h2 id="3-14">3.14 قواعد التحقق من البيانات</h2>
+<table>
+<tr><th>الحقل</th><th>نوع التحقق</th><th>القاعدة</th></tr>
+<tr><td>اسم المستخدم</td><td>تنسيق</td><td>3-50 حرفاً، أحرف وأرقام فقط، فريد</td></tr>
+<tr><td>كلمة المرور</td><td>قوة</td><td>8 أحرف على الأقل، حرف كبير + حرف صغير + رقم</td></tr>
+<tr><td>البريد الإلكتروني</td><td>تنسيق</td><td>نمط email صحيح، فريد في النظام</td></tr>
+<tr><td>رقم الهاتف</td><td>تنسيق</td><td>أرقام فقط، 7-15 رقم</td></tr>
+<tr><td>الاسم العربي</td><td>تنسيق</td><td>2-100 حرف، أحرف عربية ومسافات</td></tr>
+<tr><td>الدرجة</td><td>نطاق</td><td>0-100 (نسبة مئوية) أو 0-Max (حسب الاختبار)</td></tr>
+<tr><td>التاريخ</td><td>تنسيق</td><td>YYYY-MM-DD، يجب أن يكون ضمن نطاق السنة الدراسية</td></tr>
+<tr><td>كود الطالب</td><td>تنسيق + فريد</td><td>فريد على مستوى المدرسة</td></tr>
+</table>
+<h1 id="ch4">الفصل الرابع: التصميم</h1>
+
+<h2 id="4-1">4.1 مخططات تدفق البيانات (DFD)</h2>
+
+<h3>المستوى 0 - مخطط السياق</h3>
+<div class="mermaid">
+graph TD
+    Admin[مدير النظام] -->|إدارة المستخدمين والصلاحيات| EQAS[نظام EQAS]
+    GroupAdmin[مدير المجموعة] -->|إدارة المدارس والسياسات والتقارير| EQAS
+    SchoolAdmin[مدير المدرسة] -->|إدارة الطلاب والمعلمين والبيانات| EQAS
+    Teacher[المعلم] -->|إدخال الدرجات والتقييمات| EQAS
+    Student[الطالب] -->|استعراض النتائج والجدول| EQAS
+    Parent[ولي الأمر] -->|متابعة أداء الطالب| EQAS
+    EQAS -->|تقارير وإشعارات| Admin
+    EQAS -->|لوحات بيانات وتحليلات| GroupAdmin
+    EQAS -->|تقارير المدرسة| SchoolAdmin
+    EQAS -->|كشوف الدرجات| Teacher
+    EQAS -->|النتائج والجدول| Student
+    EQAS -->|إشعارات المتابعة| Parent
+</div>
+
+<h3>المستوى 1 - العمليات الرئيسية</h3>
+<div class="mermaid">
+graph LR
+    A[إدارة المستخدمين] --> DB[(قاعدة البيانات)]
+    B[إدارة المدارس] --> DB
+    C[إدارة الطلاب] --> DB
+    D[إدارة المواد والشعب] --> DB
+    E[إدارة الدرجات] --> DB
+    F[حساب EQI] --> DB
+    G[إدارة السلوك] --> DB
+    H[إدارة الحضور] --> DB
+    I[التقارير والتحليلات] --> DB
+    J[إدارة الاستبيانات] --> DB
+    DB --> A
+    DB --> B
+    DB --> C
+    DB --> D
+    DB --> E
+    DB --> F
+    DB --> G
+    DB --> H
+    DB --> I
+    DB --> J
+</div>
+
+<h3>المستوى 2 - تفصيل عملية حساب EQI</h3>
+<div class="mermaid">
+graph TD
+    Input[بيانات خام] --> Calc[محرك حساب EQI]
+    Calc --> Climate[حساب بُعد المناخ 25%]
+    Calc --> Behavior[حساب بُعد السلوك 20%]
+    Calc --> Teaching[حساب بُعد التدريس 20%]
+    Calc --> Attendance[حساب بُعد الحضور 15%]
+    Calc --> Skills[حساب بُعد المهارات 20%]
+    Climate --> Aggregate[تجميع مرجح]
+    Behavior --> Aggregate
+    Teaching --> Aggregate
+    Attendance --> Aggregate
+    Skills --> Aggregate
+    Aggregate --> Context[التعديل السياقي]
+    Context --> Output[نتيجة EQI نهائية]
+</div>
+
+<h2 id="4-2">4.2 مخطط العلاقات بين الكيانات (ERD)</h2>
+<div class="mermaid">
+erDiagram
+    users ||--o{ user_sessions : has
+    users ||--o{ activity_logs : creates
+    roles ||--o{ users : assigned
+    roles ||--o{ role_permissions : has
+    permissions ||--o{ role_permissions : granted
+    schools ||--o{ users : employs
+    schools ||--o{ students : enrolls
+    schools ||--o{ classes : contains
+    schools ||--o{ climate_surveys : conducts
+    schools ||--o{ school_context : has
+    academic_years ||--o{ semesters : contains
+    semesters ||--o{ classes : scheduled
+    semesters ||--o{ enrollments : tracks
+    semesters ||--o{ eqi_calculations : calculated
+    classes ||--o{ enrollments : has
+    classes ||--o{ student_grades : receives
+    classes ||--o{ subject_teachers : assigned
+    students ||--o{ enrollments : enrolled
+    students ||--o{ student_grades : receives
+    students ||--o{ behavior_incidents : involved
+    subjects ||--o{ student_grades : assessed
+    subjects ||--o{ subject_teachers : taught
+    subjects ||--o{ classes : offered
+    eqi_calculations ||--o{ eqi_dimensions : contains
+    alerts ||--o{ alert_notifications : sends
+    assessment_forms ||--o{ assessment_criteria : contains
+    teaching_evaluations }|--|| assessment_forms : uses
+    teaching_evaluations }|--|| users : evaluated
+    climate_surveys ||--o{ climate_items : contains
+    system_settings ||--o{ schools : configures
+    notifications ||--o{ users : sent
+</div>
+<h2 id="4-3">4.3 قاموس البيانات</h2>
+
+<h3>4.3.1 جدول المستخدمين (users)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>username</td><td>VARCHAR(50)</td><td>UNIQUE, NOT NULL</td><td>اسم المستخدم</td></tr>
+<tr><td>email</td><td>VARCHAR(100)</td><td>UNIQUE, NOT NULL</td><td>البريد الالكتروني</td></tr>
+<tr><td>password_hash</td><td>VARCHAR(255)</td><td>NOT NULL</td><td>تجزئة كلمة المرور (bcrypt)</td></tr>
+<tr><td>password_hash_sig</td><td>VARCHAR(255)</td><td>NULL</td><td>توقيع اعادة المصادقة</td></tr>
+<tr><td>role_id</td><td>INT</td><td>FK roles.id</td><td>الدور</td></tr>
+<tr><td>school_id</td><td>INT</td><td>FK schools.id, NULL</td><td>المدرسة المرتبطة</td></tr>
+<tr><td>full_name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>الاسم الكامل بالعربية</td></tr>
+<tr><td>phone</td><td>VARCHAR(20)</td><td>NULL</td><td>رقم الهاتف</td></tr>
+<tr><td>is_active</td><td>TINYINT(1)</td><td>DEFAULT 1</td><td>حالة الحساب</td></tr>
+<tr><td>must_change_password</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>اجبار تغيير كلمة المرور</td></tr>
+<tr><td>last_login</td><td>DATETIME</td><td>NULL</td><td>اخر تسجيل دخول</td></tr>
+<tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الانشاء</td></tr>
+</table>
+
+<h3>4.3.2 جدول المدارس (schools)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>name_ar</td><td>VARCHAR(100)</td><td>NOT NULL</td><td>اسم المدرسة بالعربية</td></tr>
+<tr><td>name_en</td><td>VARCHAR(100)</td><td>NULL</td><td>اسم المدرسة بالانجليزية</td></tr>
+<tr><td>code</td><td>VARCHAR(20)</td><td>UNIQUE, NOT NULL</td><td>رمز المدرسة</td></tr>
+<tr><td>location</td><td>VARCHAR(200)</td><td>NULL</td><td>الموقع الجغرافي</td></tr>
+<tr><td>is_active</td><td>TINYINT(1)</td><td>DEFAULT 1</td><td>حالة التفعيل</td></tr>
+<tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الانشاء</td></tr>
+</table>
+
+<h3>4.3.3 جدول السنوات الاكاديمية (academic_years)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>name_ar</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>اسم السنة بالعربية</td></tr>
+<tr><td>start_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ البداية</td></tr>
+<tr><td>end_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ النهاية</td></tr>
+<tr><td>is_current</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>السنة الحالية</td></tr>
+<tr><td>is_active</td><td>TINYINT(1)</td><td>DEFAULT 1</td><td>مفعلة (غير مؤرشفة)</td></tr>
+</table>
+
+<h3>4.3.4 جدول الفصول الدراسية (semesters)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>academic_year_id</td><td>INT</td><td>FK academic_years.id</td><td>السنة الاكاديمية</td></tr>
+<tr><td>name_ar</td><td>VARCHAR(50)</td><td>NOT NULL</td><td>اسم الفصل بالعربية</td></tr>
+<tr><td>start_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ البداية</td></tr>
+<tr><td>end_date</td><td>DATE</td><td>NOT NULL</td><td>تاريخ النهاية</td></tr>
+<tr><td>is_current</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>الفصل الحالي</td></tr>
+<tr><td>lock_level</td><td>INT</td><td>DEFAULT 0</td><td>مستوى القفل الاداري</td></tr>
+</table>
+
+<h3>4.3.5 جدول حسابات EQI (eqi_calculations)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>school_id</td><td>INT</td><td>FK schools.id</td><td>المدرسة</td></tr>
+<tr><td>semester_id</td><td>INT</td><td>FK semesters.id</td><td>الفصل الدراسي</td></tr>
+<tr><td>overall_eqi</td><td>DECIMAL(5,2)</td><td>NULL</td><td>المؤشر الكلي (0-100)</td></tr>
+<tr><td>climate_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>بعد المناخ (25%)</td></tr>
+<tr><td>behavior_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>بعد السلوك (20%)</td></tr>
+<tr><td>teaching_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>بعد التدريس (20%)</td></tr>
+<tr><td>attendance_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>بعد الحضور (15%)</td></tr>
+<tr><td>skills_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>بعد المهارات (20%)</td></tr>
+<tr><td>source_type</td><td>VARCHAR(20)</td><td>DEFAULT direct</td><td>نوع المصدر (direct/proxy)</td></tr>
+<tr><td>calculated_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الحساب</td></tr>
+</table>
+
+<h3>4.3.6 جدول استبيانات المناخ (climate_surveys)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>school_id</td><td>INT</td><td>FK schools.id</td><td>المدرسة</td></tr>
+<tr><td>semester_id</td><td>INT</td><td>FK semesters.id</td><td>الفصل الدراسي</td></tr>
+<tr><td>respondent_id</td><td>INT</td><td>FK users.id</td><td>المستجيب</td></tr>
+<tr><td>respondent_type</td><td>ENUM</td><td>teacher,student,parent</td><td>نوع المستجيب</td></tr>
+<tr><td>overall_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>الدرجة الكلية</td></tr>
+<tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الانشاء</td></tr>
+<tr><td>updated_at</td><td>TIMESTAMP</td><td>NULL</td><td>تاريخ التعديل</td></tr>
+</table>
+
+<h3>4.3.7 جدول تقييمات التدريس (teaching_evaluations)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>teacher_id</td><td>INT</td><td>FK users.id</td><td>المعلم المقيَّم</td></tr>
+<tr><td>evaluator_id</td><td>INT</td><td>FK users.id</td><td>المقيّم</td></tr>
+<tr><td>form_id</td><td>INT</td><td>FK assessment_forms.id</td><td>نموذج التقييم</td></tr>
+<tr><td>total_score</td><td>DECIMAL(5,2)</td><td>NULL</td><td>الدرجة الكلية</td></tr>
+<tr><td>evaluation_type</td><td>ENUM</td><td>self,peer,admin</td><td>نوع التقييم</td></tr>
+<tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الانشاء</td></tr>
+</table>
+
+<h3>4.3.8 جدول التنبيهات (alerts)</h3>
+<table>
+<tr><th>العمود</th><th>النوع</th><th>القيود</th><th>الوصف</th></tr>
+<tr><td>id</td><td>INT</td><td>PK, AUTO_INCREMENT</td><td>المعرف الفريد</td></tr>
+<tr><td>type</td><td>ENUM</td><td>eqi,climate,teaching,behavior,attendance,system</td><td>نوع التنبيه</td></tr>
+<tr><td>severity</td><td>ENUM</td><td>info,warning,danger,critical</td><td>شدة التنبيه</td></tr>
+<tr><td>title</td><td>VARCHAR(200)</td><td>NOT NULL</td><td>عنوان التنبيه</td></tr>
+<tr><td>description</td><td>TEXT</td><td>NULL</td><td>وصف التنبيه</td></tr>
+<tr><td>school_id</td><td>INT</td><td>FK schools.id, NULL</td><td>المدرسة المرتبطة</td></tr>
+<tr><td>is_read</td><td>TINYINT(1)</td><td>DEFAULT 0</td><td>هل تمت القراءة</td></tr>
+<tr><td>created_at</td><td>TIMESTAMP</td><td>DEFAULT CURRENT_TIMESTAMP</td><td>تاريخ الانشاء</td></tr>
+</table>
+<h2 id="4-4">4.4 حالات الاستخدام (Use Cases)</h2>
+
+<h3>UC-01: ادارة المستخدمين</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>مدير المجموعة / مدير المدرسة</td></tr>
+<tr><th>الوصف</th><td>انشاء وتعديل وحذف حسابات المستخدمين وتعيين الصلاحيات</td></tr>
+<tr><th>المدخلات</th><td>اسم المستخدم، البريد، الدور، المدرسة</td></tr>
+<tr><th>المخرجات</th><td>حساب جديد او محدث مع بيانات دخول</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يدخل المدير صفحة ادارة المستخدمين<br>2. يضغط اضافة مستخدم<br>3. يملأ البيانات<br>4. يحفظ النظام المستخدم ويولّد كلمة مرور<br>5. يعرض بيانات الدخول</td></tr>
+<tr><th>السيناريو البديل</th><td>بيانات غير صالحة -> عرض اخطاء التحقق</td></tr>
+<tr><th>الاستثناءات</th><td>اسم مستخدم مكرر -> رفض الحفظ</td></tr>
+</table>
+
+<h3>UC-02: حساب مؤشر EQI</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>مدير المجموعة</td></tr>
+<tr><th>الوصف</th><td>حساب مؤشر جودة التعليم الشامل لجميع المدارس</td></tr>
+<tr><th>المدخلات</th><td>مدرسة، فصل دراسي، اوزان الابعاد</td></tr>
+<tr><th>المخرجات</th><td>نتيجة EQI مع تفصيل الابعاد الخمسة</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يختار المدير المدرسة والفصل<br>2. يجمع النظام البيانات من 5 ابعاد<br>3. يحسب كل بُعد<br>4. يطبق الاوزان<br>5. يطبق التعديل السياقي<br>6. يحفظ النتيجة</td></tr>
+<tr><th>السيناريو البديل</th><td>بيانات ناقصة -> استخدام وكيل (proxy) مع تسجيل تحذير</td></tr>
+<tr><th>الاستثناءات</th><td>فصل مقفل -> رفض الحساب</td></tr>
+</table>
+
+<h3>UC-03: ادارة استبيانات المناخ</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>المعلم / الطالب / ولي الامر</td></tr>
+<tr><th>الوصف</th><td>ملء استبيان المناخ المدرسي</td></tr>
+<tr><th>المدخلات</th><td>تقييمات بنود الاستبيان (1-5)</td></tr>
+<tr><th>المخرجات</th><td>درجة مناخ مدرسي محدثة</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يفتح المستجيب الاستبيان<br>2. يقيّم كل بند<br>3. يرسل الاجابات<br>4. يحسب النظام الدرجات<br>5. يحدث درجة المناخ</td></tr>
+<tr><th>الاستثناءات</th><td>استبيان مغلق -> رفض الارسال</td></tr>
+</table>
+
+<h3>UC-04: ادارة الحوادث السلوكية</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>المعلم / المرشد الطلابي</td></tr>
+<tr><th>الوصف</th><td>تسجيل ومتابعة الحوادث السلوكية</td></tr>
+<tr><th>المدخلات</th><td>طالب، نوع الحادث، الوصف، التاريخ</td></tr>
+<tr><th>المخرجات</th><td>سجل حادث محدث</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يختار المعلم تسجيل حادث<br>2. يختار الطالب ونوع الحادث<br>3. يضيف وصفاً<br>4. يحفظ<br>5. يحدث النظام درجة السلوك</td></tr>
+<tr><th>الاستثناءات</th><td>طالب غير موجود -> خطأ</td></tr>
+</table>
+
+<h3>UC-05: عرض لوحة التحليلات</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>مدير المجموعة</td></tr>
+<tr><th>الوصف</th><td>استعراض التحليلات الشاملة لاداء المدارس</td></tr>
+<tr><th>المدخلات</th><td>فلاتر (سنة، فصل، مدرسة)</td></tr>
+<tr><th>المخرجات</th><td>رسوم بيانية وجداول تحليلية</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يختار المدير اداة التحليل<br>2. يطبق الفلاتر<br>3. يعرض النظام الرسوم البيانية<br>4. يمكن تصدير التقرير</td></tr>
+<tr><th>الاستثناءات</th><td>لا بيانات -> عرض حالة فارغة مع توصيات</td></tr>
+</table>
+
+<h3>UC-06: ادارة التقييمات التدريسية</h3>
+<table>
+<tr><th>الممثل الرئيسي</th><td>المشرف التربوي / المدير</td></tr>
+<tr><th>الوصف</th><td>تقييم اداء المعلمين بثلاثة انواع (ذاتي، اقران، اداري)</td></tr>
+<tr><th>المدخلات</th><td>معلم، نموذج تقييم، درجات المعايير</td></tr>
+<tr><th>المخرجات</th><td>تقييم مسجل مع درجة كلية</td></tr>
+<tr><th>السيناريو الرئيسي</th><td>1. يختار المقيّم المعلم ونوع التقييم<br>2. يملأ معايير النموذج<br>3. يحفظ التقييم<br>4. يحدث النظام درجة التدريس</td></tr>
+<tr><th>الاستثناءات</th><td>نموذج غير نشط -> رفض</td></tr>
+</table>
+
+<h2 id="4-5">4.5 مخططات التتابع (Sequence Diagrams)</h2>
+
+<h3>4.5.1 تسجيل الدخول</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant U as المستخدم
+    participant UI as واجهة الدخول
+    participant Auth as وحدة المصادقة
+    participant DB as قاعدة البيانات
+    participant Session as ادارة الجلسات
+
+    U->>UI: ادخال اسم المستخدم وكلمة المرور
+    UI->>Auth: ارسال بيانات الدخول
+    Auth->>DB: البحث عن المستخدم
+    DB-->>Auth: بيانات المستخدم
+    Auth->>Auth: التحقق من كلمة المرور
+    alt كلمة المرور صحيحة
+        Auth->>Auth: فحص must_change_password
+        alt يجب تغيير كلمة المرور
+            Auth-->>UI: تحويل الى صفحة تغيير كلمة المرور
+        else لا يحتاج تغيير
+            Auth->>Session: انشاء جلسة جديدة
+            Auth->>DB: تحديث last_login
+            Auth-->>UI: تحويل الى لوحة القيادة
+        end
+    else كلمة المرور خاطئة
+        Auth-->>UI: رسالة خطأ
+    end
+</div>
+
+<h3>4.5.2 حساب EQI</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant GA as مدير المجموعة
+    participant UI as صفحة الحساب
+    participant EQI as محرك EQI
+    participant Climate as خدمة المناخ
+    participant Behavior as خدمة السلوك
+    participant Teaching as خدمة التدريس
+    participant Attend as خدمة الحضور
+    participant Skills as خدمة المهارات
+    participant Context as التعديل السياقي
+    participant DB as قاعدة البيانات
+
+    GA->>UI: اختيار المدرسة والفصل
+    UI->>EQI: طلب حساب EQI
+    EQI->>Climate: حساب بعد المناخ
+    Climate->>DB: استعلام climate_surveys
+    DB-->>Climate: درجات المناخ
+    Climate-->>EQI: climate_score
+    EQI->>Behavior: حساب بعد السلوك
+    Behavior->>DB: استعلام behavior_incidents
+    DB-->>Behavior: بيانات السلوك
+    Behavior-->>EQI: behavior_score
+    EQI->>Teaching: حساب بعد التدريس
+    Teaching->>DB: استعلام teaching_evaluations
+    DB-->>Teaching: بيانات التدريس
+    alt توجد تقييمات
+        Teaching-->>EQI: teaching_score (مباشر)
+    else لا توجد تقييمات
+        Teaching->>DB: استعلام student_grades (وكيل)
+        DB-->>Teaching: درجات الطلاب
+        Teaching-->>EQI: teaching_score (وكيل)
+    end
+    EQI->>Attend: حساب بعد الحضور
+    Attend->>DB: استعلام attendance_records
+    DB-->>Attend: بيانات الحضور
+    Attend-->>EQI: attendance_score
+    EQI->>Skills: حساب بعد المهارات
+    Skills->>DB: استعلام student_grades
+    DB-->>Skills: درجات المهارات
+    Skills-->>EQI: skills_score
+    EQI->>Context: تطبيق التعديل السياقي
+    Context->>DB: استعلام school_context
+    DB-->>Context: عوامل السياق
+    Context-->>EQI: adjusted_eqi
+    EQI->>DB: حفظ نتيجة EQI
+    EQI-->>UI: عرض النتيجة
+    UI-->>GA: عرض لوحة EQI
+</div>
+
+<h3>4.5.3 ملء استبيان المناخ</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant R as المستجيب
+    participant UI as نموذج الاستبيان
+    participant Survey as خدمة الاستبيانات
+    participant DB as قاعدة البيانات
+    participant Alert as محرك التنبيهات
+
+    R->>UI: فتح الاستبيان
+    UI->>DB: التحقق من صلاحية المستجيب
+    DB-->>UI: صلاحية مؤكدة
+    UI-->>R: عرض بنود الاستبيان
+    R->>UI: ادخال التقييمات
+    UI->>Survey: ارسال الاجابات
+    Survey->>Survey: حساب الدرجات
+    Survey->>DB: حفظ الاستبيان
+    Survey->>DB: تحديث درجة المناخ
+    Survey->>Alert: فحص عتبات المناخ
+    alt مناخ اقل من 50%
+        Alert->>DB: انشاء تنبيه مناخ منخفض
+    end
+    alt مشاركة اقل من 60%
+        Alert->>DB: انشاء تنبيه مشاركة منخفضة
+    end
+    Survey-->>UI: تأكيد الارسال
+    UI-->>R: رسالة شكر
+</div>
+<h2 id="4-6">4.6 مخططات النشاط (Activity Diagrams)</h2>
+
+<h3>4.6.1 دورة حياة حساب EQI</h3>
+<div class="mermaid">
+flowchart TD
+    Start([بداية]) --> CheckSemester{الفصل مفتوح؟}
+    CheckSemester -->|لا| Locked[عرض رسالة: فصل مقفل]
+    Locked --> End([نهاية])
+    CheckSemester -->|نعم| CollectData[جمع البيانات من 5 ابعاد]
+    CollectData --> Climate{بيانات مناخ متوفرة؟}
+    Climate -->|نعم| CalcClimate[حساب درجة المناخ]
+    Climate -->|لا| ClimateZero[درجة المناخ = 0]
+    CalcClimate --> Behavior{بيانات سلوك متوفرة؟}
+    ClimateZero --> Behavior
+    Behavior -->|نعم| CalcBehavior[حساب درجة السلوك]
+    Behavior -->|لا| BehaviorZero[درجة السلوك = 0]
+    CalcBehavior --> Teaching{بيانات تدريس متوفرة؟}
+    BehaviorZero --> Teaching
+    Teaching -->|نعم| CalcTeaching[حساب درجة التدريس - مباشر]
+    Teaching -->|لا| ProxyTeaching[حساب وكيل من درجات الطلاب]
+    CalcTeaching --> Attendance{بيانات حضور متوفرة؟}
+    ProxyTeaching --> Attendance
+    Attendance -->|نعم| CalcAttendance[حساب درجة الحضور]
+    Attendance -->|لا| AttendZero[درجة الحضور = 0]
+    CalcAttendance --> Skills{بيانات مهارات متوفرة؟}
+    AttendZero --> Skills
+    Skills -->|نعم| CalcSkills[حساب درجة المهارات]
+    Skills -->|لا| SkillsZero[درجة المهارات = 0]
+    CalcSkills --> Aggregate[تطبيق الاوزان المرجحة]
+    SkillsZero --> Aggregate
+    Aggregate --> Context{سياق مسجل؟}
+    Context -->|نعم| Adjust[تطبيق التعديل السياقي]
+    Context -->|لا| NoAdjust[EQI = الخام]
+    Adjust --> Save[حفظ النتيجة]
+    NoAdjust --> Save
+    Save --> Alerts[فحص عتبات التنبيهات]
+    Alerts --> Display[عرض النتيجة]
+    Display --> End
+</div>
+
+<h3>4.6.2 دورة حياة المستخدم</h3>
+<div class="mermaid">
+flowchart TD
+    Start([بداية]) --> Create[انشاء حساب جديد]
+    Create --> GenPassword[توليد كلمة مرور عشوائية]
+    GenPassword --> SetFlag[تعيين must_change_password = 1]
+    SetFlag --> Notify[عرض بيانات الدخول]
+    Notify --> Login[اول تسجيل دخول]
+    Login --> CheckFlag{must_change_password؟}
+    CheckFlag -->|نعم| ForceChange[تحويل الى تغيير كلمة المرور]
+    CheckFlag -->|لا| Dashboard[الوصول العادي]
+    ForceChange --> NewPassword[ادخال كلمة مرور جديدة]
+    NewPassword --> Validate{كلمة مرور قوية؟}
+    Validate -->|لا| NewPassword
+    Validate -->|نعم| UpdateDB[تحديث hash + تعيين flag = 0]
+    UpdateDB --> UpdateSession[تحديث توقيع الجلسة]
+    UpdateSession --> Dashboard
+    Dashboard --> Use[استخدام النظام]
+    Use --> Logout[تسجيل خروج]
+    Logout --> End([نهاية])
+</div>
+
+<h2 id="4-7">4.7 مخطط الفئات (Class Diagram)</h2>
+<div class="mermaid">
+classDiagram
+    class User {
+        +int id
+        +string username
+        +string email
+        +string password_hash
+        +int role_id
+        +int school_id
+        +bool is_active
+        +bool must_change_password
+        +login()
+        +logout()
+        +changePassword()
+        +hasPermission()
+    }
+
+    class Role {
+        +int id
+        +string name
+        +string display_name_ar
+        +getUsers()
+        +getPermissions()
+    }
+
+    class Permission {
+        +int id
+        +string name
+        +string category
+        +getRoles()
+    }
+
+    class School {
+        +int id
+        +string name_ar
+        +string code
+        +bool is_active
+        +getStudents()
+        +getTeachers()
+        +getEQI()
+    }
+
+    class AcademicYear {
+        +int id
+        +string name_ar
+        +date start_date
+        +date end_date
+        +bool is_current
+        +bool is_active
+        +getSemesters()
+        +archive()
+    }
+
+    class Semester {
+        +int id
+        +int academic_year_id
+        +string name_ar
+        +date start_date
+        +date end_date
+        +bool is_current
+        +int lock_level
+        +lock()
+        +unlock()
+    }
+
+    class EQICalculator {
+        +calculate()
+        +calculateClimateScore()
+        +calculateBehaviorScore()
+        +calculateTeachingScore()
+        +calculateAttendanceScore()
+        +calculateSkillsScore()
+        +compareSchools()
+        +getRecommendations()
+    }
+
+    class ContextualAdjustmentService {
+        +calculateChallengeIndex()
+        +adjustEQI()
+        +getSchoolContext()
+        +saveSchoolContext()
+    }
+
+    class AlertEngine {
+        +runAllChecks()
+        +checkEQIThresholds()
+        +checkClimateThresholds()
+        +checkTeachingThresholds()
+        +createAlert()
+        +markAsRead()
+    }
+
+    class ClimateSurvey {
+        +int id
+        +int school_id
+        +int semester_id
+        +int respondent_id
+        +string respondent_type
+        +decimal overall_score
+        +submit()
+        +getScores()
+    }
+
+    class TeachingEvaluation {
+        +int id
+        +int teacher_id
+        +int evaluator_id
+        +int form_id
+        +decimal total_score
+        +string evaluation_type
+        +submit()
+        +getScores()
+    }
+
+    class ReportTemplate {
+        +addCover()
+        +addTable()
+        +addKPI()
+        +addProgressBar()
+        +addRecommendations()
+        +generatePDF()
+    }
+
+    User "1" --> "1" Role : has
+    Role "1" --> "*" Permission : grants
+    User "0..1" --> "1" School : belongs
+    School "1" --> "*" Student : enrolls
+    School "1" --> "*" Class : contains
+    AcademicYear "1" --> "*" Semester : contains
+    EQICalculator --> ContextualAdjustmentService : uses
+    AlertEngine --> Database : uses
+    ClimateSurvey --> School : for
+    TeachingEvaluation --> User : evaluates
+    TeachingEvaluation --> AssessmentForm : uses
+    ReportTemplate --> Database : reads
+</div>
+<h1 id="ch5">الفصل الخامس: التصميم التفصيلي</h1>
+
+<h2 id="5-1">5.1 هندسة المعمارية</h2>
+<p>يعتمد نظام EQAS معمارية <strong>MVC (Model-View-Controller)</strong> المعدلة مع فصل واضح بين الطبقات:</p>
+
+<h3>طبقات النظام</h3>
+<table>
+<tr><th>الطبقة</th><th>الوصف</th><th>المسار</th></tr>
+<tr><td>العرض (View)</td><td>صفحات HTML/PHP مع قوالب مشتركة</td><td>pages/</td></tr>
+<tr><td>التحكم (Controller)</td><td>معالجة الطلبات والتوجيه</td><td>pages/*.php</td></tr>
+<tr><td>النموذج (Model)</td><td>الوصول للبيانات ومنطق الاعمال</td><td>includes/*.php</td></tr>
+<tr><td>الخدمات (Services)</td><td>خدمات متخصصة (EQI، تعديل سياقي، تنبيهات)</td><td>includes/eqi.php, contextual_adjustment.php, alerts.php</td></tr>
+<tr><td>المساعدة (Helpers)</td><td>دوال مساعدة عامة</td><td>includes/helpers.php, filter_helpers.php</td></tr>
+<tr><td>البيانات (Data)</td><td>قاعدة البيانات MySQL</td><td>database/schema.sql</td></tr>
+</table>
+
+<h3>مكونات النظام</h3>
+<div class="mermaid">
+graph TB
+    subgraph Frontend
+        HTML[HTML5 + CSS3]
+        JS[JavaScript ES6+]
+        Chart[Chart.js]
+    end
+
+    subgraph Backend
+        PHP[PHP 8.1+]
+        PDO[PDO MySQL]
+        Session[ادارة الجلسات]
+        Auth[المصادقة والصلاحيات]
+    end
+
+    subgraph Services
+        EQI[محرك EQI]
+        Climate[خدمة المناخ]
+        Teaching[خدمة التدريس]
+        Alerts[محرك التنبيهات]
+        Context[التعديل السياقي]
+        Reports[محرك التقارير]
+    end
+
+    subgraph Database
+        MySQL[(MySQL 8.0)]
+        Tables[42 جدول]
+    end
+
+    HTML --> PHP
+    JS --> PHP
+    Chart --> JS
+    PHP --> PDO
+    PHP --> Session
+    PHP --> Auth
+    PDO --> MySQL
+    MySQL --> Tables
+    PHP --> EQI
+    PHP --> Climate
+    PHP --> Teaching
+    PHP --> Alerts
+    PHP --> Context
+    PHP --> Reports
+    EQI --> PDO
+    Climate --> PDO
+    Teaching --> PDO
+    Alerts --> PDO
+    Context --> PDO
+    Reports --> PDO
+</div>
+
+<h2 id="5-2">5.2 تصميم واجهة المستخدم</h2>
+
+<h3>5.2.1 مبادئ التصميم</h3>
+<ul>
+<li><strong>RTL كامل:</strong> دعم اللغة العربية باتجاه من اليمين لليسار</li>
+<li><strong>تصميم متجاوب:</strong> يعمل على جميع احجام الشاشات</li>
+<li><strong>قوالب مشتركة:</strong> header.php + footer.php + sidebar.php</li>
+<li><strong>الوان موحدة:</strong> نظام الوان متسق مع ترميز الاداء</li>
+<li><strong>امكانية الوصول:</strong> تباين الوان مناسب، نصوص بديلة</li>
+</ul>
+
+<h3>5.2.2 نظام الالوان</h3>
+<table>
+<tr><th>اللون</th><th>الاستخدام</th><th>القيمة</th></tr>
+<tr><td>اخضر</td><td>اداء ممتاز (90% واكثر)</td><td>#22c55e</td></tr>
+<tr><td>اصفر</td><td>اداء جيد (70-89%)</td><td>#eab308</td></tr>
+<tr><td>برتقالي</td><td>اداء مقبول (50-69%)</td><td>#f97316</td></tr>
+<tr><td>احمر</td><td>اداء ضعيف (اقل من 50%)</td><td>#ef4444</td></tr>
+<tr><td>ازرق</td><td>عناصر تفاعلية وروابط</td><td>#3b82f6</td></tr>
+<tr><td>رمادي</td><td>خلفيات ونصوص ثانوية</td><td>#6b7280</td></tr>
+</table>
+
+<h2 id="5-3">5.3 تصميم قاعدة البيانات</h2>
+
+<h3>5.3.1 المحرك والاعدادات</h3>
+<ul>
+<li><strong>المحرك:</strong> InnoDB (دعم المعاملات و FK)</li>
+<li><strong>ترميز الاحرف:</strong> utf8mb4 (دعم العربية)</li>
+<li><strong>الترتيب:</strong> utf8mb4_unicode_ci</li>
+<li><strong>المفتاح الخارجي:</strong> ON DELETE CASCADE / SET NULL حسب الجدول</li>
+</ul>
+
+<h3>5.3.2 الفهرسة (Indexing)</h3>
+<table>
+<tr><th>الجدول</th><th>الاعمدة المفهرسة</th><th>السبب</th></tr>
+<tr><td>users</td><td>username, email, school_id, role_id</td><td>تسجيل الدخول، فلترة بالمدرسة</td></tr>
+<tr><td>students</td><td>student_code, school_id, name_ar</td><td>البحث، فلترة بالمدرسة</td></tr>
+<tr><td>enrollments</td><td>student_id, class_id, semester_id</td><td>استعلامات التسجيل</td></tr>
+<tr><td>student_grades</td><td>enrollment_id, subject_id</td><td>حساب المعدلات</td></tr>
+<tr><td>eqi_calculations</td><td>school_id, semester_id</td><td>استعلامات EQI</td></tr>
+<tr><td>climate_surveys</td><td>school_id, semester_id, respondent_id</td><td>حساب درجات المناخ</td></tr>
+<tr><td>behavior_incidents</td><td>student_id, class_id, semester_id</td><td>تقارير السلوك</td></tr>
+<tr><td>teaching_evaluations</td><td>teacher_id, evaluator_id, semester_id</td><td>تقييمات المعلمين</td></tr>
+<tr><td>alerts</td><td>type, school_id, is_read</td><td>فلترة التنبيهات</td></tr>
+</table>
+
+<h2 id="5-4">5.4 تصميم الخدمات</h2>
+
+<h3>5.4.1 خدمة حساب EQI (EQICalculator)</h3>
+<p><strong>المسؤولية:</strong> حساب مؤشر جودة التعليم الشامل من 5 ابعاد.</p>
+<p><strong>الدوال الرئيسية:</strong></p>
+<ul>
+<li><code>calculate($schoolId, $semesterId)</code>: حساب EQI كامل</li>
+<li><code>calculateClimateScore()</code>: حساب بعد المناخ</li>
+<li><code>calculateBehaviorScore()</code>: حساب بعد السلوك</li>
+<li><code>calculateTeachingScore()</code>: حساب بعد التدريس (مباشر او وكيل)</li>
+<li><code>calculateAttendanceScore()</code>: حساب بعد الحضور</li>
+<li><code>calculateSkillsScore()</code>: حساب بعد المهارات</li>
+<li><code>compareSchools()</code>: مقارنة مدرستين او اكثر</li>
+<li><code>getRecommendations()</code>: توليد توصيات تلقائية</li>
+<li><code>getEQIHistory()</code>: استرجاع سجل EQI التاريخي</li>
+<li><code>checkDataAvailability()</code>: فحص توفر البيانات</li>
+<li><code>loadWeights()</code>: تحميل اوزان الابعاد</li>
+</ul>
+
+<h3>5.4.2 خدمة التعديل السياقي (ContextualAdjustmentService)</h3>
+<p><strong>المسؤولية:</strong> تطبيق تعديل على EQI الخام بناء على عوامل سياق المدرسة.</p>
+<p><strong>الدوال الرئيسية:</strong></p>
+<ul>
+<li><code>calculateChallengeIndex($schoolId)</code>: حساب مؤشر التحدي (0-100)</li>
+<li><code>adjustEQI($rawEqi, $challengeIndex)</code>: تطبيق المعادلة</li>
+<li><code>getSchoolContext($schoolId)</code>: استرجاع عوامل السياق</li>
+<li><code>saveSchoolContext($schoolId, $factors)</code>: حفظ عوامل السياق</li>
+</ul>
+
+<h3>5.4.3 محرك التنبيهات (AlertEngine)</h3>
+<p><strong>المسؤولية:</strong> فحص عتبات التنبيهات وانشاء تنبيهات ذكية.</p>
+<p><strong>الدوال الرئيسية:</strong></p>
+<ul>
+<li><code>runAllChecks()</code>: تشغيل جميع قواعد التنبيه</li>
+<li><code>checkEQIThresholds()</code>: 3 قواعد EQI (منخفض، تراجع، تحسين)</li>
+<li><code>checkClimateThresholds()</code>: قاعدتان (مناخ اقل من 50%، مشاركة اقل من 60%)</li>
+<li><code>checkTeachingThresholds()</code>: تقييمات اقل من المتوسط</li>
+<li><code>createAlert($type, $severity, $title, $description)</code>: انشاء تنبيه</li>
+<li><code>markAsRead($alertId)</code>: تحديد تنبيه كمقروء</li>
+</ul>
+
+<h3>5.4.4 محرك التقارير (ReportTemplate)</h3>
+<p><strong>المسؤولية:</strong> توليد تقارير PDF احترافية.</p>
+<p><strong>الدوال الرئيسية:</strong></p>
+<ul>
+<li><code>addCover($title, $subtitle)</code>: اضافة صفحة الغلاف</li>
+<li><code>addTable($headers, $rows)</code>: اضافة جدول</li>
+<li><code>addKPI($label, $value, $color)</code>: اضافة بطاقة KPI</li>
+<li><code>addProgressBar($label, $percentage)</code>: اضافة شريط تقدم</li>
+<li><code>addRecommendations($items)</code>: اضافة توصيات</li>
+<li><code>generatePDF()</code>: توليد ملف PDF</li>
+</ul>
+<h2 id="5-5">5.5 تصميم نظام الصلاحيات</h2>
+
+<h3>5.5.1 الادوار</h3>
+<table>
+<tr><th>الدور</th><th>الوصف</th><th>النطاق</th></tr>
+<tr><td>super_admin</td><td>مدير النظام الاعلى</td><td>كامل النظام</td></tr>
+<tr><td>group_admin</td><td>مدير المجموعة</td><td>جميع المدارس</td></tr>
+<tr><td>school_admin</td><td>مدير المدرسة</td><td>مدرسته فقط</td></tr>
+<tr><td>teacher</td><td>المعلم</td><td>شعبه وطلبته</td></tr>
+<tr><td>student</td><td>الطالب</td><td>بياناته فقط</td></tr>
+<tr><td>parent</td><td>ولي الامر</td><td>ابناؤه فقط</td></tr>
+</table>
+
+<h3>5.5.2 مصفوفة الصلاحيات</h3>
+<table>
+<tr><th>الصلاحية</th><th>super_admin</th><th>group_admin</th><th>school_admin</th><th>teacher</th></tr>
+<tr><td>ادارة المستخدمين</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (معلمين فقط)</td><td class="status-danger">لا</td></tr>
+<tr><td>ادارة المدارس</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-danger">لا</td><td class="status-danger">لا</td></tr>
+<tr><td>ادارة الطلاب</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-danger">لا</td></tr>
+<tr><td>ادارة الدرجات</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (شعبه)</td></tr>
+<tr><td>حساب EQI</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-danger">لا</td><td class="status-danger">لا</td></tr>
+<tr><td>ادارة الاستبيانات</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (ملء فقط)</td></tr>
+<tr><td>ادارة التقييمات</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (ذاتي فقط)</td></tr>
+<tr><td>التقارير</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (مدرسته)</td><td class="status-danger">لا</td></tr>
+<tr><td>التحليلات</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-ok">نعم (مدرسته)</td><td class="status-danger">لا</td></tr>
+<tr><td>ادارة السياسات</td><td class="status-ok">نعم</td><td class="status-ok">نعم</td><td class="status-danger">لا</td><td class="status-danger">لا</td></tr>
+</table>
+
+<h3>5.5.3 آلية التحقق</h3>
+<p>يتم التحقق من الصلاحيات عبر دالة <code>hasPermission($permission, $userId)</code> التي:</p>
+<ol>
+<li>تستعلم دور المستخدم من جدول users</li>
+<li>تستعلم الصلاحيات الممنوحة للدور من role_permissions</li>
+<li>تتحقق من وجود الصلاحية المطلوبة</li>
+<li>تعيد true/false</li>
+</ol>
+<p>يتم ايضاً استخدام <code>canSeeMenu($menu, $userId)</code> للتحكم في ظهور عناصر القائمة.</p>
+
+<h3>5.5.4 فلترة البيانات حسب المدرسة</h3>
+<p>للمستخدمين من نوع <code>school_admin</code> و <code>teacher</code>، يتم فلترة جميع الاستعلامات تلقائياً بـ <code>school_id = currentSchoolId()</code> لمنع الوصول لبيانات مدارس اخرى.</p>
+
+<h2 id="5-6">5.6 الخوارزميات الرئيسية</h2>
+
+<h3>5.6.1 خوارزمية حساب EQI</h3>
+<pre><code>function calculateEQI(school_id, semester_id):
+    weights = loadWeights()
+    climate = calculateClimateScore(school_id, semester_id)
+    behavior = calculateBehaviorScore(school_id, semester_id)
+    teaching = calculateTeachingScore(school_id, semester_id)
+    attendance = calculateAttendanceScore(school_id, semester_id)
+    skills = calculateSkillsScore(school_id, semester_id)
+
+    raw_eqi = (climate * weights.climate) + (behavior * weights.behavior) +
+              (teaching * weights.teaching) + (attendance * weights.attendance) +
+              (skills * weights.skills)
+
+    context = getSchoolContext(school_id)
+    if context exists:
+        challenge_index = calculateChallengeIndex(context)
+        adjusted_eqi = raw_eqi + (challenge_index / 100) * max_adjustment
+        adjusted_eqi = min(100, max(0, adjusted_eqi))
+    else:
+        adjusted_eqi = raw_eqi
+
+    saveEQI(school_id, semester_id, raw_eqi, adjusted_eqi, ...)
+    checkAlerts(school_id, semester_id, adjusted_eqi)
+    return { raw_eqi, adjusted_eqi, dimensions }
+</code></pre>
+
+<h3>5.6.2 خوارزمية مؤشر التحدي</h3>
+<pre><code>function calculateChallengeIndex(factors):
+    weights = {
+        socioeconomic: 0.20, parental_involvement: 0.15,
+        teacher_experience: 0.15, student_teacher_ratio: 0.15,
+        infrastructure: 0.10, special_needs: 0.15,
+        turnover_rate: 0.10
+    }
+    challenge = 0
+    for factor, weight in weights:
+        normalized = normalize(factor.value, factor.min, factor.max)
+        challenge += normalized * weight
+    return round(challenge * 100)  // 0-100
+</code></pre>
+
+<h3>5.6.3 خوارزمية الاتجاه السنوي</h3>
+<pre><code>function calculateYearOverYear(current, previous):
+    if previous is null:
+        return { direction: right_arrow, pct: null, label: لا توجد بيانات سابقة }
+    if previous == 0:
+        return { direction: right_arrow, pct: 0, label: مستقر }
+    change = ((current - previous) / previous) * 100
+    if change > 2:
+        return { direction: up_arrow, pct: change, label: تحسن }
+    else if change < -2:
+        return { direction: down_arrow, pct: abs(change), label: تراجع }
+    else:
+        return { direction: right_arrow, pct: abs(change), label: مستقر }
+</code></pre>
+
+<h2 id="5-7">5.7 ادارة الجلسات والامان</h2>
+
+<h3>5.7.1 ادارة الجلسات</h3>
+<ul>
+<li><strong>مدة الجلسة:</strong> 30 دقيقة من اخر نشاط</li>
+<li><strong>تجديد الجلسة:</strong> عبر /api/session/ping.php (GET/POST)</li>
+<li><strong>توقيع الجلسة:</strong> password_hash_sig لمنع استخدام الجلسات المسروقة</li>
+</ul>
+
+<h3>5.7.2 الحماية من الهجمات</h3>
+<table>
+<tr><th>نوع الحماية</th><th>الالية</th></tr>
+<tr><td>CSRF</td><td>رمز CSRF فريد لكل جلسة، تضمين في نماذج POST</td></tr>
+<tr><td>XSS</td><td>htmlspecialchars() على المخرجات، filter_input() للمدخلات</td></tr>
+<tr><td>SQL Injection</td><td>PDO Prepared Statements لجميع الاستعلامات</td></tr>
+<tr><td>كلمات المرور</td><td>password_hash() مع bcrypt، ملح عشوائي تلقائي</td></tr>
+</table>
+
+<h2 id="5-8">5.8 ادارة الاخطاء والتسجيل</h2>
+
+<h3>5.8.1 مستويات الاخطاء</h3>
+<table>
+<tr><th>المستوى</th><th>الوصف</th><th>المعالجة</th></tr>
+<tr><td>INFO</td><td>معلومات عادية</td><td>تسجيل فقط</td></tr>
+<tr><td>WARNING</td><td>تحذير غير حرج</td><td>تسجيل + اشعار</td></tr>
+<tr><td>ERROR</td><td>خطأ في العملية</td><td>تسجيل + عرض رسالة</td></tr>
+<tr><td>CRITICAL</td><td>خطأ حرج</td><td>تسجيل + اشعار فوري + تحويل</td></tr>
+</table>
+
+<h3>5.8.2 سجل النشاط (Activity Logs)</h3>
+<p>يتم تسجيل جميع العمليات الهامة في جدول activity_logs مع: user_id, action, entity_type, entity_id, details (JSON), ip_address, created_at.</p>
+<h1 id="ch6">الفصل السادس: التنفيذ والاختبار</h1>
+
+<h2 id="6-1">6.1 بيئة التطوير</h2>
+<table>
+<tr><th>المكون</th><th>التقنية</th><th>الاصدار</th></tr>
+<tr><td>الخادم المحلي</td><td>XAMPP</td><td>8.1+</td></tr>
+<tr><td>لغة البرمجة</td><td>PHP</td><td>8.1+</td></tr>
+<tr><td>قاعدة البيانات</td><td>MySQL</td><td>8.0+</td></tr>
+<tr><td>الواجهة الامامية</td><td>HTML5, CSS3, JavaScript</td><td>ES6+</td></tr>
+<tr><td>الرسوم البيانية</td><td>Chart.js</td><td>4.x</td></tr>
+<tr><td>توليد PDF</td><td>TCPDF</td><td>6.x</td></tr>
+<tr><td>ادارة الحزم</td><td>Composer</td><td>2.x</td></tr>
+<tr><td>التحكم بالمصادر</td><td>Git</td><td>2.x</td></tr>
+<tr><td>الاختبار الالي</td><td>PHPUnit</td><td>10.x</td></tr>
+<tr><td>اختبار E2E</td><td>Playwright</td><td>1.x</td></tr>
+</table>
+
+<h2 id="6-2">6.2 خطة التنفيذ</h2>
+<p>تم تنفيذ المشروع على 3 مراحل رئيسية:</p>
+
+<h3>المرحلة 1: الاساس (الاسابيع 1-4)</h3>
+<ul>
+<li>اعداد بيئة التطوير وقاعدة البيانات</li>
+<li>بناء نظام المصادقة والصلاحيات</li>
+<li>ادارة المدارس والمستخدمين</li>
+<li>ادارة السنوات والفصول الاكاديمية</li>
+</ul>
+
+<h3>المرحلة 2: الوحدات الاكاديمية (الاسابيع 5-8)</h3>
+<ul>
+<li>ادارة الطلاب والشعب والمواد</li>
+<li>ادارة الدرجات والتقييمات</li>
+<li>ادارة السلوك والحضور</li>
+<li>استبيانات المناخ المدرسي</li>
+</ul>
+
+<h3>المرحلة 3: التحليلات والتقارير (الاسابيع 9-12)</h3>
+<ul>
+<li>محرك حساب EQI</li>
+<li>التعديل السياقي</li>
+<li>لوحات التحليلات</li>
+<li>التقارير السنوية</li>
+<li>محرك التنبيهات</li>
+<li>الاشراف التربوي</li>
+</ul>
+
+<h2 id="6-3">6.3 خطة الاختبار</h2>
+
+<h3>6.3.1 مراحل الاختبار</h3>
+<table>
+<tr><th>المرحلة</th><th>النوع</th><th>العدد</th><th>الحالة</th></tr>
+<tr><td>P1</td><td>Static Analysis</td><td>165 ملف</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P2</td><td>Unit Tests (قائمة)</td><td>109</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P3</td><td>Bug Fixes</td><td>13/15</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P4</td><td>Unit Tests (جديدة)</td><td>3 ملفات</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P5</td><td>Integration Tests</td><td>26</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P6</td><td>Security Tests</td><td>33</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P7</td><td>E2E Playwright</td><td>13</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P8</td><td>Regression</td><td>الكل</td><td class="status-ok">تم بنجاح</td></tr>
+<tr><td>P9</td><td>Documentation</td><td>test-results.md</td><td class="status-ok">تم بنجاح</td></tr>
+</table>
+
+<h3>6.3.2 نتائج الاختبارات الالية</h3>
+<ul>
+<li><strong>PHPUnit:</strong> 0 فشل (وحدة + تكامل + امان)</li>
+<li><strong>Playwright:</strong> 13/13 تم بنجاح</li>
+<li><strong>ثغرات XSS:</strong> لم يتم اكتشاف ثغرات قابلة للاستغلال</li>
+<li><strong>ثغرات SQLi:</strong> لم يتم اكتشاف ثغرات قابلة للاستغلال</li>
+<li><strong>ثغرات CSRF:</strong> لم يتم اكتشاف ثغرات قابلة للاستغلال</li>
+</ul>
+
+<h3>6.3.3 اختبارات الوحدة</h3>
+<table>
+<tr><th>الملف</th><th>العدد</th><th>الوصف</th></tr>
+<tr><td>EQICalculatorTest.php</td><td>17</td><td>اختبار حساب EQI والابعاد</td></tr>
+<tr><td>SecurityTest.php</td><td>33</td><td>اختبارات الامان</td></tr>
+<tr><td>BehaviorCalculatorTest.php</td><td>4</td><td>حساب بعد السلوك</td></tr>
+<tr><td>PromotionEngineTest.php</td><td>3</td><td>محرك الترقية</td></tr>
+<tr><td>PermissionMiddlewareTest.php</td><td>5</td><td>التحقق من الصلاحيات</td></tr>
+<tr><td>ClimateFilterTest.php</td><td>14</td><td>فلترة المناخ</td></tr>
+<tr><td>TeachingEvaluationTest.php</td><td>10</td><td>تقييم التدريس</td></tr>
+</table>
+
+<h3>6.3.4 اختبارات التكامل</h3>
+<table>
+<tr><th>الملف</th><th>العدد</th><th>الوصف</th></tr>
+<tr><td>AcademicYearIntegrationTest.php</td><td>2</td><td>تكامل السنة الاكاديمية</td></tr>
+<tr><td>UserLifecycleIntegrationTest.php</td><td>4</td><td>دورة حياة المستخدم</td></tr>
+<tr><td>AssessmentFlowIntegrationTest.php</td><td>4</td><td>تدفق التقييمات</td></tr>
+<tr><td>EQIIntegrationTest.php</td><td>3</td><td>تكامل EQI</td></tr>
+<tr><td>BehaviorIntegrationTest.php</td><td>4</td><td>تكامل السلوك</td></tr>
+<tr><td>PromotionIntegrationTest.php</td><td>3</td><td>تكامل الترقية</td></tr>
+<tr><td>SchoolIsolationIntegrationTest.php</td><td>7</td><td>عزل المدارس</td></tr>
+</table>
+
+<h3>6.3.5 اختبارات E2E</h3>
+<table>
+<tr><th>الملف</th><th>العدد</th><th>الوصف</th></tr>
+<tr><td>eqas-e2e-tests.js</td><td>13</td><td>سيناريوهات E2E شاملة</td></tr>
+<tr><td>climate-module.spec.js</td><td>20</td><td>وحدة المناخ</td></tr>
+<tr><td>teaching-evaluation.spec.js</td><td>12</td><td>تقييم التدريس</td></tr>
+<tr><td>eqi-module.spec.js</td><td>12</td><td>وحدة EQI</td></tr>
+</table>
+
+<h2 id="6-4">6.4 الترحيل والنشر</h2>
+
+<h3>6.4.1 سكريبتات الترحيل</h3>
+<table>
+<tr><th>الاصدار</th><th>الوصف</th></tr>
+<tr><td>migrate_v2.0.4.sql</td><td>اضافة اعمدة is_active, academic_year_id, school_id</td></tr>
+<tr><td>migrate_v2.0.5.sql</td><td>ترحيل alert_type ENUM، اضافة notes</td></tr>
+<tr><td>migrate_v2.1.0.sql</td><td>اضافة updated_at، نقل climate_survey_items</td></tr>
+<tr><td>migrate_v2.2.0.sql</td><td>اضافة climate و teaching الى ENUM التنبيهات</td></tr>
+<tr><td>migrate_v3.0.0.sql</td><td>اعادة هيكلة تقييم التدريس</td></tr>
+<tr><td>migrate_v3.1.0.sql</td><td>اصلاح خطط التحسين</td></tr>
+</table>
+
+<h3>6.4.2 خطوات النشر</h3>
+<ol>
+<li>نسخ الملفات الى خادم الانتاج</li>
+<li>انشاء قاعدة بيانات جديدة</li>
+<li>تشغيل schema.sql لانشاء الجداول</li>
+<li>تشغيل سكريبتات الترحيل بالترتيب</li>
+<li>تشغيل demo_seed.sql للبيانات التجريبية</li>
+<li>تكوين ملف config.php ببيانات الانتاج</li>
+<li>انشاء حساب super_admin اول</li>
+<li>اختبار الاتصال والصلاحيات</li>
+</ol>
+
+<h2 id="6-5">6.5 النتائج والتوصيات</h2>
+
+<h3>6.5.1 النتائج المحققة</h3>
+<ul>
+<li>نظام متكامل لادارة جودة التعليم في 42 جدولاً</li>
+<li>محرك EQI يحسب 5 ابعاد مع تعديل سياقي</li>
+<li>6 صفحات تحليلات مع رسوم بيانية تفاعلية</li>
+<li>محرك تنبيهات ذكي بـ 3 انواع (EQI، مناخ، تدريس)</li>
+<li>نظام صلاحيات مرن بـ 6 ادوار</li>
+<li>تقارير سنوية احترافية بصيغة PDF</li>
+<li>157+ اختبار الي (وحدة + تكامل + E2E + امان)</li>
+</ul>
+
+<h3>6.5.2 التوصيات للتطوير المستقبلي</h3>
+<ul>
+<li>اضافة تطبيق جوال (Mobile App) للطلاب واولياء الامور</li>
+<li>تكامل مع انظمة التعليم الخارجية (LMS)</li>
+<li>اشعارات عبر البريد الالكتروني و SMS</li>
+<li>ذكاء اصطناعي للتنبؤ بالاداء</li>
+<li>دعم اللغة الانجليزية بشكل كامل</li>
+<li>تحسين الاداء مع قواعد البيانات الكبيرة</li>
+<li>اضافة واجهة REST API كاملة</li>
+</ul>
+<h1 id="ch7">الفصل السابع: الخاتمة</h1>
+
+<h2 id="7-1">7.1 ملخص المشروع</h2>
+<p>تم بنجاح تطوير نظام EQAS (نظام ادارة جودة التعليم الشامل) كمنصة ويب متكاملة لادارة وتحسين جودة التعليم في مجموعة مدارس. النظام يدعم 6 ادوار مختلفة، ويحسب مؤشر جودة التعليم (EQI) من 5 ابعاد، ويوفر لوحات تحليلات متقدمة وتقارير سنوية احترافية.</p>
+
+<h2 id="7-2">7.2 الانجازات</h2>
+<ul>
+<li>بناء نظام كامل من الصفر بـ 42 جدولاً في قاعدة البيانات</li>
+<li>تطوير محرك EQI مع تعديل سياقي ذكي</li>
+<li>انشاء 6 صفحات تحليلات مع رسوم بيانية تفاعلية</li>
+<li>تطوير محرك تنبيهات ذكي</li>
+<li>بناء نظام صلاحيات مرن ومتعدد المستويات</li>
+<li>توليد تقارير سنوية احترافية بصيغة PDF</li>
+<li>كتابة 157+ اختبار الي لضمان الجودة</li>
+</ul>
+
+<h2 id="7-3">7.3 الدروس المستفادة</h2>
+<ul>
+<li>اهمية التصميم المعماري الواضح قبل البدء بالتنفيذ</li>
+<li>ضرورة كتابة الاختبارات الالية مبكراً</li>
+<li>اهمية التوثيق الشامل للقرارات المعمارية</li>
+<li>فائدة استخدام ادوات الذكاء الاصطناعي في تسريع التطوير</li>
+<li>اهمية مراجعة الامان بشكل دوري</li>
+</ul>
+
+<h2 id="7-4">7.4 الخلاصة</h2>
+<p>يُعد نظام EQAS حلاً شاملاً ومتكاملاً لادارة جودة التعليم، يجمع بين ادارة البيانات الاكاديمية، حساب المؤشرات، التحليلات المتقدمة، والتقارير الاحترافية. النظام جاهز للاستخدام الفعلي وقابل للتوسع مستقبلاً.</p>
+
+<hr>
+<h1 id="المراجع">المراجع</h1>
+<ol>
+<li>وزارة التعليم - معايير الجودة المدرسية</li>
+<li>ISO 21001:2018 - انظمة ادارة المؤسسات التعليمية</li>
+<li>EFQM Excellence Model - نموذج التميز الاوروبي</li>
+<li>Baldrige Performance Excellence Framework</li>
+<li>PHP Documentation - https://www.php.net/docs.php</li>
+<li>MySQL Documentation - https://dev.mysql.com/doc/</li>
+<li>Chart.js Documentation - https://www.chartjs.org/docs/</li>
+<li>TCPDF Documentation - https://tcpdf.org/docs/</li>
+<li>PHPUnit Documentation - https://phpunit.de/documentation.html</li>
+<li>Playwright Documentation - https://playwright.dev/</li>
+</ol>
+
+<hr>
+<h1 id="الملاحق">الملاحق</h1>
+
+<h2>ملخص القرارات المعمارية (من AGENTS.md)</h2>
+<table>
+<tr><th>القرار</th><th>التاريخ</th><th>الوصف</th></tr>
+<tr><td>1</td><td>2026-05-11</td><td>النظام الموحّد للتقويم الاكاديمي</td></tr>
+<tr><td>2</td><td>2026-05-11</td><td>دوال السياق</td></tr>
+<tr><td>3</td><td>2026-05-12</td><td>ادارة المعلمين لـ school_admin</td></tr>
+<tr><td>6</td><td>2026-05-13</td><td>معامل التعديل السياقي والاتجاه السنوي</td></tr>
+<tr><td>7</td><td>2026-05-15</td><td>اعادة بناء لوحة القيادة الاستراتيجية</td></tr>
+<tr><td>8</td><td>2026-05-15</td><td>وحدة المناخ المدرسي</td></tr>
+<tr><td>9</td><td>2026-05-16</td><td>تطوير وحدة EQI - 6 مراحل</td></tr>
+<tr><td>10</td><td>2026-05-16</td><td>نظام الصلاحيات وادارة السياسات</td></tr>
+<tr><td>11</td><td>2026-05-16</td><td>التحليلات الاستكشافية</td></tr>
+<tr><td>12</td><td>2026-05-16</td><td>التقارير - التقرير السنوي</td></tr>
+<tr><td>13</td><td>2026-05-16</td><td>الاشراف التربوي</td></tr>
+<tr><td>20</td><td>2026-05-16</td><td>المراجعة الشاملة لوحدة EQI</td></tr>
+</table>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,81 @@
+@startuml BFD6 — التواصل وبوابة المستفيدين
+skinparam linetype ortho
+skinparam rectangle { backgroundColor White }
+hide circle
+
+' ═══════════════════════════════════════════════════
+' BFD 6: التواصل وبوابة المستفيدين
+' جداول: alerts, notifications, parent_students, parent_acknowledgments
+' ═══════════════════════════════════════════════════
+
+entity "alerts" as alerts {
+  id : INT UNSIGNED <<PK>>
+  * school_id : INT UNSIGNED <<FK>>
+  student_id : INT UNSIGNED <<FK>>
+  user_id : INT UNSIGNED <<FK>>
+  * alert_type : ENUM
+  * severity : ENUM
+  * title_ar : VARCHAR(200)
+  * message_ar : TEXT
+  threshold_json : JSON
+  is_read : TINYINT(1)
+  read_at : DATETIME
+  is_resolved : TINYINT(1)
+  resolved_by : INT UNSIGNED <<FK>>
+  resolved_at : DATETIME
+  notes : TEXT
+  created_at : DATETIME
+}
+
+entity "notifications" as notifications {
+  id : INT UNSIGNED <<PK>>
+  * user_id : INT UNSIGNED <<FK>>
+  type : VARCHAR(50)
+  title_ar : VARCHAR(200)
+  message_ar : TEXT
+  related_entity_type : VARCHAR(50)
+  related_entity_id : INT UNSIGNED
+  is_read : TINYINT(1)
+  read_at : DATETIME
+}
+
+entity "parent_students" as parent_students {
+  id : INT UNSIGNED <<PK>>
+  * parent_id : INT UNSIGNED <<FK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * relationship : ENUM
+  ack_grade : TINYINT(1)
+  ack_behavior : TINYINT(1)
+  ack_attendance : TINYINT(1)
+  ack_promotion : TINYINT(1)
+  last_ack_at : DATETIME
+}
+
+entity "parent_acknowledgments" as parent_acknowledgments {
+  id : INT UNSIGNED <<PK>>
+  * parent_id : INT UNSIGNED <<FK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * relationship : ENUM
+  ack_grade : TINYINT(1)
+  ack_behavior : TINYINT(1)
+  ack_attendance : TINYINT(1)
+  ack_promotion : TINYINT(1)
+  last_ack_at : DATETIME
+  is_active : TINYINT(1)
+}
+
+' ═══ Relationships ═══
+schools ||--o{ alerts : "generates"
+students ||--o{ alerts : "targets"
+users ||--o{ alerts : "assigned to"
+users ||--o{ alerts : user_id [norole]
+users ||--o{ alerts : resolved_by [norole]
+
+users ||--o{ notifications : "receives"
+users ||--o{ parent_students : parent_id
+users ||--o{ parent_acknowledgments : parent_id
+
+students ||--o{ parent_students : "linked"
+students ||--o{ parent_acknowledgments : "acknowledged"
+
+@enduml

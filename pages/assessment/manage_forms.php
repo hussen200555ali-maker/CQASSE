@@ -11,7 +11,6 @@ $breadcrumb = ['التقييمات' => 'index.php', 'إدارة النماذج' 
 
 require_once __DIR__ . '/../../includes/header.php';
 
-// التحقق من الصلاحيات - فقط مدير النظام أو مدير المدرسة
 if (!hasPermission('school_admin')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
@@ -19,28 +18,46 @@ if (!hasPermission('school_admin')) {
 
 require_once __DIR__ . '/../../includes/assessment_engine.php';
 $engine = new AssessmentEngine($db);
+$formTypeOptions = $engine->getFormTypeOptions();
 
 // فلتر نوع النموذج
-$filterType = $_GET['form_key'] ?? ''; // [إصلاح 2026-05-11] form_type → form_key
+$filterType = $_GET['form_key'] ?? '';
 
 // جلب النماذج
-$forms = $engine->getForms($filterType ?: null);
+$allForms = $engine->getForms($filterType ?: null);
 
-// معالجة الحذف
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
+// معالجة التعيين كافتراضي
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!verifyCsrf()) {
         setFlash('خطأ في التحقق من الأمان', 'danger');
     } else {
-        $deleteId = (int)($_POST['form_id'] ?? 0);
+        $formId = (int)($_POST['form_id'] ?? 0);
         try {
-            $stmt = $db->prepare("UPDATE assessment_forms SET is_active = 0 WHERE id = ?");
-            $stmt->execute([$deleteId]);
-            setFlash('تم حذف النموذج بنجاح', 'success');
-            redirect('manage_forms.php');
+            if ($_POST['action'] === 'set_default') {
+                // إزالة الافتراضية عن كل النماذج من نفس النوع
+                $stmt = $db->prepare("SELECT form_key FROM assessment_forms WHERE id = ?");
+                $stmt->execute([$formId]);
+                $key = $stmt->fetchColumn();
+                if ($key) {
+                    $db->prepare("UPDATE assessment_forms SET is_default = 0 WHERE form_key = ?")->execute([$key]);
+                    $db->prepare("UPDATE assessment_forms SET is_default = 1 WHERE id = ?")->execute([$formId]);
+                    setFlash('تم تعيين النموذج كافتراضي', 'success');
+                }
+            } elseif ($_POST['action'] === 'delete') {
+                $db->prepare("UPDATE assessment_forms SET is_active = 0 WHERE id = ?")->execute([$formId]);
+                setFlash('تم حذف النموذج بنجاح', 'success');
+            }
+            redirect('manage_forms.php' . ($filterType ? '?form_key=' . urlencode($filterType) : ''));
         } catch (Exception $e) {
-            setFlash('خطأ في حذف النموذج', 'danger');
+            setFlash('خطأ في تنفيذ العملية', 'danger');
         }
     }
+}
+
+// تجميع النماذج حسب النوع
+$grouped = [];
+foreach ($allForms as $f) {
+    $grouped[$f['form_key']][] = $f;
 }
 ?>
 
@@ -56,9 +73,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             <form method="GET" class="form-inline">
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label" style="margin-bottom:0; margin-left:8px;">نوع النموذج:</label>
-                    <select name="form_key" class="form-control" style="width:auto;" onchange="this.form.submit()"> <!-- [إصلاح 2026-05-11] form_type → form_key -->
-                        <option value="">الكل</option>
-                        <?php foreach ($engine->getFormTypeOptions() as $key => $label): ?>
+                    <select name="form_key" class="form-control" style="width:auto;" onchange="this.form.submit()">
+                        <option value="">كل الأنواع</option>
+                        <?php foreach ($formTypeOptions as $key => $label): ?>
                             <option value="<?php echo $key; ?>" <?php echo $filterType === $key ? 'selected' : ''; ?>><?php echo e($label); ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -67,65 +84,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </div>
     </div>
 
-    <!-- قائمة النماذج -->
-    <div class="card">
-        <div class="card-body" style="padding:0;">
-            <?php if (empty($forms)): ?>
-                <div class="table-empty">
-                    <div class="table-empty-icon">📋</div>
-                    <div class="table-empty-text">لا توجد نماذج تقييم</div>
-                    <p style="color:var(--text-muted); font-size:14px;">يمكنك إنشاء نموذج جديد من الزر أعلاه</p>
-                </div>
-            <?php else: ?>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>اسم النموذج</th>
-                                <th>نوع التقييم</th>
-                                <th>عدد الفئات</th>
-                                <th>عدد العناصر</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($forms as $i => $form): ?>
-                            <tr>
-                                <td><?php echo $i + 1; ?></td>
-                                <td>
-                                    <a href="view_form.php?id=<?php echo $form['id']; ?>" style="font-weight:600;">
-                                        <?php echo e($form['name_ar']); ?>
-                                    </a>
-                                    <?php if ($form['name_en']): ?>
-                                        <div style="font-size:12px; color:var(--text-muted);"><?php echo e($form['name_en']); ?></div>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <span class="badge" style="background:<?php echo $engine->getFormTypeIcon($form['form_key']) === '🎯' ? '#e63946' : 'var(--primary)'; /* [إصلاح 2026-05-11] form_type → form_key */ ?>; color:white; padding:3px 8px; border-radius:12px; font-size:11px;">
-                                        <?php echo $engine->getFormTypeIcon($form['form_key']) . ' ' . e($engine->getFormTypeLabel($form['form_key'])); // [إصلاح 2026-05-11] form_type → form_key (تطابق schema) ?>
-                                    </span>
-                                </td>
-                                <td><?php echo number_format($form['category_count']); ?></td>
-                                <td><?php echo number_format($form['item_count']); ?></td>
-                                <td class="actions">
-                                    <a href="view_form.php?id=<?php echo $form['id']; ?>" class="btn btn-sm btn-info" title="عرض">👁️</a>
-                                    <a href="add_form.php?edit=<?php echo $form['id']; ?>" class="btn btn-sm btn-warning" title="تعديل">✏️</a>
-                                    <form method="POST" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا النموذج؟');">
-                                        <?= csrfField() ?>
-                                        <input type="hidden" name="action" value="delete">
-                                        <input type="hidden" name="form_id" value="<?php echo $form['id']; ?>">
-                                        <button type="submit" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
+    <!-- قائمة النماذج مجمعة حسب النوع -->
+    <?php if (empty($allForms)): ?>
+        <div class="card">
+            <div class="card-body" style="text-align:center;padding:60px 20px;">
+                <div style="font-size:48px;margin-bottom:16px;">📋</div>
+                <div style="font-size:18px;font-weight:600;margin-bottom:8px;">لا توجد نماذج تقييم</div>
+                <p style="color:var(--text-muted);">يمكنك إنشاء نموذج جديد من الزر أعلاه</p>
+            </div>
         </div>
-    </div>
+    <?php else: ?>
+        <?php foreach ($grouped as $formKey => $forms): ?>
+        <div class="card mb-4">
+            <div class="card-header" style="background:var(--bg-light, #f8f9fa); border-bottom:2px solid var(--primary);">
+                <div class="flex items-center gap-2">
+                    <span style="font-size:20px;"><?php echo $engine->getFormTypeIcon($formKey); ?></span>
+                    <h4 style="margin:0;font-size:16px;"><?php echo e($formTypeOptions[$formKey] ?? $formKey); ?></h4>
+                    <span class="badge" style="background:var(--primary);color:white;font-size:11px;"><?php echo count($forms); ?> نموذج</span>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم النموذج</th>
+                            <th>الإصدار</th>
+                            <th>عدد الفئات</th>
+                            <th>عدد العناصر</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($forms as $i => $form): ?>
+                        <tr style="<?php echo $form['is_default'] ? 'background:var(--bg-success, #f0fff4);' : ''; ?>">
+                            <td><?php echo $i + 1; ?></td>
+                            <td>
+                                <a href="view_form.php?id=<?php echo $form['id']; ?>" style="font-weight:600;">
+                                    <?php echo e($form['name_ar']); ?>
+                                </a>
+                                <?php if ($form['name_en']): ?>
+                                    <div style="font-size:12px; color:var(--text-muted);"><?php echo e($form['name_en']); ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo $form['version'] ? e($form['version']) : '<span style="color:var(--text-muted);">—</span>'; ?></td>
+                            <td><?php echo number_format($form['category_count']); ?></td>
+                            <td><?php echo number_format($form['item_count']); ?></td>
+                            <td>
+                                <?php if ($form['is_default']): ?>
+                                    <span class="badge" style="background:#28a745;color:white;font-size:11px;">⭐ افتراضي</span>
+                                <?php else: ?>
+                                    <span class="badge" style="background:var(--bg-light,#e9ecef);color:var(--text-muted);font-size:11px;">عادي</span>
+                                <?php endif; ?>
+                                <?php if ($form['is_system']): ?>
+                                    <span class="badge" style="background:#6c757d;color:white;font-size:10px;">نظام</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="actions" style="white-space:nowrap;">
+                                <a href="view_form.php?id=<?php echo $form['id']; ?>" class="btn btn-sm btn-info" title="عرض">👁️</a>
+                                <a href="add_form.php?edit=<?php echo $form['id']; ?>" class="btn btn-sm btn-warning" title="تعديل">✏️</a>
+                                <?php if (!$form['is_default']): ?>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('تعيين هذا النموذج كافتراضي؟');">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="action" value="set_default">
+                                    <input type="hidden" name="form_id" value="<?php echo $form['id']; ?>">
+                                    <button type="submit" class="btn btn-sm btn-success" title="تعيين كافتراضي">⭐</button>
+                                </form>
+                                <?php endif; ?>
+                                <?php if (!$form['is_system']): ?>
+                                <form method="POST" style="display:inline;" onsubmit="return confirm('هل أنت متأكد من حذف هذا النموذج؟');">
+                                    <?= csrfField() ?>
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="form_id" value="<?php echo $form['id']; ?>">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="حذف">🗑️</button>
+                                </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

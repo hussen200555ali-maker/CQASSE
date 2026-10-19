@@ -30,6 +30,8 @@ if (!hasPermission('teacher')) {
 
 $academicYearId = getCurrentAcademicYearId($db);
 $schoolId = $_SESSION['user']['school_id'] ?? 0;
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? 0;
 
 // ============================================================
 // معالجة الإجراءات
@@ -54,8 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($titleAr) || $subjectId <= 0 || $classId <= 0 || $assessmentTypeId <= 0 || $semesterId <= 0) {
             setFlash('جميع الحقول مطلوبة', 'danger');
-        } else {
-            try {
+            redirect('tests.php');
+        }
+
+        // التحقق من أن المعلم يملك صلاحية لهذه المادة والفصل
+        if ($userRole === 'teacher') {
+            $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+            if (!in_array($classId, $allowedIds)) {
+                setFlash('ليس لديك صلاحية لإنشاء اختبار في هذا الفصل', 'danger');
+                redirect('tests.php');
+            }
+        }
+
+        try {
                 $stmt = $db->prepare("
                     INSERT INTO tests (subject_id, class_id, assessment_type_id, academic_year_id, semester_id, title_ar, max_grade, test_date, status, created_by, is_active)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, 1)
@@ -69,7 +82,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 setFlash('حدث خطأ: ' . $e->getMessage(), 'danger');
             }
-        }
         redirect('tests.php');
     }
 
@@ -107,6 +119,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'publish') {
         $testId = (int)($_POST['test_id'] ?? 0);
         try {
+            // التحقق من ملكية الاختبار
+            if ($userRole === 'teacher') {
+                $checkStmt = $db->prepare("SELECT t.class_id FROM tests t WHERE t.id = ? AND t.is_active = 1");
+                $checkStmt->execute([$testId]);
+                $testClassId = (int)$checkStmt->fetchColumn();
+                $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+                if (!$testClassId || !in_array($testClassId, $allowedIds)) {
+                    setFlash('ليس لديك صلاحية لنشر هذا الاختبار', 'danger');
+                    redirect('tests.php');
+                }
+            }
             $stmt = $db->prepare("UPDATE tests SET status = 'published' WHERE id = ? AND status = 'draft'");
             $stmt->execute([$testId]);
             if ($stmt->rowCount() > 0) {
@@ -125,6 +148,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'lock') {
         $testId = (int)($_POST['test_id'] ?? 0);
         try {
+            // التحقق من ملكية الاختبار
+            if ($userRole === 'teacher') {
+                $checkStmt = $db->prepare("SELECT t.class_id FROM tests t WHERE t.id = ? AND t.is_active = 1");
+                $checkStmt->execute([$testId]);
+                $testClassId = (int)$checkStmt->fetchColumn();
+                $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+                if (!$testClassId || !in_array($testClassId, $allowedIds)) {
+                    setFlash('ليس لديك صلاحية لقفل هذا الاختبار', 'danger');
+                    redirect('tests.php');
+                }
+            }
             $stmt = $db->prepare("UPDATE tests SET status = 'locked' WHERE id = ? AND status IN ('draft', 'published')");
             $stmt->execute([$testId]);
             if ($stmt->rowCount() > 0) {
@@ -163,6 +197,17 @@ if ($filterType) { $where[] = "t.assessment_type_id = ?"; $params[] = $filterTyp
 if ($filterStatus) { $where[] = "t.status = ?"; $params[] = $filterStatus; }
 if ($filterSemester) { $where[] = "t.semester_id = ?"; $params[] = $filterSemester; }
 
+// للمعلم: تقييد الاختبارات بفصوله
+if ($userRole === 'teacher') {
+    $schoolId = $_SESSION['user']['school_id'] ?? 0;
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId);
+    if (!empty($allowedIds)) {
+        $ph = implode(',', array_fill(0, count($allowedIds), '?'));
+        $where[] = "t.class_id IN ($ph)";
+        $params = array_merge($params, $allowedIds);
+    }
+}
+
 $whereClause = implode(' AND ', $where);
 
 $stmt = $db->prepare("
@@ -187,17 +232,54 @@ $testsList = $stmt->fetchAll();
 // جلب بيانات الفلاتر
 $classes = [];
 if ($schoolId) {
-    $stmt = $db->prepare("
-        SELECT c.id, c.name_ar, gl.name_ar AS grade_name
-        FROM classes c INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
-        WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
-        ORDER BY gl.level_number
-    ");
-    $stmt->execute([$schoolId, $academicYearId]);
+    if ($userRole === 'teacher') {
+        $stmt = $db->prepare("
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            JOIN subject_teachers st ON st.classroom_id = c.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            UNION
+            SELECT DISTINCT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.teacher_id = ? AND c.is_active = 1 AND c.school_id = ? AND c.academic_year_id = ?
+            ORDER BY grade_name
+        ");
+        $stmt->execute([$userId, $schoolId, $academicYearId, $userId, $schoolId, $academicYearId]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT c.id, c.name_ar, gl.name_ar AS grade_name
+            FROM classes c INNER JOIN grade_levels gl ON gl.id = c.grade_level_id
+            WHERE c.school_id = ? AND c.academic_year_id = ? AND c.is_active = 1
+            ORDER BY gl.level_number
+        ");
+        $stmt->execute([$schoolId, $academicYearId]);
+    }
     $classes = $stmt->fetchAll();
 }
 
-$subjects = $db->query("SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+if ($userRole === 'teacher') {
+    $filterClass = (int)($_GET['class_id'] ?? 0);
+    if ($filterClass > 0) {
+        $stmt = $db->prepare("
+            SELECT DISTINCT s.id, s.name_ar, s.code
+            FROM subjects s
+            JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.classroom_id = ? AND st.is_active = 1
+            WHERE s.is_active = 1 ORDER BY s.name_ar
+        ");
+        $stmt->execute([$userId, $filterClass]);
+    } else {
+        $stmt = $db->prepare("
+            SELECT DISTINCT s.id, s.name_ar, s.code
+            FROM subjects s
+            JOIN subject_teachers st ON st.subject_id = s.id AND st.teacher_id = ? AND st.is_active = 1
+            WHERE s.is_active = 1 ORDER BY s.name_ar
+        ");
+        $stmt->execute([$userId]);
+    }
+    $subjects = $stmt->fetchAll();
+} else {
+    $subjects = $db->query("SELECT id, name_ar, code FROM subjects WHERE is_active = 1 ORDER BY name_ar")->fetchAll();
+}
 $assessmentTypes = $db->query("SELECT id, name_ar, code FROM assessment_types WHERE is_active = 1 ORDER BY sort_order")->fetchAll();
 $semesters = [];
 $stmt = $db->prepare("SELECT id, name_ar FROM semesters WHERE academic_year_id = ? AND is_active = 1");

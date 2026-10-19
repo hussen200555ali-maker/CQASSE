@@ -20,7 +20,12 @@ if (!hasPermission('teacher')) {
 
 $alertEngine = new AlertEngine($db);
 
-// الفلاتر
+// تحديد الدور والمستخدم
+$userRole = $_SESSION['user']['role'] ?? '';
+$userId = $_SESSION['user']['id'] ?? null;
+$userSchoolId = $_SESSION['user']['school_id'] ?? null;
+
+// الفلاتر الأساسية
 $filters = [
     'school_id' => $_GET['school_id'] ?? '',
     'alert_type' => $_GET['alert_type'] ?? '',
@@ -30,19 +35,37 @@ $filters = [
     'page' => max(1, (int)($_GET['page'] ?? 1)),
     'sort' => $_GET['sort'] ?? 'created_at',
     'dir' => $_GET['dir'] ?? 'DESC',
+    'where' => [],    // للشروط الإضافية
+    'params' => [],   // للمعاملات
 ];
 
 // تطبيق فلتر المدرسة حسب الدور
-$userRole = $_SESSION['user']['role'] ?? '';
-$userSchoolId = $_SESSION['user']['school_id'] ?? null;
 if (in_array($userRole, ['school_admin', 'teacher']) && $userSchoolId) {
     $filters['school_id'] = $userSchoolId;
 }
 
+// تطبيق الفلترة حسب الدور على استعلام SQL
+$filters = $alertEngine->applyRoleFilter($filters, $userRole, $userId);
+
+// جلب التنبيهات مع الفلترة حسب الدور
 $alerts = $alertEngine->getAlerts($filters);
 $totalAlerts = $alertEngine->getAlertsCount($filters);
-$stats = $alertEngine->getAlertStats($userSchoolId);
-$unreadCount = $alertEngine->getUnreadCount($_SESSION['user']['id'] ?? null);
+
+// للـ UI: تحديد الأنواع المسموحة لكل دور
+$roleFilterTypes = $alertEngine->getRoleBasedFilter($userRole, $userId);
+$allowedTypes = is_array($roleFilterTypes['alert_types']) ? $roleFilterTypes['alert_types'] : ['academic','behavior','attendance','promotion','eqi','climate','teaching','improvement_plan'];
+
+// إحصائيات مفلترة حسب الدور ( لنفس المدرسة أو نفس دور المستخدم)
+$stats = $alertEngine->getAlertStats($userSchoolId, $userRole, $userId);
+$unreadCount = $alertEngine->getUnreadCount($userId);
+
+// أنواع التنبيهات الاستراتيجية والتشغيلية
+$strategicTypes = ['eqi', 'climate', 'teaching', 'improvement_plan'];
+$operationalTypes = ['academic', 'behavior', 'attendance', 'promotion'];
+
+// التحقق من صلاحية كل دور لعرض أنواع التنبيهات
+$canViewStrategic = in_array($userRole, ['group_admin', 'school_admin']);
+$canViewOperational = true; // كل الأدوار يمكنها رؤية التنبيهات التشغيلية لأبنائها/طلابها
 
 // الحصول على قائمة المدارس
 $schools = [];
@@ -187,25 +210,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     </select>
                 </div>
                 <?php endif; ?>
+
+                <!-- فلتر مستوى التنبيه (استراتيجي / تشغيلي) - للمدراء فقط -->
+                <?php if (in_array($userRole, ['group_admin', 'school_admin'])): ?>
+                <div class="form-group">
+                    <label class="form-label">المستوى</label>
+                    <select name="alert_level" class="form-control" onchange="this.form.submit()">
+                        <option value="">الكل</option>
+                        <option value="strategic" <?= ($_GET['alert_level'] ?? '') === 'strategic' ? 'selected' : '' ?>>📊 تنبيهات استراتيجية</option>
+                        <option value="operational" <?= ($_GET['alert_level'] ?? '') === 'operational' ? 'selected' : '' ?>>⚙️ تنبيهات تشغيلية</option>
+                    </select>
+                </div>
+                <?php endif; ?>
+
+                <!-- فلتر النوع - يظهر فقط الأنواع المسموحة لهذا الدور -->
                 <div class="form-group">
                     <label class="form-label">النوع</label>
                     <select name="alert_type" class="form-control">
                         <option value="">جميع الأنواع</option>
-                        <option value="academic" <?= $filters['alert_type'] === 'academic' ? 'selected' : '' ?>>أكاديمي</option>
-                        <option value="behavior" <?= $filters['alert_type'] === 'behavior' ? 'selected' : '' ?>>سلوكي</option>
-                        <option value="attendance" <?= $filters['alert_type'] === 'attendance' ? 'selected' : '' ?>>حضور</option>
-                        <option value="eqi" <?= $filters['alert_type'] === 'eqi' ? 'selected' : '' ?>>مؤشر الجودة</option>
-                        <option value="promotion" <?= $filters['alert_type'] === 'promotion' ? 'selected' : '' ?>>ترفيع</option>
+                        <?php
+                        // أنواع التنبيهات حسب الدور
+                        $allowedTypes = [];
+                        if ($canViewOperational) {
+                            $allowedTypes = array_merge($allowedTypes, ['academic', 'behavior', 'attendance', 'promotion']);
+                        }
+                        if ($canViewStrategic) {
+                            $allowedTypes = array_merge($allowedTypes, ['eqi', 'climate', 'teaching', 'improvement_plan']);
+                        }
+
+                        $typeLabels = [
+                            'academic' => '📚 أكاديمي',
+                            'behavior' => '⭐ سلوكي',
+                            'attendance' => '📋 حضور',
+                            'eqi' => '📊 مؤشر الجودة',
+                            'promotion' => '📈 ترفيع',
+                            'climate' => '🌤️ المناخ',
+                            'teaching' => '👨‍🏫 التدريس',
+                            'improvement_plan' => '📋 خطط التحسين'
+                        ];
+
+                        // تطبيق فلتر المستوى إذا اختاره المستخدم
+                        $selectedLevel = $_GET['alert_level'] ?? '';
+                        if ($selectedLevel === 'strategic') {
+                            $allowedTypes = array_intersect($allowedTypes, $strategicTypes);
+                        } elseif ($selectedLevel === 'operational') {
+                            $allowedTypes = array_intersect($allowedTypes, $operationalTypes);
+                        }
+
+                        foreach ($allowedTypes as $type): ?>
+                        <option value="<?= $type ?>" <?= $filters['alert_type'] === $type ? 'selected' : '' ?>><?= $typeLabels[$type] ?? $type ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">الخطورة</label>
                     <select name="severity" class="form-control">
                         <option value="">جميع المستويات</option>
-                        <option value="critical" <?= $filters['severity'] === 'critical' ? 'selected' : '' ?>>حرج</option>
-                        <option value="danger" <?= $filters['severity'] === 'danger' ? 'selected' : '' ?>>خطر</option>
-                        <option value="warning" <?= $filters['severity'] === 'warning' ? 'selected' : '' ?>>تحذير</option>
-                        <option value="info" <?= $filters['severity'] === 'info' ? 'selected' : '' ?>>معلوماتي</option>
+                        <option value="critical" <?= $filters['severity'] === 'critical' ? 'selected' : '' ?>>🔴 حرج</option>
+                        <option value="danger" <?= $filters['severity'] === 'danger' ? 'selected' : '' ?>>🟠 خطر</option>
+                        <option value="warning" <?= $filters['severity'] === 'warning' ? 'selected' : '' ?>>🟡 تحذير</option>
+                        <option value="info" <?= $filters['severity'] === 'info' ? 'selected' : '' ?>>🔵 معلوماتي</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -222,6 +286,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     <a href="index.php" class="btn btn-light">إعادة تعيين</a>
                 </div>
             </form>
+
+            <!-- رسالة توضيحية للمستخدم عن نوع التنبيهات التي يراها -->
+            <div class="alert alert-info mt-3">
+                <?php
+                $roleExplanation = [
+                    'group_admin' => '🎯 <strong>أنت مدير المجموعة:</strong> ترى التنبيهات الاستراتيجية (مؤشر الجودة، المناخ، التدريس، خطط التحسين) من جميع المدارس.',
+                    'school_admin' => '🎯 <strong>أنت مدير المدرسة:</strong> ترى كل التنبيهات (استراتيجية وتشغيلية) لمدرستك فقط.',
+                    'teacher' => '🎯 <strong>أنت معلم:</strong> ترى تنبيهات طلاب شعبك فقط (أكاديمي، سلوكي، حضور).',
+                    'parent' => '🎯 <strong>أنت ولي أمر:</strong> ترى تنبيهات أبنائك فقط.'
+                ];
+                echo $roleExplanation[$userRole] ?? '';
+                ?>
+            </div>
         </div>
     </div>
 
@@ -230,8 +307,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         <div class="card-header">
             <h3 class="card-title">قائمة التنبيهات (<?= $totalAlerts ?>)</h3>
             <div class="flex gap-2">
+                <?php if ($userRole === 'group_admin'): ?>
                 <a href="run_checks.php" class="btn btn-primary btn-sm">▶️ تشغيل الفحوصات</a>
+                <?php endif; ?>
+                <?php if (in_array($userRole, ['group_admin', 'school_admin'])): ?>
                 <a href="bulk_resolve.php" class="btn btn-warning btn-sm">✅ حل جماعي</a>
+                <?php endif; ?>
                 <a href="export.php" class="btn btn-info btn-sm">📥 تصدير</a>
             </div>
         </div>
@@ -305,7 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                         <button type="submit" class="btn btn-sm btn-info" title="تحديد كمقروء" style="padding:4px 8px; font-size:11px;">👁️</button>
                                     </form>
                                     <?php endif; ?>
-                                    <?php if (!$alert['is_resolved']): ?>
+                                    <?php if (!$alert['is_resolved'] && in_array($userRole, ['group_admin', 'school_admin'])): ?>
                                     <form method="POST" style="display:inline;">
                                         <?= csrfField() ?>
                                         <input type="hidden" name="action" value="resolve">

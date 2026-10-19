@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_import'])) {
             // تحديد school_id
             $schoolId = null;
             if (!empty($row['school_code'])) {
-                $stmt = $db->prepare("SELECT id FROM schools WHERE code = ?");
+                $stmt = $db->prepare("SELECT id FROM schools WHERE reference_code = ?");
                 $stmt->execute([$row['school_code']]);
                 $school = $stmt->fetch();
                 if ($school) $schoolId = $school['id'];

@@ -6,21 +6,26 @@
  * ============================================================
  */
 
+// ===================== التحميل الموحد =====================
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../includes/auth.php';
+
 $pageTitle = 'التقرير السنوي لمؤشرات الجودة';
 $breadcrumb = ['التقارير' => null, 'التقرير السنوي' => null];
 
-// إذا كان الطلب POST، نولّد التقرير مباشرة
+// ===================== معالج POST =====================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require_once __DIR__ . '/../../includes/report_template.php';
-    require_once __DIR__ . '/../../includes/eqi.php';
-    require_once __DIR__ . '/../../includes/contextual_adjustment.php';
-    require_once __DIR__ . '/../../includes/helpers.php';
-
-    require_once __DIR__ . '/../../includes/session.php';
     if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'group_admin') {
         die('Unauthorized');
     }
     global $db;
+
+    require_once __DIR__ . '/../../includes/report_template.php';
+    require_once __DIR__ . '/../../includes/eqi.php';
+    require_once __DIR__ . '/../../includes/contextual_adjustment.php';
 
     $academicYearId = (int)($_POST['academic_year_id'] ?? 0);
     $semesterId = (int)($_POST['semester_id'] ?? 0);
@@ -71,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($allSchoolsEQI as $s) {
         $rawMap[$s['school_id']] = $s['overall_eqi'];
     }
-    $adjustedMap = $adjustService->batchCalculateAdjustedSQI($schoolIds, $academicYearId, $rawMap);
+    $adjustedMap = $adjustService->batchCalculateAdjustedSQI($schoolIds, $rawMap);
 
     // ================================================================
     // بناء التقرير
@@ -81,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $report = new ReportTemplate($title, 'P', 'A4');
 
     // ─── الغلاف ───
-    $logoPath = __DIR__ . '/../../assets/img/eqas-logo.png';
+    $logoPath = __DIR__ . '/../../assets/img/logo-login.svg';
     if (!file_exists($logoPath)) $logoPath = null;
     $report->addCoverPage($yearName, $preparedBy, $logoPath);
 

@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../includes/header.php';
 requireLogin();
 
 $userId = $_SESSION['user']['id'];
-$userRole = $_SESSION['user']['role_id'] ?? 0;
+$userRole = $_SESSION['user']['role'] ?? 'guest';
 
 // أنواع الإشعارات
 $notifierTypes = [
@@ -43,16 +43,16 @@ $frequencyOptions = [
 ];
 
 // جلب التفضيلات الحالية (is_enabled للقيم البوليانية، value_string للنصوص)
-$stmt = $db->prepare("SELECT notification_type, is_enabled, value_string FROM user_preferences WHERE user_id = ?");
+$stmt = $db->prepare("SELECT pref_key, pref_value FROM user_preferences WHERE user_id = ? AND pref_type = 'notification' AND is_active = 1");
 $stmt->execute([$userId]);
 $prefRows = $stmt->fetchAll();
 $prefsBool = []; // boolean values
 $prefsStr = [];  // string values
 foreach ($prefRows as $row) {
-    $prefsBool[$row['notification_type']] = (int)$row['is_enabled'];
-    if ($row['value_string'] !== null) {
-        $prefsStr[$row['notification_type']] = $row['value_string'];
-    }
+    $val = json_decode($row['pref_value'], true) ?: [];
+    $key = $row['pref_key'];
+    if (isset($val['enabled'])) $prefsBool[$key] = (int)$val['enabled'];
+    if (isset($val['value'])) $prefsStr[$key] = $val['value'];
 }
 
 // تعيين القيم الافتراضية للأنواع البوليانية
@@ -89,62 +89,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $saved = 0;
     foreach ($notifierTypes as $type => $info) {
         $isEnabled = isset($_POST['notif_' . $type]) ? 1 : 0;
+        $prefValue = json_encode(['enabled' => $isEnabled]);
 
-        $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                              VALUES (?, ?, ?, NOW(), NOW())
-                              ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
-        $stmt->execute([$userId, $type, $isEnabled, $isEnabled]);
+        $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                              VALUES (?, 'notification', ?, ?, 1, NOW(), NOW())
+                              ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+        $stmt->execute([$userId, $type, $prefValue, $prefValue]);
         $saved++;
     }
 
     // تفضيلات البريد والتطبيق
     $emailVal = isset($_POST['email_enabled']) ? 1 : 0;
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'email', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $emailVal, $emailVal]);
+    $val = json_encode(['enabled' => $emailVal]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'email', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $val, $val]);
 
     $inAppVal = isset($_POST['in_app_enabled']) ? 1 : 0;
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'in_app', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $inAppVal, $inAppVal]);
+    $val = json_encode(['enabled' => $inAppVal]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'in_app', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $val, $val]);
 
     // ساعات الهدوء (تخزن في value_string)
     $quietFrom = $_POST['quiet_from'] ?? '22:00';
     $quietTo = $_POST['quiet_to'] ?? '07:00';
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
-                          VALUES (?, 'quiet_from', 1, ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $quietFrom, $quietFrom]);
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
-                          VALUES (?, 'quiet_to', 1, ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $quietTo, $quietTo]);
+    $valFrom = json_encode(['value' => $quietFrom]);
+    $valTo = json_encode(['value' => $quietTo]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'quiet_from', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $valFrom, $valFrom]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'quiet_to', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $valTo, $valTo]);
 
     // وضع عدم الإزعاج (قيمة بوليانية في is_enabled)
     $dndVal = isset($_POST['dnd_mode']) ? 1 : 0;
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                          VALUES (?, 'dnd', ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $dndVal, $dndVal]);
+    $val = json_encode(['enabled' => $dndVal]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'dnd', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $val, $val]);
 
     // تكرار الإشعارات (يخزن في value_string)
     $freqVal = $_POST['frequency'] ?? 'immediate';
     if (!in_array($freqVal, ['immediate', 'daily', 'weekly'])) $freqVal = 'immediate';
-    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, value_string, created_at, updated_at)
-                          VALUES (?, 'frequency', 1, ?, NOW(), NOW())
-                          ON DUPLICATE KEY UPDATE value_string = ?, updated_at = NOW()");
-    $stmt->execute([$userId, $freqVal, $freqVal]);
+    $val = json_encode(['value' => $freqVal]);
+    $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                          VALUES (?, 'notification', 'frequency', ?, 1, NOW(), NOW())
+                          ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+    $stmt->execute([$userId, $val, $val]);
 
-    // إعدادات الأدوار (قيم بوليانية في is_enabled)
+    // إعدادات الأدوار (قيم بوليانية في is_enabled) — فقط للمدراء
+    if (in_array($userRole, ['group_admin', 'school_admin'])) {
     foreach ($roleLabels as $roleId => $roleInfo) {
         $key = 'role_' . $roleId;
         $roleVal = isset($_POST['role_' . $roleId]) ? 1 : 0;
-        $stmt = $db->prepare("INSERT INTO user_preferences (user_id, notification_type, is_enabled, created_at, updated_at)
-                              VALUES (?, ?, ?, NOW(), NOW())
-                              ON DUPLICATE KEY UPDATE is_enabled = ?, updated_at = NOW()");
-        $stmt->execute([$userId, $key, $roleVal, $roleVal]);
+        $val = json_encode(['enabled' => $roleVal]);
+        $stmt = $db->prepare("INSERT INTO user_preferences (user_id, pref_type, pref_key, pref_value, is_active, created_at, updated_at)
+                              VALUES (?, 'notification', ?, ?, 1, NOW(), NOW())
+                              ON DUPLICATE KEY UPDATE pref_value = ?, updated_at = NOW()");
+        $stmt->execute([$userId, $key, $val, $val]);
+    }
     }
 
     logActivity($db, $userId, 'settings_change', 'تحديث تفضيلات الإشعارات', 'notification', null);
@@ -279,7 +289,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <label class="switch">
                                 <input type="checkbox" name="notif_<?php echo $type; ?>" value="1"
-                                       <?php echo $preferences[$type] ? 'checked' : ''; ?>>
+                                        <?php echo $prefsBool[$type] ? 'checked' : ''; ?>>
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -288,7 +298,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endforeach; ?>
             </div>
 
-            <!-- إعدادات الأدوار -->
+            <!-- إعدادات الأدوار (فقط لمدير المجموعة ومدير المدرسة) -->
+            <?php if (in_array($userRole, ['group_admin', 'school_admin'])): ?>
             <h4 class="mb-3 mt-4">👥 إعدادات الإشعارات حسب الدور</h4>
             <p class="text-muted mb-3" style="font-size:13px;">
                 تحكم في استلام الإشعارات الصادرة من كل دور. إيقاف دور معين يعني عدم استلام إشعارات من المستخدمين بهذا الدور.
@@ -312,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
 
             <div class="mt-4" style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button type="submit" class="btn btn-primary btn-lg">

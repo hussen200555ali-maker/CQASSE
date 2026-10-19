@@ -23,7 +23,44 @@ if (basename($_SERVER['PHP_SELF'] ?? '') === basename(__FILE__)) {
 }
 
 /**
- * التحقق من صلاحية الوصول للصفحة الحالية
+ * التحقق من صلاحية الوصول للصفحة الحالية (بدون side-effects)
+ *
+ * @param string $userRole دور المستخدم الحالي
+ * @param string|array $requiredRole الدور الأدنى المطلوب أو مصفوفة أدوار مسموحة
+ * @return bool هل المستخدم مصرح له
+ */
+function hasPageAccess($userRole, $requiredRole) {
+    // التسلسل الهرمي للأدوار
+    $roleHierarchy = [
+        'group_admin'  => 100,
+        'school_admin' => 80,
+        'teacher'      => 50,
+        'parent'       => 30,
+        'guest'        => 0
+    ];
+
+    $userLevel = $roleHierarchy[$userRole] ?? 0;
+
+    if (empty($userRole)) {
+        return false;
+    }
+
+    if (is_array($requiredRole)) {
+        foreach ($requiredRole as $role) {
+            $requiredLevel = $roleHierarchy[$role] ?? 0;
+            if ($userLevel >= $requiredLevel) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    $requiredLevel = $roleHierarchy[$requiredRole] ?? 0;
+    return $userLevel >= $requiredLevel;
+}
+
+/**
+ * التحقق من صلاحية الوصول للصفحة الحالية مع redirect
  *
  * @param string|array $requiredRole الدور الأدنى المطلوب أو مصفوفة أدوار مسموحة
  * @param string $redirectUrl عنوان URL للإعادة (افتراضي: الصفحة الرئيسية)
@@ -40,42 +77,11 @@ function checkPageAccess($requiredRole, $redirectUrl = 'index.php') {
 
     $userRole = $_SESSION['user']['role'];
 
-    // التسلسل الهرمي للأدوار
-    $roleHierarchy = [
-        'group_admin'  => 100,
-        'school_admin' => 80,
-        'teacher'      => 50,
-        'parent'       => 30,
-        'guest'        => 0
-    ];
-
-    $userLevel = $roleHierarchy[$userRole] ?? 0;
-
-    if (is_array($requiredRole)) {
-        // مصفوفة أدوار مسموحة - التحقق من التطابق المباشر أو المستوى الأعلى
-        $allowed = false;
-        foreach ($requiredRole as $role) {
-            $requiredLevel = $roleHierarchy[$role] ?? 0;
-            if ($userLevel >= $requiredLevel) {
-                $allowed = true;
-                break;
-            }
-        }
-        if (!$allowed) {
-            $_SESSION['flash_message'] = 'ليس لديك صلاحية الوصول إلى هذه الصفحة.';
-            $_SESSION['flash_type'] = 'danger';
-            header('Location: ' . $redirectUrl);
-            exit;
-        }
-    } else {
-        // دور واحد - التحقق من المستوى الأدنى
-        $requiredLevel = $roleHierarchy[$requiredRole] ?? 0;
-        if ($userLevel < $requiredLevel) {
-            $_SESSION['flash_message'] = 'ليس لديك صلاحية الوصول إلى هذه الصفحة.';
-            $_SESSION['flash_type'] = 'danger';
-            header('Location: ' . $redirectUrl);
-            exit;
-        }
+    if (!hasPageAccess($userRole, $requiredRole)) {
+        $_SESSION['flash_message'] = 'ليس لديك صلاحية الوصول إلى هذه الصفحة.';
+        $_SESSION['flash_type'] = 'danger';
+        header('Location: ' . $redirectUrl);
+        exit;
     }
 
     return true;
@@ -100,7 +106,22 @@ function requireSchoolAdminOrAbove() {
 }
 
 /**
- * التحقق من ملكية المدرسة - أن المستخدم ينتمي لنفس المدرسة
+ * التحقق من ملكية المدرسة (بدون side-effects)
+ *
+ * @param string $userRole دور المستخدم
+ * @param int|null $userSchoolId معرف مدرسة المستخدم
+ * @param int $targetSchoolId معرف المدرسة المستهدفة
+ * @return bool هل المستخدم يملك الصلاحية للمدرسة
+ */
+function hasSchoolOwnership($userRole, $userSchoolId, $targetSchoolId) {
+    if ($userRole === 'group_admin') {
+        return true;
+    }
+    return $userSchoolId == $targetSchoolId;
+}
+
+/**
+ * التحقق من ملكية المدرسة مع redirect
  *
  * @param int $targetSchoolId معرف المدرسة المستهدفة
  * @return bool هل المستخدم ينتمي للمدرسة

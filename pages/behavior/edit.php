@@ -38,7 +38,7 @@ $stmt = $db->prepare("
     JOIN students s ON e.student_id = s.id
     JOIN classes c ON e.class_id = c.id
     JOIN grade_levels gl ON c.grade_level_id = gl.id
-    JOIN users u ON e.student_id = u.id
+    JOIN users u ON e.evaluated_by = u.id
     JOIN semesters sem ON e.semester_id = sem.id
     JOIN academic_years ay ON e.academic_year_id = ay.id
     WHERE e.eval_type = 'behavior_score' AND e.id = ? AND e.is_active = 1
@@ -57,6 +57,22 @@ if ($evaluation['evaluator_id'] != $userId && !hasPermission('group_admin')) {
     redirect('view.php?id=' . $evalId);
 }
 
+// التحقق من ملكية المدرسة — لا يمكن تعديل تقييم من مدرسة أخرى
+$schoolIdCheck = $schoolId ?? $_SESSION['user']['school_id'] ?? null;
+if ($schoolIdCheck && $userRole !== 'group_admin' && $evaluation['school_id'] != $schoolIdCheck) {
+    setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
+    redirect('view.php?id=' . $evalId);
+}
+
+// التحقق من وصول المعلم — الفصل ضمن فصوله المسموحة
+if ($userRole === 'teacher') {
+    $allowedIds = getTeacherAssignedClassIds($db, $userId, $schoolId ?? $_SESSION['user']['school_id']);
+    if (!in_array((int)$evaluation['class_id'], $allowedIds)) {
+        setFlash('ليس لديك صلاحية لتعديل هذا التقييم', 'danger');
+        redirect('view.php?id=' . $evalId);
+    }
+}
+
 // التحقق من قفل الفصل الدراسي
 if (isSemesterLocked($db, $evaluation['semester_id'])) {
     if (!canEditSemester($db, $evaluation['semester_id'], $userRole)) {
@@ -69,12 +85,12 @@ if (isSemesterLocked($db, $evaluation['semester_id'])) {
 $existingItems = [];
 try {
     $stmt = $db->prepare("
-        SELECT bi.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
+        SELECT ar.*, ai.text_ar, ai.tool_type, ai.weight, ai.is_inverse, ai.max_value,
                ac.name_ar as category_name
-        FROM behavior_items bi
-        JOIN assessment_structure ai ON bi.item_id = ai.id
+        FROM assessment_responses ar
+        JOIN assessment_structure ai ON ar.item_id = ai.id
         JOIN assessment_structure ac ON ai.parent_id = ac.id
-        WHERE bi.evaluation_id = ? AND bi.is_active = 1
+        WHERE ar.evaluation_id = ? AND ar.is_active = 1
         ORDER BY ac.sort_order, ai.sort_order
     ");
     $stmt->execute([$evalId]);
@@ -86,14 +102,14 @@ try {
 // بناء مصفوفة القيم الحالية حسب item_id
 $currentValues = [];
 foreach ($existingItems as $ei) {
-    $currentValues[$ei['item_id']] = $ei['score'];
+    $currentValues[$ei['item_id']] = $ei['numeric_value'];
 }
 
 // جلب نموذج التقييم السلوكي
 $behaviorForm = null;
 $behaviorItems = [];
 try {
-    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'behavior_eval' AND is_active = 1 LIMIT 1");
+    $stmt = $db->prepare("SELECT id FROM assessment_forms WHERE form_key = 'behavior_eval' AND is_active = 1 ORDER BY is_default DESC, created_at DESC LIMIT 1");
     $stmt->execute();
     $formRow = $stmt->fetch();
     if ($formRow) {
@@ -144,19 +160,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([$overallScore, $overallScore, $evalId]);
 
-            // تحديث عناصر التقييم
-            $stmtCheck = $db->prepare("SELECT id FROM behavior_items WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
-            $stmtUpdate = $db->prepare("UPDATE behavior_items SET score = ?, notes = ? WHERE evaluation_id = ? AND item_id = ?");
-            $stmtInsert = $db->prepare("INSERT INTO behavior_items (evaluation_id, item_id, score, notes, is_active) VALUES (?, ?, ?, ?, 1)");
+            // تحديث عناصر التقييم في assessment_responses
+            $stmtCheck = $db->prepare("SELECT id FROM assessment_responses WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
+            $stmtUpdate = $db->prepare("UPDATE assessment_responses SET numeric_value = ?, responded_by = ?, response_date = NOW() WHERE evaluation_id = ? AND item_id = ? AND is_active = 1");
+            $stmtInsert = $db->prepare("INSERT INTO assessment_responses (form_id, evaluation_id, item_id, student_id, school_id, class_id, academic_year_id, semester_id, numeric_value, responded_by, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
 
             foreach ($itemScores as $itemId => $scores) {
                 $stmtCheck->execute([$evalId, $itemId]);
                 $existingRow = $stmtCheck->fetch();
 
                 if ($existingRow) {
-                    $stmtUpdate->execute([$scores['normalized'], null, $evalId, $itemId]);
+                    $stmtUpdate->execute([$scores['normalized'], $userId, $evalId, $itemId]);
                 } else {
-                    $stmtInsert->execute([$evalId, $itemId, $scores['normalized'], null]);
+                    $stmtInsert->execute([$formRow['id'], $evalId, $itemId, $evaluation['student_id'], $evaluation['school_id'], $evaluation['class_id'], $evaluation['academic_year_id'], $evaluation['semester_id'], $scores['normalized'], $userId]);
                 }
             }
 
@@ -214,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-header">
                 <h3 class="card-title">📋 عناصر التقييم السلوكي</h3>
                 <div id="overall-score-display" style="font-size:18px; font-weight:700; color:var(--primary);">
-                    الدرجة الكلية: <span id="live-score"><?= number_format($evaluation['overall_score'] ?? 0, 1) ?></span>%
+                    الدرجة الكلية: <span id="live-score"><?= number_format($evaluation['current_percentage'] ?? $evaluation['combined_score'] ?? 0, 1) ?></span>%
                 </div>
             </div>
             <div class="card-body">

@@ -88,9 +88,7 @@ if ($step === 3 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confir
     }
 
     // جلب معلومات النسخة
-    $stmt = $db->prepare("SELECT * FROM backup_logs WHERE id = ? AND is_active = 1 AND status = 'completed'");
-    $stmt->execute([$backupId]);
-    $backup = $stmt->fetch();
+    $backup = $backupManager->getBackupById($backupId);
 
     if (!$backup) {
         setFlash('النسخة الاحتياطية غير موجودة أو غير مكتملة.', 'danger');
@@ -144,12 +142,7 @@ $backups = $backupManager->listBackups(['status' => 'completed']);
 $selectedBackup = null;
 $backupInfo = null;
 if ($selectedBackupId) {
-    $stmt = $db->prepare("SELECT bl.*, u.full_name_ar as creator_name
-                          FROM backup_logs bl
-                          LEFT JOIN users u ON u.id = bl.created_by
-                          WHERE bl.id = ? AND bl.is_active = 1");
-    $stmt->execute([$selectedBackupId]);
-    $selectedBackup = $stmt->fetch();
+    $selectedBackup = $backupManager->getBackupById($selectedBackupId);
     if ($selectedBackup) {
         $backupInfo = $backupManager->getBackupInfo($selectedBackup['file_path']);
     }

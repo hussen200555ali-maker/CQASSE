@@ -14,7 +14,7 @@ require_once __DIR__ . '/../../includes/header.php';
 requireLogin();
 
 // [إصلاح v2.0.3] فحص الصلاحيات
-if (!hasPermission('school_admin')) {
+if (!hasPermission('teacher')) {
     setFlash('ليس لديك صلاحية للوصول إلى هذه الصفحة', 'danger');
     redirect('index.php');
 }
@@ -23,7 +23,7 @@ $userId = $_SESSION['user']['id']; // @session-migration-v2.0.3
 
 // فلاتر
 $filterPriority = $_GET['priority'] ?? '';
-$filterEntityType = $_GET['entity_type'] ?? '';
+$filterNoteType = $_GET['note_type'] ?? '';
 $filterSearch = $_GET['search'] ?? '';
 $filterDateFrom = $_GET['date_from'] ?? '';
 $filterDateTo = $_GET['date_to'] ?? '';
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_pin'])) {
     $pinId = (int)$_POST['toggle_pin'];
     $currentPin = (int)$_POST['current_pin'] ?? 0;
     $newPin = $currentPin ? 0 : 1;
-    $stmt = $db->prepare("UPDATE notes SET is_pinned = ? WHERE id = ? AND user_id = ?");
+    $stmt = $db->prepare("UPDATE student_notes SET is_pinned = ? WHERE id = ? AND created_by = ?");
     $stmt->execute([$newPin, $pinId, $userId]);
     logActivity($db, $userId, 'note_pin', ($newPin ? 'تثبيت' : 'إلغاء تثبيت') . ' ملاحظة #' . $pinId, 'note', $pinId);
     setFlash($newPin ? 'تم تثبيت الملاحظة' : 'تم إلغاء تثبيت الملاحظة', 'success');
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
         redirect('index.php');
     }
     $deleteId = (int)$_POST['delete_id'];
-    $stmt = $db->prepare("UPDATE notes SET is_active = 0 WHERE id = ? AND user_id = ?");
+    $stmt = $db->prepare("UPDATE student_notes SET is_active = 0 WHERE id = ? AND created_by = ?");
     $stmt->execute([$deleteId, $userId]);
     logActivity($db, $userId, 'note_delete', 'حذف ملاحظة #' . $deleteId, 'note', $deleteId);
     setFlash('تم حذف الملاحظة', 'success');
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete'])) {
         $placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
         $params = array_map('intval', $selectedIds);
         array_unshift($params, $userId);
-        $stmt = $db->prepare("UPDATE notes SET is_active = 0 WHERE user_id = ? AND id IN ($placeholders)");
+        $stmt = $db->prepare("UPDATE student_notes SET is_active = 0 WHERE created_by = ? AND id IN ($placeholders)");
         $stmt->execute($params);
         $count = count($selectedIds);
         logActivity($db, $userId, 'note_bulk_delete', "حذف جماعي لـ {$count} ملاحظة", 'note', null);
@@ -90,34 +90,29 @@ $stmt = $db->prepare("SELECT
     SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent_count,
     SUM(CASE WHEN is_pinned = 1 THEN 1 ELSE 0 END) as pinned_count,
     SUM(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as recent_count
-    FROM notes WHERE user_id = ? AND is_active = 1");
+    FROM student_notes WHERE created_by = ? AND is_active = 1");
 $stmt->execute([$userId]);
 $stats = $stmt->fetch();
 
 // بناء الاستعلام
 $sql = "SELECT n.*,
-        CASE n.related_entity_type
-            WHEN 'student' THEN s.full_name_ar
-            WHEN 'teacher' THEN u.full_name_ar
-            WHEN 'class' THEN c.name_ar
-            WHEN 'school' THEN sch.name_ar
-            ELSE NULL
-        END as entity_name
-        FROM notes n
-        LEFT JOIN students s ON n.related_entity_type = 'student' AND n.related_entity_id = s.id
-        LEFT JOIN users u ON n.related_entity_type = 'teacher' AND n.related_entity_id = u.id
-        LEFT JOIN classes c ON n.related_entity_type = 'class' AND n.related_entity_id = c.id
-        LEFT JOIN schools sch ON n.related_entity_type = 'school' AND n.related_entity_id = sch.id
-        WHERE n.user_id = ? AND n.is_active = 1";
+        s.full_name_ar as entity_name,
+        s.student_number,
+        s.school_id as note_school_id,
+        c.name_ar as class_name
+        FROM student_notes n
+        LEFT JOIN students s ON n.student_id = s.id
+        LEFT JOIN classes c ON n.class_id = c.id
+        WHERE n.created_by = ? AND n.is_active = 1";
 $params = [$userId];
 
 if ($filterPriority) {
     $sql .= " AND n.priority = ?";
     $params[] = $filterPriority;
 }
-if ($filterEntityType) {
-    $sql .= " AND n.related_entity_type = ?";
-    $params[] = $filterEntityType;
+if ($filterNoteType) {
+    $sql .= " AND n.note_type = ?";
+    $params[] = $filterNoteType;
 }
 if ($filterSearch) {
     $sql .= " AND (n.title_ar LIKE ? OR n.content_ar LIKE ?)";
@@ -137,14 +132,10 @@ if ($filterPinned) {
 }
 
 // عدد النتائج الكلي للتصفح
-$countSql = str_replace("SELECT n.*,\n        CASE n.related_entity_type\n            WHEN 'student' THEN s.full_name_ar\n            WHEN 'teacher' THEN u.full_name_ar\n            WHEN 'class' THEN c.name_ar\n            WHEN 'school' THEN sch.name_ar\n            ELSE NULL\n        END as entity_name", "SELECT COUNT(*)", $sql);
-$countSql = preg_replace('/LEFT JOIN.*?(?=WHERE)/s', '', $countSql);
-$countSql = preg_replace('/LEFT JOIN.*?(?=WHERE)/s', '', $countSql);
-// استخدام استعلام عد بسيط
 $countParams = $params;
-$countStmt = $db->prepare("SELECT COUNT(*) FROM notes n WHERE n.user_id = ? AND n.is_active = 1"
+$countStmt = $db->prepare("SELECT COUNT(*) FROM student_notes n WHERE n.created_by = ? AND n.is_active = 1"
     . ($filterPriority ? " AND n.priority = ?" : "")
-    . ($filterEntityType ? " AND n.related_entity_type = ?" : "")
+    . ($filterNoteType ? " AND n.note_type = ?" : "")
     . ($filterSearch ? " AND (n.title_ar LIKE ? OR n.content_ar LIKE ?)" : "")
     . ($filterDateFrom ? " AND n.created_at >= ?" : "")
     . ($filterDateTo ? " AND n.created_at <= ?" : "")
@@ -168,12 +159,12 @@ $priorityLabels = [
     'urgent' => ['label' => 'عاجلة', 'color' => 'danger', 'icon' => '🔴', 'bg' => '#fce4ec'],
 ];
 
-// أنواع الكيانات
-$entityTypeLabels = [
-    'student' => 'طالب',
-    'teacher' => 'معلم',
-    'class' => 'فصل',
-    'school' => 'مدرسة',
+// أنواع الملاحظات
+$noteTypeLabels = [
+    'general' => 'عامة',
+    'academic' => 'أكاديمية',
+    'behavioral' => 'سلوكية',
+    'attendance' => 'حضور',
 ];
 ?>
 
@@ -246,10 +237,10 @@ $entityTypeLabels = [
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select name="entity_type" class="form-control" onchange="this.form.submit()">
-                        <option value="">كل الكيانات</option>
-                        <?php foreach ($entityTypeLabels as $key => $label): ?>
-                        <option value="<?php echo $key; ?>" <?php echo $filterEntityType === $key ? 'selected' : ''; ?>>
+                    <select name="note_type" class="form-control" onchange="this.form.submit()">
+                        <option value="">كل الأنواع</option>
+                        <?php foreach ($noteTypeLabels as $key => $label): ?>
+                        <option value="<?php echo $key; ?>" <?php echo $filterNoteType === $key ? 'selected' : ''; ?>>
                             <?php echo e($label); ?>
                         </option>
                         <?php endforeach; ?>
@@ -330,9 +321,17 @@ $entityTypeLabels = [
                                         <?php if ($note['entity_name']): ?>
                                         <div class="mb-2">
                                             <span class="badge" style="background:var(--border-light, #e9ecef); color:var(--text-muted, #6c757d);">
-                                                📎 <?php echo e($entityTypeLabels[$note['related_entity_type']] ?? $note['related_entity_type']); ?>:
+                                                📎 <?php echo e($noteTypeLabels[$note['note_type']] ?? $note['note_type']); ?>:
                                                 <?php echo e($note['entity_name']); ?>
+                                                <?php if ($note['student_number']): ?>
+                                                (<?php echo e($note['student_number']); ?>)
+                                                <?php endif; ?>
                                             </span>
+                                            <?php if ($note['class_name']): ?>
+                                            <span class="badge" style="background:var(--bg-light, #f0f0f0); color:var(--text-muted, #6c757d); font-size:10px;">
+                                                🏫 <?php echo e($note['class_name']); ?>
+                                            </span>
+                                            <?php endif; ?>
                                         </div>
                                         <?php endif; ?>
                                         <div class="d-flex justify-content-between align-items-center">
@@ -357,19 +356,19 @@ $entityTypeLabels = [
             <ul class="pagination justify-content-center" style="gap:4px;">
                 <?php if ($page > 1): ?>
                 <li class="page-item">
-                    <a class="page-link" href="?page=<?= $page - 1 ?>&priority=<?= e($filterPriority) ?>&entity_type=<?= e($filterEntityType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>">« السابق</a>
+                    <a class="page-link" href="?page=<?= $page - 1 ?>&priority=<?= e($filterPriority) ?>&note_type=<?= e($filterNoteType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>">« السابق</a>
                 </li>
                 <?php endif; ?>
 
                 <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
                 <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="?page=<?= $i ?>&priority=<?= e($filterPriority) ?>&entity_type=<?= e($filterEntityType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>"><?= $i ?></a>
+                    <a class="page-link" href="?page=<?= $i ?>&priority=<?= e($filterPriority) ?>&note_type=<?= e($filterNoteType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>"><?= $i ?></a>
                 </li>
                 <?php endfor; ?>
 
                 <?php if ($page < $totalPages): ?>
                 <li class="page-item">
-                    <a class="page-link" href="?page=<?= $page + 1 ?>&priority=<?= e($filterPriority) ?>&entity_type=<?= e($filterEntityType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>">التالي »</a>
+                    <a class="page-link" href="?page=<?= $page + 1 ?>&priority=<?= e($filterPriority) ?>&note_type=<?= e($filterNoteType) ?>&search=<?= urlencode($filterSearch) ?>&date_from=<?= e($filterDateFrom) ?>&date_to=<?= e($filterDateTo) ?><?= $filterPinned ? '&pinned=1' : '' ?>">التالي »</a>
                 </li>
                 <?php endif; ?>
             </ul>

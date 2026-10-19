@@ -1,0 +1,309 @@
+@startuml BFD4 — التقييم الشامل وجودة التعليم
+skinparam linetype ortho
+skinparam rectangle { backgroundColor White }
+hide circle
+
+' ═══════════════════════════════════════════════════
+' BFD 4: التقييم الشامل وجودة التعليم
+' جداول: assessment_types, assessment_forms, assessment_structure,
+'         assessment_responses, tests, grades, learning_outcomes,
+'         evaluations, surveys, survey_items, climate_items,
+'         facility_items, eqi_results, improvement_plans,
+'         school_improvement_plans, promotions, promotion_overrides
+' ═══════════════════════════════════════════════════
+
+entity "assessment_types" as assessment_types {
+  id : INT UNSIGNED <<PK>>
+  * name_ar : VARCHAR(100)
+  name_en : VARCHAR(100)
+  description : TEXT
+  is_active : TINYINT(1)
+}
+
+entity "assessment_forms" as assessment_forms {
+  id : INT UNSIGNED <<PK>>
+  * form_key : ENUM
+  * name_ar : VARCHAR(200)
+  name_en : VARCHAR(200)
+  * category : ENUM
+  * target : ENUM
+  description : TEXT
+  * is_system : TINYINT(1)
+  is_default : TINYINT(1)
+  version : VARCHAR(50)
+  is_active : TINYINT(1)
+}
+
+entity "assessment_structure" as assessment_structure {
+  id : INT UNSIGNED <<PK>>
+  * form_id : INT UNSIGNED <<FK>>
+  parent_id : INT UNSIGNED <<FK>>
+  * type : ENUM
+  name_ar : VARCHAR(200)
+  name_en : VARCHAR(200)
+  text_ar : TEXT
+  text_en : TEXT
+  tool_type : ENUM
+  weight : DECIMAL(5,2)
+  is_inverse : TINYINT(1)
+  max_value : DECIMAL(10,2)
+  sort_order : INT UNSIGNED
+  is_active : TINYINT(1)
+}
+
+entity "assessment_responses" as assessment_responses {
+  id : INT UNSIGNED <<PK>>
+  * form_id : INT UNSIGNED <<FK>>
+  * item_id : INT UNSIGNED <<FK>>
+  student_id : INT UNSIGNED <<FK>>
+  teacher_id : INT UNSIGNED <<FK>>
+  school_id : INT UNSIGNED <<FK>>
+  class_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  numeric_value : DECIMAL(10,4)
+  text_value : TEXT
+  * responded_by : INT UNSIGNED <<FK>>
+  * response_date : DATETIME
+  is_active : TINYINT(1)
+}
+
+entity "tests" as tests {
+  id : INT UNSIGNED <<PK>>
+  * subject_id : INT UNSIGNED <<FK>>
+  * class_id : INT UNSIGNED <<FK>>
+  * assessment_type_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * title_ar : VARCHAR(200)
+  * max_grade : DECIMAL(5,2)
+  test_date : DATE
+  * status : ENUM
+  * created_by : INT UNSIGNED <<FK>>
+}
+
+entity "grades" as grades {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * test_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED
+  * semester_id : INT UNSIGNED
+  * grade_value : DECIMAL(7,2)
+  * max_value : DECIMAL(7,2)
+  percentage : DECIMAL(7,2)
+  letter_grade : VARCHAR(3)
+  notes : TEXT
+  * graded_by : INT UNSIGNED <<FK>>
+}
+
+entity "learning_outcomes" as learning_outcomes {
+  id : INT UNSIGNED <<PK>>
+  * subject_id : INT UNSIGNED <<FK>>
+  code : VARCHAR(20)
+  description_ar : TEXT
+  description_en : TEXT
+  is_active : TINYINT(1)
+}
+
+entity "evaluations" as evaluations {
+  id : INT UNSIGNED <<PK>>
+  * eval_type : ENUM
+  teacher_id : INT UNSIGNED <<FK>>
+  student_id : INT UNSIGNED <<FK>>
+  class_id : INT UNSIGNED <<FK>>
+  * school_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  self_score : DECIMAL(5,2)
+  peer_score : DECIMAL(5,2)
+  admin_score : DECIMAL(5,2)
+  combined_score : DECIMAL(5,2)
+  adjusted_score : DECIMAL(5,2)
+  starting_points : DECIMAL(5,2)
+  earned_points : DECIMAL(5,2)
+  deducted_points : DECIMAL(5,2)
+  current_percentage : DECIMAL(5,2)
+  is_passing : TINYINT(1)
+}
+
+entity "surveys" as surveys {
+  id : INT UNSIGNED <<PK>>
+  * survey_type : ENUM
+  * school_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * respondent_type : ENUM
+  respondent_id : INT UNSIGNED <<FK>>
+  evaluator_id : INT UNSIGNED <<FK>>
+  survey_date : DATE
+  overall_score : DECIMAL(5,2)
+  notes : TEXT
+  * status : ENUM
+  * created_by : INT UNSIGNED <<FK>>
+}
+
+entity "survey_items" as survey_items {
+  id : INT UNSIGNED <<PK>>
+  * survey_id : INT UNSIGNED <<FK>>
+  * item_id : INT UNSIGNED <<FK>>
+  numeric_value : DECIMAL(10,4)
+  normalized_value : DECIMAL(5,2)
+  is_active : TINYINT(1)
+}
+
+entity "climate_items" as climate_items {
+  id : INT UNSIGNED <<PK>>
+  * survey_id : INT UNSIGNED <<FK>>
+  * item_id : INT UNSIGNED <<FK>>
+  numeric_value : DECIMAL(10,4)
+  normalized_value : DECIMAL(5,2)
+  is_active : TINYINT(1)
+}
+
+entity "facility_items" as facility_items {
+  id : INT UNSIGNED <<PK>>
+  * checklist_id : INT UNSIGNED <<FK>>
+  * item_id : INT UNSIGNED <<FK>>
+  numeric_value : DECIMAL(10,4)
+  normalized_value : DECIMAL(5,2)
+  notes : TEXT
+  is_active : TINYINT(1)
+}
+
+entity "eqi_results" as eqi_results {
+  id : INT UNSIGNED <<PK>>
+  * school_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  academic_score : DECIMAL(5,2)
+  teaching_score : DECIMAL(5,2)
+  climate_score : DECIMAL(5,2)
+  behavior_score : DECIMAL(5,2)
+  skills_score : DECIMAL(5,2)
+  attendance_score : DECIMAL(5,2)
+  overall_eqi : DECIMAL(5,2)
+  weights_json : JSON
+  context_json : JSON
+  challenge_index : DECIMAL(5,2)
+  adjusted_eqi : DECIMAL(5,2)
+  missing_dimensions : JSON
+  * calculated_by : INT UNSIGNED <<FK>>
+}
+
+entity "improvement_plans" as improvement_plans {
+  id : INT UNSIGNED <<PK>>
+  * plan_type : ENUM
+  student_id : INT UNSIGNED <<FK>>
+  school_id : INT UNSIGNED <<FK>>
+  teacher_id : INT UNSIGNED <<FK>>
+  trigger_type : ENUM
+  weaknesses : TEXT
+  goals : TEXT
+  strategies : TEXT
+  timeline : VARCHAR(200)
+  * responsible_user_id : INT UNSIGNED <<FK>>
+  parent_involvement : TEXT
+  * status : ENUM
+  progress : INT
+  follow_up_date : DATE
+  * created_by : INT UNSIGNED <<FK>>
+  * updated_by : INT UNSIGNED <<FK>>
+}
+
+entity "school_improvement_plans" as school_improvement_plans {
+  id : INT UNSIGNED <<PK>>
+  * school_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  weaknesses : TEXT
+  goals : TEXT
+  strategies : TEXT
+  timeline : VARCHAR(200)
+  * responsible_user_id : INT UNSIGNED <<FK>>
+  * status : ENUM
+  progress : INT
+  * created_by : INT UNSIGNED <<FK>>
+  * updated_by : INT UNSIGNED <<FK>>
+}
+
+entity "promotions" as promotions {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  academic_score : DECIMAL(5,2)
+  behavior_score : DECIMAL(5,2)
+  attendance_score : DECIMAL(5,2)
+  academic_pass : TINYINT(1)
+  behavior_pass : TINYINT(1)
+  attendance_pass : TINYINT(1)
+  * decision : ENUM
+  * status : ENUM
+  override_json : JSON
+  approved_by : INT UNSIGNED <<FK>>
+  decided_by : INT UNSIGNED <<FK>>
+}
+
+entity "promotion_overrides" as promotion_overrides {
+  id : INT UNSIGNED <<PK>>
+  * student_id : INT UNSIGNED <<FK>>
+  * academic_year_id : INT UNSIGNED <<FK>>
+  * semester_id : INT UNSIGNED <<FK>>
+  * override_type : ENUM
+  override_value : DECIMAL(5,2)
+  * reason : TEXT
+  * approved_by : INT UNSIGNED <<FK>>
+  is_active : TINYINT(1)
+}
+
+' ═══ Relationships ═══
+assessment_forms ||--o{ assessment_structure : defines
+assessment_structure ||--o{ assessment_structure : "self-ref\n(parent_id)"
+
+assessment_forms ||--o{ assessment_responses : collects
+
+assessment_structure ||--o{ assessment_responses : "responds to"
+assessment_structure ||--o{ survey_items : "rates"
+assessment_structure ||--o{ climate_items : "rates"
+assessment_structure ||--o{ facility_items : "rates"
+
+assessment_types ||--o{ subject_weight_distribution : [BFD2]
+assessment_types ||--o{ tests : types
+
+tests ||--o{ grades : has
+students ||--o{ grades : receives
+students ||--o{ promotions : promoted
+students ||--o{ promotion_overrides : overridden
+students ||--o{ improvement_plans : plans
+users ||--o{ tests : created_by
+users ||--o{ grades : graded_by
+users ||--o{ evaluations : teacher_id
+users ||--o{ evaluations : student_id [norole]
+
+schools ||--o{ surveys : conducts
+schools ||--o{ eqi_results : measures
+schools ||--o{ improvement_plans : school_id
+schools ||--o{ school_improvement_plans : improves
+
+subjects ||--o{ tests : tested
+subjects ||--o{ learning_outcomes : defines
+
+surveys ||--o{ survey_items : contains
+surveys ||--o{ climate_items : contains [norole]
+surveys ||--o{ facility_items : contains [norole]
+
+academic_years ||--o{ tests
+academic_years ||--o{ grades
+academic_years ||--o{ surveys
+academic_years ||--o{ eqi_results
+academic_years ||--o{ promotions
+academic_years ||--o{ school_improvement_plans
+
+semesters ||--o{ tests
+semesters ||--o{ grades
+semesters ||--o{ surveys
+semesters ||--o{ eqi_results
+semesters ||--o{ promotions
+semesters ||--o{ school_improvement_plans
+
+@enduml

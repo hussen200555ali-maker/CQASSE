@@ -1,9 +1,12 @@
 <?php
 /**
  * ============================================================
- * EQAS - تعيين المعلمين
+ * EQAS - تعيين المعلمين (نظام مستمر)
  * نظام التقييم الشامل - Teacher Assignment
  * ============================================================
+ * التعيينات مستمرة — لا تتأثر بالفصل/العام الدراسي.
+ * تم تغيير النظام ليكتب في subject_teachers بدلاً من teacher_assignments.
+ * لمزيد من التفاصيل راجع AGENTS.md والوثائق.
  */
 
 $pageTitle = 'تعيين المعلمين';
@@ -16,8 +19,9 @@ if (!hasPermission('school_admin')) {
     redirect(baseUrl('index.php'));
 }
 
-$academicYearId = currentAcademicYearId();
 $schoolId = currentSchoolId();
+$currentAcademicYearId = currentAcademicYearId();
+$currentSemesterId = currentSemesterId();
 
 // معالجة الحفظ
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -33,25 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($teacherId && $subjectId && $classId) {
                 try {
-                    // إنشاء جدول تعيينات المعلمين إذا لم يكن موجوداً
-                    $db->exec("CREATE TABLE IF NOT EXISTS teacher_assignments (
-                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                        teacher_id INT UNSIGNED NOT NULL,
-                        subject_id INT UNSIGNED NOT NULL,
-                        class_id INT UNSIGNED NOT NULL,
-                        academic_year_id INT UNSIGNED NOT NULL,
-                        is_active TINYINT(1) DEFAULT 1,
-                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE KEY uk_teacher_subj_class_year (teacher_id, subject_id, class_id, academic_year_id)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-
                     $stmt = $db->prepare("
-                        INSERT INTO teacher_assignments (teacher_id, subject_id, class_id, academic_year_id, is_active)
-                        VALUES (?, ?, ?, ?, 1)
+                        INSERT INTO subject_teachers (subject_id, teacher_id, classroom_id, academic_year_id, school_id, semester_id, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, 1)
                         ON DUPLICATE KEY UPDATE is_active = 1
                     ");
-                    $stmt->execute([$teacherId, $subjectId, $classId, $academicYearId]);
-                    logActivity($db, $_SESSION['user']['id'], 'setup_teacher_assign', "تعيين معلم رقم {$teacherId} للمادة {$subjectId} بالفصل {$classId}", 'teacher_assignments', null);
+                    $stmt->execute([$subjectId, $teacherId, $classId, $currentAcademicYearId, $schoolId, $currentSemesterId]);
+                    logActivity($db, $_SESSION['user']['id'], 'setup_teacher_assign', "تعيين معلم رقم {$teacherId} للمادة {$subjectId} بالفصل {$classId}", 'subject_teachers', null);
                     setFlash('تم التعيين بنجاح.', 'success');
                 } catch (Exception $e) {
                     setFlash('خطأ: ' . $e->getMessage(), 'danger');
@@ -61,9 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
         } elseif ($action === 'remove_assignment') {
-            $id = (int)$_POST['assignment_id'];
-            $stmt = $db->prepare("UPDATE teacher_assignments SET is_active = 0 WHERE id = ?");
-            $stmt->execute([$id]);
+            $assignmentId = (int)$_POST['assignment_id'];
+            $stmt = $db->prepare("UPDATE subject_teachers SET is_active = 0 WHERE id = ?");
+            $stmt->execute([$assignmentId]);
             setFlash('تم إلغاء التعيين.', 'success');
         }
 
@@ -75,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $teachers = $db->query("
     SELECT u.id, u.full_name_ar
     FROM users u JOIN roles r ON u.role_id = r.id
-    WHERE r.name = 'teacher' AND u.is_active = 1
+    WHERE r.name = 'teacher' AND u.is_active = 1 AND u.school_id = {$schoolId}
     ORDER BY u.full_name_ar
 ")->fetchAll();
 
@@ -84,24 +76,26 @@ $subjects = $db->query("SELECT id, name_ar, code FROM subjects WHERE is_active =
 $classes = $db->query("
     SELECT c.id, c.name_ar, gl.name_ar as grade_name
     FROM classes c JOIN grade_levels gl ON c.grade_level_id = gl.id
-    WHERE c.is_active = 1 AND c.academic_year_id = {$academicYearId}
+    WHERE c.is_active = 1 AND c.school_id = {$schoolId}
     ORDER BY gl.level_number, c.name_ar
 ")->fetchAll();
 
-// التعيينات الحالية
+// التعيينات الحالية — نظام مستمر (بدون فلتر سنة)
 $assignments = [];
 try {
     $assignments = $db->query("
-        SELECT ta.id, ta.teacher_id, ta.subject_id, ta.class_id,
+        SELECT st.id, st.teacher_id, st.subject_id, st.classroom_id as class_id,
                u.full_name_ar as teacher_name,
                s.name_ar as subject_name, s.code as subject_code,
-               c.name_ar as class_name, gl.name_ar as grade_name
-        FROM teacher_assignments ta
-        JOIN users u ON ta.teacher_id = u.id
-        JOIN subjects s ON ta.subject_id = s.id
-        JOIN classes c ON ta.class_id = c.id
+               c.name_ar as class_name, gl.name_ar as grade_name,
+               ay.name as academic_year_name
+        FROM subject_teachers st
+        JOIN users u ON st.teacher_id = u.id
+        JOIN subjects s ON st.subject_id = s.id
+        JOIN classes c ON st.classroom_id = c.id
         JOIN grade_levels gl ON c.grade_level_id = gl.id
-        WHERE ta.is_active = 1 AND ta.academic_year_id = {$academicYearId}
+        LEFT JOIN academic_years ay ON st.academic_year_id = ay.id
+        WHERE st.is_active = 1 AND st.school_id = {$schoolId}
         ORDER BY u.full_name_ar, s.name_ar
     ")->fetchAll();
 } catch (Exception $e) {
@@ -118,7 +112,7 @@ foreach ($assignments as $a) {
     $teacherLoad[$a['teacher_id']]['subjects'][] = $a['subject_name'];
 }
 
-// تغطية المواد - هل كل مادة لها معلم؟
+// تغطية المواد
 $coveredSubjects = [];
 $uncoveredSubjects = [];
 foreach ($classes as $cl) {
@@ -139,7 +133,6 @@ foreach ($classes as $cl) {
     }
 }
 ?>
-
 <div class="section">
     <div class="card mb-6">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -147,6 +140,10 @@ foreach ($classes as $cl) {
             <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('assign-form').style.display='block'">➕ تعيين جديد</button>
         </div>
         <div class="card-body">
+            <div class="alert alert-info" style="font-size:13px;">
+                <strong>ℹ️ نظام التعيين المستمر:</strong> التعيينات لا تتأثر بالفصل أو العام الدراسي. المعلم يُعين مرة واحدة ويستمر حتى يتم نقله أو إيقاف حسابه.
+            </div>
+
             <!-- نموذج التعيين -->
             <div id="assign-form" style="display:none;margin-bottom:20px;">
                 <div class="card" style="border:2px solid var(--primary);">
@@ -192,7 +189,7 @@ foreach ($classes as $cl) {
                 </div>
             </div>
 
-            <!-- نظرة عامة على الحمل التدريسي -->
+            <!-- الحمل التدريسي -->
             <?php if (!empty($teacherLoad)): ?>
             <div class="card mb-4">
                 <div class="card-header" style="background:var(--background);">
@@ -241,7 +238,7 @@ foreach ($classes as $cl) {
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
-                        <tr><th>المعلم</th><th>المادة</th><th>الفصل</th><th>إجراء</th></tr>
+                        <tr><th>المعلم</th><th>المادة</th><th>الفصل</th><th>منذ</th><th>إجراء</th></tr>
                     </thead>
                     <tbody>
                         <?php foreach ($assignments as $a): ?>
@@ -249,6 +246,7 @@ foreach ($classes as $cl) {
                             <td><strong><?= e($a['teacher_name']) ?></strong></td>
                             <td><?= e($a['subject_name']) ?></td>
                             <td><?= e($a['grade_name'] . ' - ' . $a['class_name']) ?></td>
+                            <td style="font-size:12px;color:var(--text-muted);"><?= e($a['academic_year_name'] ?? 'مستمر') ?></td>
                             <td>
                                 <form method="POST" style="display:inline;" onsubmit="return confirm('إلغاء التعيين؟');">
                                     <?= csrfField() ?>

@@ -79,7 +79,7 @@ $adjustedScore = $schoolAvgScore;
 if ($schoolAvgScore !== null && $schoolAvgScore > 0) {
     try {
         $adj = new ContextualAdjustmentService($db);
-        $adjustedScore = $adj->calculateAdjustedSQI($selectedSchoolId, $selectedAcademicYearId, $schoolAvgScore);
+        $adjustedScore = $adj->calculateAdjustedSQI($selectedSchoolId, $schoolAvgScore);
     } catch (Exception $e) {}
 }
 

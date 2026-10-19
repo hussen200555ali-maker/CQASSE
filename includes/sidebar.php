@@ -32,6 +32,10 @@ if (preg_match('#/pages/dashboard/#', $currentScript)) {
 if (preg_match('#/pages/parent/#', $currentScript)) {
     $currentSection = 'parent';
 }
+// Detect parents management pages
+if (preg_match('#/pages/parents/#', $currentScript)) {
+    $currentSection = 'parents';
+}
 
 // User info
 $userRole = $_SESSION['user']['role'] ?? 'guest';
@@ -94,11 +98,27 @@ $menuPermissions = [
      'setup'               => ['group_admin', 'school_admin'],
 
      // التقييمات
-     'assessment'          => ['group_admin', 'school_admin', 'teacher'],
-     'assessment_manage'   => ['group_admin', 'school_admin'],
+     'assessment'          => ['group_admin', 'school_admin'],
+     'assessment_manage'   => ['group_admin'],
+     'teacher_dashboard'   => ['teacher'],
+
+     // عناصر الإدخال اليومي (مخفية عن school_admin)
+     'grade_entry'         => ['group_admin', 'teacher'],
+     'grade_edit'          => ['group_admin', 'teacher'],
+     'academic_weight_setup' => ['group_admin', 'school_admin'],
+     'test_management'     => ['group_admin', 'teacher'],
+     'attendance_daily'    => ['group_admin', 'teacher'],
+     'attendance_period'   => ['group_admin', 'teacher'],
+     'attendance_amend'    => ['group_admin', 'teacher'],
+     'behavior_evaluate'   => ['group_admin', 'teacher'],
+     'behavior_incident'   => ['group_admin', 'teacher'],
+     'skills_entry'        => ['group_admin', 'teacher'],
+     'teaching_self'       => ['group_admin', 'teacher'],
+     'teaching_peer'       => ['group_admin', 'teacher'],
 
      // التقييم الأكاديمي
      'academic_assessment' => ['group_admin', 'school_admin', 'teacher'],
+     'academic_subjects'   => ['group_admin', 'school_admin'],
 
      // الحضور
      'attendance'          => ['group_admin', 'school_admin', 'teacher'],
@@ -119,12 +139,14 @@ $menuPermissions = [
      'supervision'         => ['group_admin', 'school_admin'],
 
      // البيئة المدرسية
-     'climate'             => ['group_admin', 'school_admin'],
-     'facility'            => ['group_admin', 'school_admin'],
+      'climate'             => ['group_admin', 'school_admin'],
+      'climate_teacher'     => ['teacher'],
+      'climate_parent'      => ['parent'],
+      'facility'            => ['group_admin', 'school_admin'],
 
      // المؤشرات
      'alerts'              => ['group_admin', 'school_admin', 'teacher'],
-     'eqi'                 => ['group_admin', 'school_admin', 'teacher'],
+     'eqi'                 => ['group_admin', 'school_admin'],
      'eqi_settings'        => ['group_admin'],
      'permissions_matrix'  => ['group_admin'],
 
@@ -136,14 +158,15 @@ $menuPermissions = [
      'promotion_approve'   => ['group_admin', 'school_admin'],
 
      // المخرجات
-     'grade_sheets'        => ['group_admin', 'school_admin', 'teacher', 'parent'],
+     'grade_sheets'        => ['group_admin', 'school_admin', 'teacher'],
      'export'              => ['group_admin', 'school_admin'],
      'backup'              => ['group_admin'],
 
      // التواصل
      'notifications'       => ['group_admin', 'school_admin', 'teacher', 'parent'],
-     'notes'               => ['group_admin', 'school_admin', 'teacher'],
+     'notes' => ['group_admin', 'school_admin', 'teacher'],
      'parent_ack'          => ['group_admin', 'school_admin', 'parent'],
+     'parents'             => ['group_admin', 'school_admin'],
 
      // النظام
      'settings'            => ['group_admin', 'school_admin'],
@@ -171,9 +194,9 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
 <aside class="sidebar" id="sidebar">
     <!-- Logo Area -->
     <div class="sidebar-logo">
-        <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-        <h2>EQAS</h2>
-        <div class="logo-subtitle">نظام التقييم الشامل لجودة التعليم</div>
+        <div class="logo-icon"><img src="<?php echo defined('EQAS_ASSETS_URL') ? EQAS_ASSETS_URL : 'assets'; ?>/img/logo-login.svg" alt="CQASSE" class="sidebar-logo-img" width="48" height="48"></div>
+        <h2>CQASSE</h2>
+        <div class="logo-subtitle">نظام التقييم الشامل لجودة التعليم المدرسي</div>
     </div>
 
     <!-- User Info -->
@@ -291,6 +314,13 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
         <span class="menu-text">تقارير المؤشر</span>
     </a>
+    <?php if ($isGroupAdmin): ?>
+    <a href="<?php echo baseUrl('pages/reports/annual_report.php'); ?>"
+       class="sidebar-menu-link <?php echo ($currentSection === 'reports' && strpos($currentScript, 'annual_report') !== false) ? 'active' : ''; ?>">
+        <span class="menu-icon"><i class="fas fa-file-pdf"></i></span>
+        <span class="menu-text">التقرير السنوي</span>
+    </a>
+    <?php endif; ?>
     <?php if (canSeeMenu('eqi_settings', $userRole, $menuPermissions)): ?>
     <a href="<?php echo baseUrl('pages/eqi/settings.php'); ?>"
        class="sidebar-menu-link <?php echo ($currentSection === 'eqi' && strpos($currentScript, 'settings.php') !== false) ? 'active' : ''; ?>">
@@ -326,6 +356,11 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
     <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
     <span class="menu-text">خطط التحسين المدرسية</span>
 </a>
+<a href="<?php echo baseUrl('pages/assessment/manage_forms.php'); ?>"
+   class="sidebar-menu-link <?php echo ($currentSection === 'assessment' && strpos($currentScript, 'manage_forms') !== false) ? 'active' : ''; ?>">
+    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
+    <span class="menu-text">إدارة الاستمارات</span>
+</a>
 
 <!-- ⚙️ السياسات والحوكمة -->
 <div class="sidebar-section-title">السياسات والحوكمة</div>
@@ -346,6 +381,11 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         <span class="menu-icon"><i class="fas fa-check-circle"></i></span>
         <span class="menu-text">إقرارات أولياء الأمور</span>
     </a>
+    <a href="<?php echo baseUrl('pages/parents/link.php'); ?>"
+       class="sidebar-menu-link <?php echo menuActiveClass(['parents'], $currentSection, $currentScript); ?>">
+        <span class="menu-icon"><i class="fas fa-link"></i></span>
+        <span class="menu-text">ربط أولياء الأمور</span>
+    </a>
 </div>
 <button class="sidebar-menu-link <?php echo menuActiveClass(['backup_reports', 'settings'], $currentSection, $currentScript); ?>"
         data-toggle="submenu" aria-expanded="<?php echo isSidebarActive(['backup_reports', 'settings'], $currentSection, $currentScript) ? 'true' : 'false'; ?>" aria-controls="submenu-governance-ga" id="btn-governance-ga">
@@ -359,6 +399,13 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         <span class="menu-icon"><i class="fas fa-cog"></i></span>
         <span class="menu-text">إعدادات النظام</span>
     </a>
+    <?php if (canSeeMenu('settings', $userRole, $menuPermissions)): ?>
+    <a href="<?php echo baseUrl('pages/school_context/index.php'); ?>"
+       class="sidebar-menu-link <?php echo menuActiveClass(['school_context'], $currentSection, $currentScript); ?>">
+        <span class="menu-icon"><i class="fas fa-chart-line"></i></span>
+        <span class="menu-text">التعديل السياقي</span>
+    </a>
+    <?php endif; ?>
     <a href="<?php echo baseUrl('pages/backup_reports/index.php'); ?>"
        class="sidebar-menu-link <?php echo ($currentSection === 'backup_reports' && $currentPage === 'index') ? 'active' : ''; ?>">
         <span class="menu-icon"><i class="fas fa-database"></i></span>
@@ -506,6 +553,13 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
             <span class="menu-icon"><i class="fas fa-tachometer-alt"></i></span>
             <span class="menu-text">لوحة التقييمات</span>
         </a>
+        <?php if (canSeeMenu('teacher_dashboard', $userRole, $menuPermissions)): ?>
+        <a href="<?php echo baseUrl('pages/assessment/teacher_dashboard.php'); ?>"
+           class="sidebar-menu-link <?php echo ($currentSection === 'assessment' && strpos($currentScript, 'teacher_dashboard') !== false) ? 'active' : ''; ?>">
+            <span class="menu-icon"><i class="fas fa-chalkboard-teacher"></i></span>
+            <span class="menu-text">لوحة تقييمات المعلم</span>
+        </a>
+        <?php endif; ?>
         <?php if (canSeeMenu('assessment_manage', $userRole, $menuPermissions)): ?>
         <a href="<?php echo baseUrl('pages/assessment/manage_forms.php'); ?>"
            class="sidebar-menu-link <?php echo ($currentSection === 'assessment' && strpos($currentScript, 'manage_forms') !== false) ? 'active' : ''; ?>">
@@ -527,16 +581,20 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
             <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
         </button>
         <div class="sidebar-submenu <?php echo isSubmenuExpanded(['academic_assessment'], $currentSection, $currentScript); ?>" id="submenu-academic-assessment" role="region" aria-labelledby="btn-academic-assessment">
+            <?php if (canSeeMenu('grade_entry', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/grade_entry.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'grade_entry') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-pen"></i></span>
                 <span class="menu-text">إدخال الدرجات</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('grade_edit', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/grade_edit.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'grade_edit') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-edit"></i></span>
                 <span class="menu-text">تعديل الدرجات</span>
             </a>
+            <?php endif; ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/summary.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'summary') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-chart-bar"></i></span>
@@ -547,21 +605,27 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
                 <span class="menu-icon"><i class="fas fa-calculator"></i></span>
                 <span class="menu-text">حساب نتائج الفصل</span>
             </a>
+            <?php if (canSeeMenu('academic_subjects', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/subjects.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'subjects') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-book-open"></i></span>
                 <span class="menu-text">المواد الدراسية</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('academic_weight_setup', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/weight_setup.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'weight_setup') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-balance-scale-right"></i></span>
                 <span class="menu-text">توزيع الأوزان</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('test_management', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/academic_assessment/tests.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'academic_assessment' && strpos($currentScript, 'tests') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-clipboard-list"></i></span>
                 <span class="menu-text">إدارة الاختبارات</span>
             </a>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
@@ -577,21 +641,27 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
             <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
         </button>
         <div class="sidebar-submenu <?php echo isSubmenuExpanded(['attendance'], $currentSection, $currentScript); ?>" id="submenu-attendance" role="region" aria-labelledby="btn-attendance">
+            <?php if (canSeeMenu('attendance_daily', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/attendance/daily.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'attendance' && strpos($currentScript, 'daily') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-calendar-day"></i></span>
                 <span class="menu-text">تسجيل الحضور</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('attendance_period', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/attendance/period.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'attendance' && strpos($currentScript, 'period') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-clock"></i></span>
                 <span class="menu-text">الحضور بالحصص</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('attendance_amend', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/attendance/amend.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'attendance' && strpos($currentScript, 'amend') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-eraser"></i></span>
                 <span class="menu-text">تعديل الحضور</span>
             </a>
+            <?php endif; ?>
             <a href="<?php echo baseUrl('pages/attendance/summary.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'attendance' && strpos($currentScript, 'summary') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-chart-pie"></i></span>
@@ -624,16 +694,20 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
             <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
         </button>
         <div class="sidebar-submenu <?php echo isSubmenuExpanded(['behavior'], $currentSection, $currentScript); ?>" id="submenu-behavior" role="region" aria-labelledby="btn-behavior">
+            <?php if (canSeeMenu('behavior_evaluate', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/behavior/evaluate.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'behavior' && strpos($currentScript, 'evaluate') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-clipboard-check"></i></span>
                 <span class="menu-text">التقييم السلوكي</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('behavior_incident', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/behavior/incident.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'behavior' && strpos($currentScript, 'incident') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-exclamation-triangle"></i></span>
                 <span class="menu-text">تسجيل سلوك</span>
             </a>
+            <?php endif; ?>
             <a href="<?php echo baseUrl('pages/behavior/scores.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'behavior' && strpos($currentScript, 'scores') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-trophy"></i></span>
@@ -657,7 +731,7 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
         <!-- ════════════════════════════════════════════
              المهارات - Skills
              ════════════════════════════════════════════ -->
-        <?php if (canSeeMenu('skills', $userRole, $menuPermissions)): ?>
+        <?php if (canSeeMenu('skills_entry', $userRole, $menuPermissions)): ?>
         <div class="sidebar-section-title">المهارات</div>
         <a href="<?php echo baseUrl('pages/skills/index.php'); ?>"
            class="sidebar-menu-link <?php echo menuActiveClass(['skills'], $currentSection, $currentScript); ?>">
@@ -678,25 +752,36 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
             <span class="menu-arrow"><i class="fas fa-chevron-left"></i></span>
         </button>
         <div class="sidebar-submenu <?php echo isSubmenuExpanded(['teaching'], $currentSection, $currentScript); ?>" id="submenu-teaching" role="region" aria-labelledby="btn-teaching">
+            <?php if (canSeeMenu('teaching_self', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/teaching/self_index.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'teaching' && strpos($currentScript, 'self') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-user-edit"></i></span>
                 <span class="menu-text">التقييم الذاتي</span>
             </a>
+            <?php endif; ?>
+            <?php if (canSeeMenu('teaching_peer', $userRole, $menuPermissions)): ?>
             <a href="<?php echo baseUrl('pages/teaching/peer_index.php'); ?>"
                class="sidebar-menu-link <?php echo ($currentSection === 'teaching' && strpos($currentScript, 'peer') !== false) ? 'active' : ''; ?>">
                 <span class="menu-icon"><i class="fas fa-user-friends"></i></span>
                 <span class="menu-text">تقييم الأقران</span>
             </a>
-            <?php if (canSeeMenu('teaching_admin', $userRole, $menuPermissions)): ?>
-            <a href="<?php echo baseUrl('pages/teaching/admin_index.php'); ?>"
-               class="sidebar-menu-link <?php echo ($currentSection === 'teaching' && strpos($currentScript, 'admin') !== false) ? 'active' : ''; ?>">
-                <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
-                <span class="menu-text">التقييم الإشرافي</span>
-            </a>
             <?php endif; ?>
-        </div>
-        <?php endif; ?>
+            <?php if (canSeeMenu('teaching_admin', $userRole, $menuPermissions)): ?>
+             <a href="<?php echo baseUrl('pages/teaching/admin_index.php'); ?>"
+                class="sidebar-menu-link <?php echo ($currentSection === 'teaching' && strpos($currentScript, 'admin') !== false) ? 'active' : ''; ?>">
+                 <span class="menu-icon"><i class="fas fa-user-tie"></i></span>
+                 <span class="menu-text">التقييم الإشرافي</span>
+             </a>
+             <?php endif; ?>
+             <?php if (canSeeMenu('climate_teacher', $userRole, $menuPermissions)): ?>
+             <a href="<?php echo baseUrl('pages/climate/teacher_survey.php'); ?>"
+                class="sidebar-menu-link <?php echo ($currentSection === 'climate' && strpos($currentScript, 'teacher_survey') !== false) ? 'active' : ''; ?>">
+                 <span class="menu-icon"><i class="fas fa-cloud-sun-rain"></i></span>
+                 <span class="menu-text">استبيان المناخ</span>
+             </a>
+             <?php endif; ?>
+         </div>
+         <?php endif; ?>
 
         <!-- ════════════════════════════════════════════
              التقييمات الإشرافية - Supervision
@@ -948,12 +1033,19 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
                 <span class="menu-text">المهارات</span>
             </a>
             <a href="<?php echo baseUrl('pages/parent/promotion.php'); ?>"
-               class="sidebar-menu-link <?php echo ($currentSection === 'parent' && strpos($currentScript, 'promotion') !== false) ? 'active' : ''; ?>">
-                <span class="menu-icon"><i class="fas fa-level-up-alt"></i></span>
-                <span class="menu-text">قرارات الترفيع</span>
-            </a>
-        </div>
-        <?php endif; ?>
+                class="sidebar-menu-link <?php echo ($currentSection === 'parent' && strpos($currentScript, 'promotion') !== false) ? 'active' : ''; ?>">
+                 <span class="menu-icon"><i class="fas fa-level-up-alt"></i></span>
+                 <span class="menu-text">قرارات الترفيع</span>
+             </a>
+             <?php if (canSeeMenu('climate_parent', $userRole, $menuPermissions)): ?>
+             <a href="<?php echo baseUrl('pages/climate/parent_survey.php'); ?>"
+                class="sidebar-menu-link <?php echo ($currentSection === 'climate' && strpos($currentScript, 'parent_survey') !== false) ? 'active' : ''; ?>">
+                 <span class="menu-icon"><i class="fas fa-cloud-sun-rain"></i></span>
+                 <span class="menu-text">استبيان المناخ</span>
+             </a>
+             <?php endif; ?>
+         </div>
+         <?php endif; ?>
 
         <!-- ════════════════════════════════════════════
              التواصل - Communication
@@ -966,6 +1058,12 @@ $isAdminOrTeacher = ($isAdmin || $isTeacher);
            class="sidebar-menu-link <?php echo menuActiveClass(['notifications'], $currentSection, $currentScript); ?>">
             <span class="menu-icon"><i class="fas fa-envelope"></i></span>
             <span class="menu-text">الإشعارات</span>
+        </a>
+        <a href="<?php echo baseUrl('pages/notifications/preferences.php'); ?>"
+           class="sidebar-menu-link <?php echo menuActiveClass(['notifications_preferences'], $currentSection, $currentScript); ?>"
+           style="padding-right:44px;font-size:13px;">
+            <span class="menu-icon" style="width:20px;opacity:0.5;"><i class="fas fa-cog"></i></span>
+            <span class="menu-text">تفضيلات</span>
         </a>
         <?php endif; ?>
 
