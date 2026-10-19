@@ -8,9 +8,17 @@
 
 // Include session management (same path as all pages)
 require_once __DIR__ . '/includes/session.php';
+require_once __DIR__ . '/includes/installer.php';
 
-// If already installed, redirect to login
-if (file_exists(__DIR__ . '/config.php')) {
+// [R-01] منع إعادة تشغيل المعالج بعد نجاح التثبيت.
+// يعتمد على قفل التثبيت (temp/installed.lock) أو وجود EQAS_INSTALLED في config.php
+// بدلاً من مجرّد وجود config.php — حتى يعمل التثبيت على نسخة جديدة تماماً.
+$eqasInstalled = is_file(__DIR__ . '/temp/installed.lock');
+if (!$eqasInstalled && is_file(__DIR__ . '/config.php')) {
+    $eqasCfg = @file_get_contents(__DIR__ . '/config.php');
+    $eqasInstalled = ($eqasCfg !== false && strpos($eqasCfg, 'EQAS_INSTALLED') !== false);
+}
+if ($eqasInstalled) {
     header('Location: login.php');
     exit;
 }
@@ -84,8 +92,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (empty($adminUsername) || empty($adminPassword) || empty($adminEmail)) {
                     $error = 'يرجى ملء جميع الحقول المطلوبة.';
-                } elseif (strlen($adminPassword) < 8) {
-                    $error = 'يجب أن تكون كلمة المرور 8 أحرف على الأقل.';
+                } elseif (($pwError = eqas_validate_admin_password($adminPassword)) !== null) {
+                    $error = $pwError;
                 } elseif ($adminPassword !== $adminPasswordConfirm) {
                     $error = 'كلمتا المرور غير متطابقتين.';
                 } elseif (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) {
@@ -161,278 +169,15 @@ $error = $error ?? '';
 
 /**
  * Perform the actual installation
- * [إصلاح v2.0.3] يستخدم schema.sql بدلاً من جداول مبسطة غير متوافقة
+ * يفوّض المنطق الفعلي إلى محرّك التثبيت القابل للاختبار (includes/installer.php)
  */
 function performInstallation() {
-    $dbConfig = $_SESSION['setup_db'] ?? null;
-    $adminConfig = $_SESSION['setup_admin'] ?? null;
-    $schoolConfig = $_SESSION['setup_school'] ?? null;
-    $yearConfig = $_SESSION['setup_year'] ?? null;
-
-    if (!$dbConfig || !$adminConfig || !$schoolConfig || !$yearConfig) {
-        return 'بيانات التثبيت غير مكتملة. يرجى البدء من جديد.';
-    }
-
-    try {
-        // Connect to database
-        $pdo = new PDO(
-            "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset=utf8mb4",
-            $dbConfig['user'],
-            $dbConfig['pass'],
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-        );
-
-        // [إصلاح v2.0.3] استيراد schema.sql الكامل (71 جدول + 1 عرض)
-        $schemaFile = __DIR__ . '/database/schema.sql';
-        if (!file_exists($schemaFile)) {
-            return 'ملف schema.sql غير موجود في مجلد database/. يرجى التأكد من رفع جميع ملفات النظام.';
-        }
-
-        $schemaSql = file_get_contents($schemaFile);
-        if ($schemaSql === false) {
-            return 'فشل في قراءة ملف schema.sql.';
-        }
-
-        // استيراد schema.sql - تنفيذ الاستعلامات واحدًا تلو الآخر
-        $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
-        $pdo->exec("SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO'");
-
-        // تقسيم الاستعلامات بذكاء (تجنب تقسيم داخل النصوص)
-        $statements = [];
-        $current = '';
-        $inString = false;
-        $stringChar = '';
-        for ($i = 0; $i < strlen($schemaSql); $i++) {
-            $ch = $schemaSql[$i];
-            if (!$inString && $ch === "'") {
-                $inString = true;
-                $stringChar = "'";
-            } elseif (!$inString && $ch === '"') {
-                $inString = true;
-                $stringChar = '"';
-            } elseif ($inString && $ch === $stringChar && ($i === 0 || $schemaSql[$i-1] !== '\\')) {
-                $inString = false;
-            }
-            if ($ch === ';' && !$inString) {
-                $stmt = trim($current);
-                if (!empty($stmt) && $stmt[0] !== '-' && $stmt[0] !== '/') {
-                    $statements[] = $stmt;
-                }
-                $current = '';
-            } else {
-                $current .= $ch;
-            }
-        }
-        // آخر استعلام بدون فاصلة منقوطة
-        $lastStmt = trim($current);
-        if (!empty($lastStmt) && $lastStmt[0] !== '-' && $lastStmt[0] !== '/') {
-            $statements[] = $lastStmt;
-        }
-
-        foreach ($statements as $statement) {
-            // تخطي التعليقات والأسطر الفارغة
-            $trimmed = trim($statement);
-            if (empty($trimmed) || $trimmed[0] === '-' || $trimmed[0] === '#') {
-                continue;
-            }
-            try {
-                $pdo->exec($statement);
-            } catch (PDOException $e) {
-                // تجاهل أخطاء "already exists" - فهي طبيعية في إعادة التثبيت
-                if (strpos($e->getMessage(), 'already exists') === false &&
-                    strpos($e->getMessage(), 'Duplicate') === false) {
-                    return 'خطأ في استيراد schema.sql: ' . $e->getMessage() .
-                           '<br><small>الاستعلام: ' . htmlspecialchars(mb_substr($trimmed, 0, 200)) . '...</small>';
-                }
-            }
-        }
-
-        $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
-
-        // إدخال المحافظات ة (بيانات أساسية)
-        $governorateData = [
-            ['أمانة العاصمة', 'Amanat Al Asimah', 1],
-            ['عدن', 'Aden', 2],
-            ['تعز', 'Taiz', 3],
-            ['الحديدة', 'Al Hudaydah', 4],
-            ['إب', 'Ibb', 5],
-            ['ذمار', 'Dhamar', 6],
-            ['حضرموت', 'Hadhramaut', 7],
-            ['المكلا', 'Al Mukalla', 8],
-            ['عمران', 'Amran', 9],
-            ['حجة', 'Hajjah', 10],
-            ['صنعاء', 'Sanaa', 11],
-            ['البيضاء', 'Al Bayda', 12],
-            ['مأرب', "Ma'rib", 13],
-            ['لحج', 'Lahj', 14],
-            ['أبين', 'Abyan', 15],
-            ['شبوة', 'Shabwah', 16],
-            ['صعدة', "Sa'dah", 17],
-            ['الجوف', 'Al Jawf', 18],
-            ['المهرة', 'Al Mahrah', 19],
-            ['ريمة', 'Raymah', 20],
-            ['سقطرى', 'Socotra', 21],
-        ];
-        $govStmt = $pdo->prepare("INSERT IGNORE INTO governorates (name_ar, name_en, sort_order) VALUES (?, ?, ?)");
-        foreach ($governorateData as $gov) {
-            $govStmt->execute($gov);
-        }
-
-        // إدخال الأدوار (بيانات أساسية) - يجب أن تتطابق مع schema.sql
-        $rolesData = [
-            ['group_admin', 'مدير النظام', 'Group Admin', 100, 'إدارة كاملة للنظام'],
-            ['school_admin', 'مدير المدرسة', 'School Admin', 80, 'إدارة المدرسة'],
-            ['teacher', 'معلم', 'Teacher', 50, 'تقييم ومتابعة الطلاب'],
-            ['parent', 'ولي أمر', 'Parent', 30, 'متابعة أبنائه'],
-        ];
-        $roleStmt = $pdo->prepare("INSERT IGNORE INTO roles (name, display_name_ar, display_name_en, rank, description) VALUES (?, ?, ?, ?, ?)");
-        foreach ($rolesData as $role) {
-            $roleStmt->execute($role);
-        }
-        // جلب معرف دور مدير النظام
-        $adminRoleId = $pdo->query("SELECT id FROM roles WHERE name = 'group_admin'")->fetchColumn();
-
-        // إدخال المراحل الدراسية (بيانات أساسية)
-        $gradeData = [];
-        $gradeNames = [
-            1 => 'الأول', 2 => 'الثاني', 3 => 'الثالث', 4 => 'الرابع', 5 => 'الخامس',
-            6 => 'السادس', 7 => 'السابع', 8 => 'الثامن', 9 => 'التاسع',
-            10 => 'العاشر', 11 => 'الحادي عشر', 12 => 'الثاني عشر'
-        ];
-        $gradeStmt = $pdo->prepare("INSERT IGNORE INTO grade_levels (name_ar, name_en, level_number, stage, is_active) VALUES (?, ?, ?, ?, 1)");
-        foreach ($gradeNames as $num => $nameAr) {
-            $stage = $num <= 9 ? 'basic' : 'secondary';
-            $gradeStmt->execute(["الصف {$nameAr}", "Grade {$num}", $num, $stage]);
-        }
-
-        // إدخال المدرسة - [إصلاح] أسماء الأعمدة تتطابق مع schema.sql
-        $schoolType = $schoolConfig['type'];
-        // تحويل قيم النوع القديمة إلى القيم الجديدة
-        $typeMap = ['primary' => 'basic', 'secondary' => 'secondary', 'mixed' => 'combined'];
-        $schoolTypeDb = $typeMap[$schoolType] ?? 'combined';
-
-        // إنشاء رمز مرجعي فريد
-        $refCode = str_pad(random_int(1, 99999), 5, '0', STR_PAD_LEFT);
-
-        $stmt = $pdo->prepare("INSERT INTO schools (name_ar, name_en, reference_code, address, governorate, district, school_type, is_active)
-                               VALUES (?, NULL, ?, ?, ?, ?, ?, 1)");
-        $stmt->execute([
-            $schoolConfig['name'],
-            $refCode,
-            $schoolConfig['address'],
-            $schoolConfig['governorate'],
-            $schoolConfig['directorate'],
-            $schoolTypeDb
-        ]);
-        $schoolId = $pdo->lastInsertId();
-
-        // إدخال مدير النظام - [إصلاح] أسماء الأعمدة تتطابق مع schema.sql
-        $hashedPassword = password_hash($adminConfig['password'], PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, full_name_ar, full_name_en, email, role_id, school_id, is_active, login_attempts, created_at)
-                               VALUES (?, ?, ?, NULL, ?, ?, ?, 1, 0, NOW())");
-        $stmt->execute([
-            $adminConfig['username'],
-            $hashedPassword,
-            $adminConfig['full_name'],
-            $adminConfig['email'],
-            $adminRoleId,
-            $schoolId
-        ]);
-
-        // إدخال العام الأكاديمي - [إصلاح] أسماء الأعمدة تتطابق مع schema.sql
-        $stmt = $pdo->prepare("INSERT INTO academic_years (name, start_date, end_date, is_current, status, is_active)
-                               VALUES (?, ?, ?, 1, 'active', 1)");
-        $stmt->execute([
-            $yearConfig['name'],
-            $yearConfig['start'],
-            $yearConfig['end']
-        ]);
-        $academicYearId = $pdo->lastInsertId();
-
-        // إدخال الفصل الدراسي الأول
-        $semStart = $yearConfig['start'];
-        $semEnd = date('Y-m-d', strtotime($yearConfig['start'] . ' + 4 months'));
-        $stmt = $pdo->prepare("INSERT INTO semesters (academic_year_id, name_ar, start_date, end_date, is_current, lock_level, is_active)
-                               VALUES (?, 'الفصل الدراسي الأول', ?, ?, 1, 'none', 1)");
-        $stmt->execute([$academicYearId, $semStart, $semEnd]);
-
-        // إدخال إعدادات النظام الافتراضية
-        $defaultSettings = [
-            ['system_name', 'نظام التقييم الشامل لجودة التعليم المدرسي '],
-            ['system_short_name', 'EQAS'],
-            ['system_version', '2.0.3'],
-            ['default_language', 'ar'],
-            ['timezone', 'Asia/Aden'],
-        ];
-        $settingsStmt = $pdo->prepare("INSERT IGNORE INTO system_settings (setting_key, setting_value) VALUES (?, ?)");
-        foreach ($defaultSettings as $setting) {
-            $settingsStmt->execute($setting);
-        }
-
-        // إدخال إعدادات المدرسة
-        $schoolSettings = [
-            [$schoolId, 'school_name', $schoolConfig['name']],
-            [$schoolId, 'academic_year_id', $academicYearId],
-        ];
-        $schSetStmt = $pdo->prepare("INSERT IGNORE INTO school_settings (school_id, setting_key, setting_value) VALUES (?, ?, ?)");
-        foreach ($schoolSettings as $ss) {
-            $schSetStmt->execute($ss);
-        }
-
-        // استيراد ملف البذور إذا وجد
-        $seedFile = __DIR__ . '/database/seed.sql';
-        if (file_exists($seedFile)) {
-            $seedSql = file_get_contents($seedFile);
-            if ($seedSql !== false) {
-                $pdo->exec($seedSql);
-            }
-        }
-
-        // إنشاء ملف config.php - [إصلاح] تنسيق متكامل مع الإعدادات الأمنية
-        $sessionSalt = bin2hex(random_bytes(32)); // ملح عشوائي فريد لكل تثبيت
-        $configContent = "<?php\n";
-        $configContent .= "/**\n * EQAS - Configuration File\n * نظام التقييم الشامل - ملف الإعدادات\n * Auto-generated by setup wizard v2.0.3\n */\n\n";
-        $configContent .= "define('EQAS_ENV', 'production');\n";
-        $configContent .= "define('EQAS_VERSION', '2.0.3');\n\n";
-        $configContent .= "require_once __DIR__ . '/includes/security_headers.php';\n\n";
-        $configContent .= "define('DB_HOST', '" . addslashes($dbConfig['host']) . "');\n";
-        $configContent .= "define('DB_NAME', '" . addslashes($dbConfig['name']) . "');\n";
-        $configContent .= "define('DB_USER', '" . addslashes($dbConfig['user']) . "');\n";
-        $configContent .= "define('DB_PASS', '" . addslashes($dbConfig['pass']) . "');\n";
-        $configContent .= "define('DB_CHARSET', 'utf8mb4');\n\n";
-        $configContent .= "define('EQAS_ROOT', __DIR__);\n";
-        $configContent .= "define('EQAS_INCLUDES', EQAS_ROOT . '/includes');\n";
-        $configContent .= "define('EQAS_PAGES', EQAS_ROOT . '/pages');\n";
-        $configContent .= "define('EQAS_ASSETS', EQAS_ROOT . '/assets');\n";
-        $configContent .= "define('EQAS_BACKUPS', EQAS_ROOT . '/backups');\n";
-        $configContent .= "define('EQAS_TEMP', EQAS_ROOT . '/temp');\n";
-        $configContent .= "define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');\n\n";
-        $configContent .= "define('EQAS_URL', 'http://' . (\$_SERVER['HTTP_HOST'] ?? 'localhost') . '/cqasse');\n";
-        $configContent .= "define('EQAS_ASSETS_URL', EQAS_URL . '/assets');\n\n";
-        $configContent .= "define('CSRF_ENABLED', true);\n";
-        $configContent .= "define('MAX_LOGIN_ATTEMPTS', 5);\n";
-        $configContent .= "define('LOCKOUT_DURATION', 900);\n";
-        $configContent .= "define('SESSION_TIMEOUT', 3600);\n";
-        $configContent .= "define('PASSWORD_MIN_LENGTH', 8);\n";
-        $configContent .= "define('SESSION_FINGERPRINT_SALT', '" . $sessionSalt . "');\n\n";
-        $configContent .= "define('BACKUP_MAX_SIZE_MB', 50);\n";
-        $configContent .= "define('BACKUP_GZIP_ENABLED', true);\n\n";
-        $configContent .= "define('EQI_REDISTRIBUTION', 'hybrid');\n";
-        $configContent .= "define('ACADEMIC_PASS_RATE', 50);\n";
-        $configContent .= "define('BEHAVIOR_PASS_RATE', 60);\n";
-        $configContent .= "define('ATTENDANCE_PASS_RATE', 75);\n\n";
-        $configContent .= "error_reporting(0);\n";
-        $configContent .= "ini_set('display_errors', 0);\n\n";
-        $configContent .= "date_default_timezone_set('Asia/Aden');\n\n";
-        $configContent .= "define('EQAS_INSTALLED', true);\n";
-
-        file_put_contents(__DIR__ . '/config.php', $configContent);
-
-        return true;
-
-    } catch (Exception $e) {
-        return 'حدث خطأ أثناء التثبيت: ' . $e->getMessage();
-    }
+    return eqas_perform_installation([
+        'db'     => $_SESSION['setup_db']     ?? null,
+        'admin'  => $_SESSION['setup_admin']  ?? null,
+        'school' => $_SESSION['setup_school'] ?? null,
+        'year'   => $_SESSION['setup_year']   ?? null,
+    ]);
 }
 
 // Step labels
@@ -782,7 +527,7 @@ $governorates = [
                         <div class="alert alert-warning">
                             <span class="alert-icon">⚠️</span>
                             <div class="alert-content">
-                                <strong>مهم:</strong> يرجى حذف ملف setup.php بعد التثبيت لأسباب أمنية. كما يُنصح بتغيير كلمة المرور الافتراضية بعد تسجيل الدخول الأول.
+                                <strong>مهم:</strong> يرجى حذف ملف setup.php بعد التثبيت لأسباب أمنية، والحفاظ على اسم المستخدم وكلمة المرور التي اخترتها في الخطوة السابقة.
                             </div>
                         </div>
 

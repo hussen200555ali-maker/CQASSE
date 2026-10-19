@@ -1,48 +1,39 @@
 <?php
 /**
- * نظام التقييم الشامل لجودة التعليم المدرسي  - EQAS
- * ملف الإعدادات الرئيسي
+ * EQAS - نموذج ملف الإعدادات (Configuration Template)
+ * نظام التقييم الشامل لجودة التعليم المدرسي
  *
- * يحتوي هذا الملف على جميع إعدادات النظام الأساسية بما في ذلك:
- * - إعدادات البيئة
- * - إعدادات قاعدة البيانات
- * - مسارات الملفات
- * - عناوين URL
- * - إعدادات الأمان
- * - إعدادات النسخ الاحتياطي
- * - إعدادات مؤشر جودة التعليم
+ * الاستخدام:
+ *   - التثبيت الموصى به: افتح معالج التثبيت setup.php وسينشئ config.php تلقائياً.
+ *   - التثبيت اليدوي: انسخ هذا الملف إلى config.php ثم عدّل القيم أدناه.
  *
- * ترتيب التحميل: config.php → database.php → helpers.php
+ * ⚠️ لا تُرفع config.php إلى Git أبداً — فهو يحتوي بيانات الاتصال وأسرار الجلسة.
+ *     هذا النموذج (config.example.php) هو ما يُرفع فقط.
+ *
+ * ترتيب التضمين: config.php ? database.php ? helpers.php
  */
 
-// [إصلاح v2.0.3] تحذير الإنتاج
-$serverName = $_SERVER['SERVER_NAME'] ?? '';
-$isLocal = in_array($serverName, ['localhost', '127.0.0.1', '::1']) 
-           || preg_match('/^192\.168\./', $serverName);
-if (!$isLocal && !getenv('EQAS_DEV_MODE')) {
-    trigger_error('⚠️ WARNING: Using development config in production! Use config.production.php instead.', E_USER_WARNING);
-}
-
-// [SEC-001] رؤوس الأمان المركزية - يجب تحميلها أولاً قبل أي مخرجات
+// [SEC-001] ترويسات الأمان - لا تُحذف
 require_once __DIR__ . '/includes/security_headers.php';
 
 // ============================================================================
 // إعدادات البيئة
 // ============================================================================
-define('EQAS_ENV', 'development');
+define('EQAS_ENV', 'development');       // development | production
 define('EQAS_VERSION', '2.0.3');
 
 // ============================================================================
 // إعدادات قاعدة البيانات
 // ============================================================================
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'eqas_db');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// في الإنتاج: استخدم مستخدماً مخصّصاً (لا root) وكلمة مرور قوية، أو متغيرات بيئة.
+define('DB_HOST', getenv('EQAS_DB_HOST') ?: 'localhost');
+define('DB_NAME', getenv('EQAS_DB_NAME') ?: 'eqas_db');
+define('DB_USER', getenv('EQAS_DB_USER') ?: 'root');
+define('DB_PASS', getenv('EQAS_DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
 // ============================================================================
-// مسارات الملفات
+// مسارات المشروع
 // ============================================================================
 define('EQAS_ROOT', __DIR__);
 define('EQAS_INCLUDES', EQAS_ROOT . '/includes');
@@ -53,7 +44,7 @@ define('EQAS_TEMP', EQAS_ROOT . '/temp');
 define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');
 
 // ============================================================================
-// عناوين URL
+// روابط النظام
 // ============================================================================
 $eqasProtocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $eqasHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -69,8 +60,8 @@ define('LOCKOUT_DURATION', 900);       // 15 دقيقة بالثواني
 define('SESSION_TIMEOUT', 3600);       // ساعة واحدة بالثواني
 define('PASSWORD_MIN_LENGTH', 8);
 // [SEC-002] ملح بصمة الجلسة - يجب تغييره في كل تثبيت
-// استخدم قيمة عشوائية 64 حرفاً على الأقل: openssl rand -hex 32
-define('SESSION_FINGERPRINT_SALT', 'eac133542bb160125a8d75b2868ab1ab38741c5f4c2c55b951e0d919f8e8d438');
+// أنشئ قيمة عشوائية 64 حرفاً على الأقل: openssl rand -hex 32
+define('SESSION_FINGERPRINT_SALT', getenv('EQAS_SESSION_SALT') ?: 'CHANGE_THIS_TO_A_SECURE_RANDOM_STRING_64_CHARS_MINIMUM');
 
 // ============================================================================
 // إعدادات النسخ الاحتياطي
@@ -81,7 +72,7 @@ define('BACKUP_GZIP_ENABLED', true);
 // ============================================================================
 // إعدادات مؤشر جودة التعليم الافتراضية
 // ============================================================================
-define('EQI_REDISTRIBUTION', 'hybrid'); // hybrid (50% نسبي + 50% متساوٍ) أو equal أو proportional
+define('EQI_REDISTRIBUTION', 'hybrid'); // hybrid | equal | proportional
 define('ACADEMIC_PASS_RATE', 50);
 define('BEHAVIOR_PASS_RATE', 60);
 define('ATTENDANCE_PASS_RATE', 75);

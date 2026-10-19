@@ -1,5 +1,7 @@
 # Credentials — must never be committed
+config.php
 docs/DEFAULT_CREDENTIALS.md
+temp/installed.lock
 
 # Backups
 backups/
