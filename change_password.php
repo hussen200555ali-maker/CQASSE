@@ -16,7 +16,7 @@ $pdo = Database::getInstance()->getConnection();
 
 // التحقق من تسجيل الدخول
 if (!isLoggedIn()) {
-    header('Location: login.php');
+    header('Location: ' . baseUrl('login.php'));
     exit;
 }
 
@@ -30,7 +30,7 @@ $user = $stmt->fetch();
 
 // إذا لم يكن مطلوباً تغيير كلمة المرور وليس في وضع force
 if (!$isForced && empty($user['must_change_password'])) {
-    header('Location: index.php');
+    header('Location: ' . baseUrl('index.php'));
     exit;
 }
 
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['password_hash_sig'] = hash('sha256', $newHash);
             $_SESSION['flash_message'] = 'تم تغيير كلمة المرور بنجاح';
             $_SESSION['flash_type'] = 'success';
-            header('Location: index.php');
+            header('Location: ' . baseUrl('index.php'));
             exit;
         } catch (Exception $e) {
             $errors['general'] = 'حدث خطأ أثناء تغيير كلمة المرور';

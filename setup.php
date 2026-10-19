@@ -19,7 +19,15 @@ if (!$eqasInstalled && is_file(__DIR__ . '/config.php')) {
     $eqasInstalled = ($eqasCfg !== false && strpos($eqasCfg, 'EQAS_INSTALLED') !== false);
 }
 if ($eqasInstalled) {
-    header('Location: login.php');
+    // [R-01] إعادة توجيه مطلقة (لا تعتمد على دقة المسار النسبي) لتجنّب 404
+    // عند تثبيت النظام في مجلد فرعي.
+    if (defined('EQAS_URL')) {
+        $eqasLoginUrl = EQAS_URL . '/login.php';
+    } else {
+        $eqasBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/setup.php')), '/');
+        $eqasLoginUrl = $eqasBase . '/login.php';
+    }
+    header('Location: ' . $eqasLoginUrl);
     exit;
 }
 

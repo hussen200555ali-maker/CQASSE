@@ -13,7 +13,7 @@ require_once __DIR__ . '/includes/session.php';
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['user_id']) && !empty($_SESSION['user_id'])) {
-    header('Location: index.php');
+    header('Location: ' . baseUrl('index.php'));
     exit;
 }
 
@@ -151,12 +151,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                 // التحقق من إجبار تغيير كلمة المرور
                                 if (!empty($user['must_change_password'])) {
-                                    header('Location: change_password.php?force=1');
+                                    header('Location: ' . baseUrl('change_password.php?force=1'));
                                     exit;
                                 }
 
                                 // Redirect to dashboard
-                                header('Location: index.php');
+                                header('Location: ' . baseUrl('index.php'));
                                 exit;
                             }
                         } else {
