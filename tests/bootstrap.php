@@ -9,7 +9,7 @@ ini_set('display_errors', '1');
 
 // تعريف ثوابت النظام
 define('EQAS_VERSION', '2.0.3');
-define('EQAS_URL', 'http://localhost/eqas');
+define('EQAS_URL', 'http://localhost/cqasse');
 define('SESSION_TIMEOUT', 3600);
 define('PASSWORD_MIN_LENGTH', 8);
 define('MAX_LOGIN_ATTEMPTS', 5);

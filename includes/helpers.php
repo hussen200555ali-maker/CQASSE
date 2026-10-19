@@ -654,7 +654,7 @@ function setSetting($key, $value, $schoolId = null) {
  * @return string الرابط الكامل
  */
 function baseUrl($path = '') {
-    $base = defined('EQAS_URL') ? EQAS_URL : 'http://localhost/eqas';
+    $base = defined('EQAS_URL') ? EQAS_URL : 'http://localhost/cqasse';
     return rtrim($base, '/') . '/' . ltrim($path, '/');
 }
 

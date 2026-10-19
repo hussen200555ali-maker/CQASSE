@@ -63,7 +63,7 @@ define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');
 // ============================================================================
 // عناوين URL
 // ============================================================================
-define('EQAS_URL', 'https://your-production-domain.com/eqas');
+define('EQAS_URL', 'https://your-production-domain.com/cqasse');
 define('EQAS_ASSETS_URL', EQAS_URL . '/assets');
 
 // ============================================================================

@@ -57,7 +57,7 @@ define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');
 // ============================================================================
 $eqasProtocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $eqasHost = $_SERVER['HTTP_HOST'] ?? 'localhost';
-define('EQAS_URL', $eqasProtocol . '://' . $eqasHost . '/eqas');
+define('EQAS_URL', $eqasProtocol . '://' . $eqasHost . '/cqasse');
 define('EQAS_ASSETS_URL', EQAS_URL . '/assets');
 
 // ============================================================================

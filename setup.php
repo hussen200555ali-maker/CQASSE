@@ -407,7 +407,7 @@ function performInstallation() {
         $configContent .= "define('EQAS_BACKUPS', EQAS_ROOT . '/backups');\n";
         $configContent .= "define('EQAS_TEMP', EQAS_ROOT . '/temp');\n";
         $configContent .= "define('EQAS_UPLOADS', EQAS_ROOT . '/uploads');\n\n";
-        $configContent .= "define('EQAS_URL', 'http://' . (\$_SERVER['HTTP_HOST'] ?? 'localhost') . '/eqas');\n";
+        $configContent .= "define('EQAS_URL', 'http://' . (\$_SERVER['HTTP_HOST'] ?? 'localhost') . '/cqasse');\n";
         $configContent .= "define('EQAS_ASSETS_URL', EQAS_URL . '/assets');\n\n";
         $configContent .= "define('CSRF_ENABLED', true);\n";
         $configContent .= "define('MAX_LOGIN_ATTEMPTS', 5);\n";
