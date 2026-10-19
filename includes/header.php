@@ -9,6 +9,9 @@
  * ============================================================
  */
 
+// Central error handler
+require_once __DIR__ . '/error_handler.php';
+
 // Include required files (CRITICAL ORDER: config → database → helpers → session → auth)
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/database.php';

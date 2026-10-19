@@ -20,6 +20,12 @@ if (!isset($_SESSION['user']['id'])) {
     exit;
 }
 
+if (!verifyCsrf()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'رمز الأمان غير صالح'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $userId = $_SESSION['user']['id'];
 $notifId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 

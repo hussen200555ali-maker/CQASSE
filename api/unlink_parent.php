@@ -32,6 +32,12 @@ if (!hasPermission('school_admin')) {
     exit;
 }
 
+if (!verifyCsrf()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'رمز الأمان غير صالح'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $linkId = intval($_POST['link_id'] ?? 0);
 
 if ($linkId <= 0) {

@@ -1,4 +1,4 @@
-# Credentials — must never be committed
+# Credentials â€” must never be committed
 config.php
 docs/DEFAULT_CREDENTIALS.md
 temp/installed.lock
@@ -55,3 +55,6 @@ login-test.html
 test-responsive.php
 phpunit_*.txt
 docs/erd/.*.dtmp
+
+# Application logs (keep logs/.htaccess tracked)
+logs/*.log

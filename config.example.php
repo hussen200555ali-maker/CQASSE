@@ -13,6 +13,9 @@
  * ترتيب التضمين: config.php ? database.php ? helpers.php
  */
 
+// معالج الأخطاء المركزي (قبل أي شيء آخر)
+require_once __DIR__ . '/includes/error_handler.php';
+
 // [SEC-001] ترويسات الأمان - لا تُحذف
 require_once __DIR__ . '/includes/security_headers.php';
 

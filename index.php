@@ -13,6 +13,9 @@
  * ============================================================
  */
 
+// Central error handler
+require_once __DIR__ . '/includes/error_handler.php';
+
 // Include required files for session and auth check
 // (database → helpers → session → auth order is critical)
 require_once __DIR__ . '/includes/database.php';

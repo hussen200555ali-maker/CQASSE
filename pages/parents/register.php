@@ -13,6 +13,7 @@
  * ============================================================
  */
 
+require_once __DIR__ . '/../../includes/error_handler.php';
 require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/helpers.php';
 require_once __DIR__ . '/../../includes/session.php';
@@ -38,6 +39,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
         $error = 'رمز الأمان غير صالح. يرجى تحديث الصفحة والمحاولة مرة أخرى.';
     } else {
+        // [P0] حدّ لمحاولات التسجيل: 5 محاولات كل 15 دقيقة لكل جلسة
+        $now = time();
+        $_SESSION['parent_reg_attempts'] = array_values(array_filter(
+            $_SESSION['parent_reg_attempts'] ?? [],
+            static function ($t) use ($now) {
+                return is_int($t) && $t > $now - 900;
+            }
+        ));
+        $throttled = count($_SESSION['parent_reg_attempts']) >= 5;
+        if (!$throttled) {
+            $_SESSION['parent_reg_attempts'][] = $now;
+        }
+
         $fullNameAr = trim($_POST['full_name_ar'] ?? '');
         $phone      = trim($_POST['phone'] ?? '');
         $email      = trim($_POST['email'] ?? '');
@@ -45,10 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirm    = $_POST['confirm_password'] ?? '';
 
         // التحقق من المدخلات
-        if (empty($fullNameAr)) {
+        if ($throttled) {
+            $error = 'عدد المحاولات كبير. يرجى الانتظار 15 دقيقة ثم المحاولة مرة أخرى.';
+        } elseif (empty($fullNameAr)) {
             $error = 'الاسم الكامل مطلوب';
         } elseif (empty($phone)) {
             $error = 'رقم الجوال مطلوب';
+        } elseif (!preg_match('/^\+?[0-9\s\-]{7,20}$/', $phone)) {
+            $error = 'صيغة رقم الجوال غير صحيحة';
         } elseif (empty($password)) {
             $error = 'كلمة المرور مطلوبة';
         } elseif (mb_strlen($password) < 8) {
@@ -75,41 +93,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $existingParent = $stmt->fetch();
 
                     if ($existingParent) {
-                        // يوجد حساب مسبق — ربط بالطلاب الجدد إذا لم يكونوا مرتبطين
-                        $parentId = $existingParent['id'];
+                        // [P0] لا ربط تلقائي لحساب قائم بناءً على رقم جوال غير موثّق.
+                        $error = 'يوجد حساب مسجّل بهذا الرقم. يرجى تسجيل الدخول، أو التواصل مع المدرسة لإضافة الطلاب إلى حسابك.';
 
-                        // ربط بالطلاب الجدد (غير المرتبطين)
-                        foreach ($matchedStudents as $student) {
-                            $checkStmt = $db->prepare("SELECT id FROM parent_students WHERE parent_id = ? AND student_id = ?");
-                            $checkStmt->execute([$parentId, $student['id']]);
-                            if (!$checkStmt->fetch()) {
-                                $linkStmt = $db->prepare("INSERT INTO parent_students (parent_id, student_id, relationship, is_active) VALUES (?, ?, 'father', 1)");
-                                $linkStmt->execute([$parentId, $student['id']]);
-                                $linkedStudents[] = $student;
+                        // إشعار إدارات المدارس بمحاولة التسجيل (للتدقيق)
+                        $schoolIds = array_unique(array_column($matchedStudents, 'school_id'));
+                        foreach ($schoolIds as $sid) {
+                            $adminStmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND role_id = 2 AND is_active = 1");
+                            $adminStmt->execute([$sid]);
+                            $adminIds = $adminStmt->fetchAll(\PDO::FETCH_COLUMN);
+                            foreach ($adminIds as $adminId) {
+                                $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read) VALUES (?, 'parent_link', ?, ?, NULL, NULL, 0)");
+                                $notifStmt->execute([$adminId, 'محاولة تسجيل برقم قائم', "محاولة تسجيل ولي أمر برقم جوال مرتبط بحساب قائم (لم يتم ربط أي طالب). الاسم: {$fullNameAr} - الجوال: {$phone}"]);
                             }
-                        }
-
-                        if (!empty($linkedStudents)) {
-                            // إشعار مدراء المدرسة
-                            $schoolIds = array_unique(array_column($matchedStudents, 'school_id'));
-                            $notifiedAdmins = [];
-                            foreach ($schoolIds as $sid) {
-                                $adminStmt = $db->prepare("SELECT id FROM users WHERE school_id = ? AND role_id = 2 AND is_active = 1");
-                                $adminStmt->execute([$sid]);
-                                $adminIds = $adminStmt->fetchAll(\PDO::FETCH_COLUMN);
-                                foreach ($adminIds as $adminId) {
-                                    if (!in_array($adminId, $notifiedAdmins)) {
-                                        $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read) VALUES (?, 'parent_link', ?, ?, NULL, NULL, 0)");
-                                        $notifStmt->execute([$adminId, 'ربط ولي أمر', "تم ربط ولي الأمر \"{$fullNameAr}\" بـ " . count($linkedStudents) . " طالب (حساب قائم)"]);
-                                        $notifiedAdmins[] = $adminId;
-                                    }
-                                }
-                            }
-
-                            $success = true;
-                            $createdUser = ['username' => $existingParent['username'], 'is_existing' => true];
-                        } else {
-                            $error = 'جميع الطلاب المرتبطين بهذا الرقم مسجلون مسبقاً على حسابك. يمكنك تسجيل الدخول.';
                         }
                     } else {
                         // إنشاء حساب جديد
@@ -129,7 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $passwordHash = password_hash($password, PASSWORD_BCRYPT);
 
-                        $stmt = $db->prepare("INSERT INTO users (username, password_hash, full_name_ar, email, phone, role_id, school_id, must_change_password, is_active, created_at) VALUES (?, ?, ?, ?, ?, 4, NULL, 0, 1, NOW())");
+                        // [P0] الحساب يبقى غير مفعّل حتى تعتمده إدارة المدرسة.
+                        $stmt = $db->prepare("INSERT INTO users (username, password_hash, full_name_ar, email, phone, role_id, school_id, must_change_password, is_active, created_at) VALUES (?, ?, ?, ?, ?, 4, NULL, 0, 0, NOW())");
                         $stmt->execute([$username, $passwordHash, $fullNameAr, $email ?: null, $phone]);
                         $parentId = $db->lastInsertId();
 
@@ -149,15 +146,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $adminStmt->execute([$sid]);
                             $adminIds = $adminStmt->fetchAll(\PDO::FETCH_COLUMN);
                             foreach ($adminIds as $adminId) {
-                                $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read) VALUES (?, 'parent_link', ?, ?, NULL, NULL, 0)");
-                                $notifStmt->execute([$adminId, 'تسجيل ولي أمر جديد', "تم تسجيل ولي أمر جديد \"{$fullNameAr}\" وربطه بـ " . count($matchedStudents) . " طالب. رقم الجوال: {$phone}"]);
+                                $notifStmt = $db->prepare("INSERT INTO notifications (user_id, type, title_ar, message_ar, related_entity_type, related_entity_id, is_read) VALUES (?, 'parent_link', ?, ?, 'user', ?, 0)");
+                                $notifStmt->execute([$adminId, 'ولي أمر بانتظار الاعتماد', "تسجيل ولي أمر جديد \"{$fullNameAr}\" وربطه بـ " . count($matchedStudents) . " طالب، بانتظار تفعيل الحساب. الجوال: {$phone}", $parentId]);
                             }
                         }
 
                         $db->commit();
 
                         $success = true;
-                        $createdUser = ['username' => $username, 'password' => $password, 'is_existing' => false];
+                        $createdUser = ['username' => $username, 'is_existing' => false, 'pending' => true];
                     }
                 }
             } catch (Exception $e) {
@@ -271,24 +268,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="register-body">
             <?php if ($success): ?>
                 <div class="alert alert-success">
-                    ✅ تم إنشاء الحساب بنجاح وربطك بـ <?= count($linkedStudents) ?> طالب.
+                    ✅ تم إنشاء حسابك وربطه بـ <?= count($linkedStudents) ?> طالب.
+                </div>
+
+                <div class="alert alert-info">
+                    ⏳ الحساب بانتظار اعتماد إدارة المدرسة. لن تتمكن من تسجيل الدخول قبل تفعيل الحساب.
                 </div>
 
                 <?php if (!$createdUser['is_existing']): ?>
-                <div class="alert alert-info">
-                    <strong>بيانات الدخول:</strong>
-                </div>
                 <div class="success-credentials">
                     <strong>اسم المستخدم:</strong> <?= e($createdUser['username']) ?><br>
-                    <strong>كلمة المرور:</strong> <span style="color:#dc2626;font-weight:bold;"><?= e($createdUser['password']) ?></span>
+                    <strong>كلمة المرور:</strong> التي اخترتها عند التسجيل
                 </div>
                 <p style="font-size:13px;color:#64748b;margin:8px 0;">
-                    ⚠️ احتفظ ببيانات الدخول. يمكنك تغيير كلمة المرور بعد تسجيل الدخول.
+                    ⚠️ احتفظ باسم المستخدم. تواصل مع المدرسة لتفعيل الحساب.
                 </p>
-                <?php else: ?>
-                <div class="alert alert-info">
-                    تم ربط حسابك الحالي (<strong><?= e($createdUser['username']) ?></strong>) بالطلاب الجدد.
-                </div>
                 <?php endif; ?>
 
                 <div style="margin:16px 0;">

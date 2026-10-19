@@ -32,6 +32,12 @@ if (!hasPermission('school_admin')) {
     exit;
 }
 
+if (!verifyCsrf()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'رمز الأمان غير صالح'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 $parentId  = intval($_POST['parent_id'] ?? 0);
 $studentId = intval($_POST['student_id'] ?? 0);
 $relationship = $_POST['relationship'] ?? 'father';

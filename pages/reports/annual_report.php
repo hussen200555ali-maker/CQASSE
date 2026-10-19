@@ -7,6 +7,7 @@
  */
 
 // ===================== التحميل الموحد =====================
+require_once __DIR__ . '/../../includes/error_handler.php';
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/helpers.php';
@@ -20,6 +21,10 @@ $breadcrumb = ['التقارير' => null, 'التقرير السنوي' => null
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'group_admin') {
         die('Unauthorized');
+    }
+    if (!verifyCsrf()) {
+        setFlash('رمز الأمان غير صالح، يرجى المحاولة مرة أخرى', 'danger');
+        redirect('annual_report.php');
     }
     global $db;
 
@@ -345,6 +350,7 @@ if ($selectedYear) {
             </div>
 
             <form method="POST" action="" id="reportForm">
+                <?= csrfField() ?>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">السنة الدراسية</label>

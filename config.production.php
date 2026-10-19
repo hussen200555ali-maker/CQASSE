@@ -19,6 +19,9 @@
  * ترتيب التحميل: config.production.php → database.php → helpers.php
  */
 
+// معالج الأخطاء المركزي (قبل أي شيء آخر)
+require_once __DIR__ . '/includes/error_handler.php';
+
 // [SEC-001] رؤوس الأمان المركزية - يجب تحميلها أولاً قبل أي مخرجات
 require_once __DIR__ . '/includes/security_headers.php';
 

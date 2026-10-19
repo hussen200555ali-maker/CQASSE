@@ -6,6 +6,9 @@
  * ============================================================
  */
 
+// Central error handler
+require_once __DIR__ . '/includes/error_handler.php';
+
 // Include config for EQAS_URL constant
 require_once __DIR__ . '/config.php';
 

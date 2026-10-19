@@ -9,7 +9,14 @@
 $pageTitle = 'نموذج الإقرار';
 $breadcrumb = ['إقرار أولياء الأمور' => 'index.php', 'الإقرار' => null];
 
-require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '/../../includes/database.php';
+require_once __DIR__ . '/../../includes/helpers.php';
+require_once __DIR__ . '/../../includes/session.php';
+
+if (!isset($_SESSION['user']['id'])) {
+    redirect(baseUrl('login.php'));
+}
 
 $studentId = (int)($_GET['student_id'] ?? 0);
 $ackType = $_GET['type'] ?? 'grades';
@@ -31,6 +38,20 @@ $ackTypeMap = [
 $userRole = $_SESSION['user']['role'] ?? '';
 $userId = $_SESSION['user']['id'];
 
+// [P0-IDOR] عزل المدرسة: غير مدير المجموعة لا يرى إلا طلاب مدرسته.
+$isGroupAdmin = ($userRole === 'group_admin');
+$userSchoolId = (int) ($_SESSION['user']['school_id'] ?? 0);
+$schoolScope = '';
+$schoolParams = [];
+if ($userRole !== 'parent' && !$isGroupAdmin) {
+    if ($userSchoolId <= 0) {
+        setFlash('ليس لديك صلاحية للوصول إلى هذا الإقرار', 'danger');
+        redirect('index.php');
+    }
+    $schoolScope = ' AND s.school_id = ?';
+    $schoolParams = [$userSchoolId];
+}
+
 // جلب بيانات الطالب وولي الأمر
 if ($userRole === 'parent') {
     // ولي الأمر: يبحث عن إقراراته فقط
@@ -43,7 +64,7 @@ if ($userRole === 'parent') {
                           WHERE ps.student_id = ? AND ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1");
     $stmt->execute([$studentId, $userId]);
 } else {
-    // المدير: يمكنه عرض أي إقرار (يستخدم parent_id من URL أو يبحث عن أي ولي أمر)
+    // الإدارة: مدير المجموعة يرى أي إقرار؛ مدير المدرسة/المعلم داخل مدرسته فقط.
     $targetParentId = $parentParam ? (int)$parentParam : null;
     if ($targetParentId) {
         $stmt = $db->prepare("SELECT ps.id, s.id as student_id, s.full_name_ar as student_name, s.student_number, s.school_id,
@@ -52,8 +73,9 @@ if ($userRole === 'parent') {
                               FROM parent_students ps
                               JOIN students s ON s.id = ps.student_id
                               JOIN users p ON p.id = ps.parent_id
-                              WHERE ps.student_id = ? AND ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1");
-        $stmt->execute([$studentId, $targetParentId]);
+                              WHERE ps.student_id = ? AND ps.parent_id = ? AND ps.is_active = 1 AND s.is_active = 1"
+                              . $schoolScope);
+        $stmt->execute(array_merge([$studentId, $targetParentId], $schoolParams));
     } else {
         // إذا لم يُحدد parent_id، نأخذ أول ولي أمر مرتبط بالطالب
         $stmt = $db->prepare("SELECT ps.id, s.id as student_id, s.full_name_ar as student_name, s.student_number, s.school_id,
@@ -62,9 +84,10 @@ if ($userRole === 'parent') {
                               FROM parent_students ps
                               JOIN students s ON s.id = ps.student_id
                               JOIN users p ON p.id = ps.parent_id
-                              WHERE ps.student_id = ? AND ps.is_active = 1 AND s.is_active = 1
+                              WHERE ps.student_id = ? AND ps.is_active = 1 AND s.is_active = 1"
+                              . $schoolScope . "
                               ORDER BY ps.id ASC LIMIT 1");
-        $stmt->execute([$studentId]);
+        $stmt->execute(array_merge([$studentId], $schoolParams));
     }
 }
 $acknowledgment = $stmt->fetch();
@@ -191,6 +214,9 @@ $decisionLabels = [
     'conditional' => ['ترفيع مشروط', 'warning'],
     'under_review' => ['قيد المراجعة', 'info'],
 ];
+
+// إخراج القالب بعد كل قرارات الصلاحية وإعادة التوجيه فقط
+require_once __DIR__ . '/../../includes/header.php';
 ?>
 
 <div class="card">

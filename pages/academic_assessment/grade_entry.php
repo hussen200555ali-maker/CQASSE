@@ -31,30 +31,6 @@ $userRole = $_SESSION['user']['role'] ?? '';
 $userId = $_SESSION['user']['id'] ?? 0;
 $schoolId = $_SESSION['user']['school_id'] ?? 0;
 $currentSemesterId = currentSemesterId($academicYearId);
-// Debug: Show session and computed values on screen (temporary)
-if (isset($_GET['debug']) && $_GET['debug'] === '1') {
-    echo "<div style='background:#fff3cd; border:1px solid #ffeaa7; padding:10px; margin:10px 0;'>";
-    echo "<strong>DEBUG grade_entry.php:</strong> ";
-    echo "userId={$userId}, role={$userRole}, schoolId={$schoolId}, academicYearId={$academicYearId}";
-    echo "</div>";
-    
-    // Show session contents
-    echo "<div style='background:#e2f3ff; border:1px solid #bee3f8; padding:10px; margin:10px 0;'>";
-    echo "<strong>SESSION Contents:</strong><br>";
-    if (isset($_SESSION['user'])) {
-        echo "user: ".htmlspecialchars(print_r($_SESSION['user'], true))."<br>";
-    }
-    if (isset($_SESSION['academic_year_id'])) {
-        echo "academic_year_id: ".$_SESSION['academic_year_id']."<br>";
-    }
-    if (isset($_SESSION['current_semester_id'])) {
-        echo "current_semester_id: ".$_SESSION['current_semester_id']."<br>";
-    }
-    echo "</div>";
-}
-
-// Always show basic debug info in comments for inspection
-// DEBUG: userId={$userId}, role={$userRole}, schoolId={$schoolId}, academicYearId={$academicYearId}
 
 // ============================================================
 // معالجة إنشاء اختبار جديد

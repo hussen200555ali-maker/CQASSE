@@ -10,6 +10,7 @@
  */
 
 // ===================== التحميل الموحد =====================
+require_once __DIR__ . '/../../includes/error_handler.php';
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../includes/database.php';
 require_once __DIR__ . '/../../includes/helpers.php';
@@ -32,6 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($userRole !== 'group_admin' && $userRole !== 'school_admin') {
         http_response_code(403);
         die('غير مصرح');
+    }
+
+    if (!verifyCsrf()) {
+        setFlash('رمز الأمان غير صالح، يرجى المحاولة مرة أخرى', 'danger');
+        redirect('school_report.php');
     }
 
     global $db;
@@ -522,6 +528,7 @@ if ($selectedYear) {
             </div>
 
             <form method="POST" action="" id="reportForm">
+                <?= csrfField() ?>
                 <div class="form-row">
 
                     <?php if ($isGroupAdmin): ?>

@@ -12,6 +12,7 @@ RewriteRule ^backups/ - [F,L]
 RewriteRule ^temp/ - [F,L]
 RewriteRule ^database/ - [F,L]
 RewriteRule ^includes/ - [F,L]
+RewriteRule ^logs/ - [F,L]
 
 # ============================================================================
 # رؤوس الأمان — تُدار من includes/security_headers.php (PHP ديناميكية مع nonce)

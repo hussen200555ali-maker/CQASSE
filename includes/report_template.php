@@ -10,7 +10,21 @@
  * 2. ReportTemplate — واجهة عالية المستوى لبناء التقارير
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/error_handler.php';
+
+$eqasAutoload = __DIR__ . '/../vendor/autoload.php';
+if (!is_file($eqasAutoload)) {
+    throw new RuntimeException(
+        'مكتبات توليد التقارير (TCPDF) غير مثبّتة. شغّل الأمر: composer install'
+    );
+}
+require_once $eqasAutoload;
+
+if (!class_exists('TCPDF')) {
+    throw new RuntimeException(
+        'تعذّر تحميل مكتبة TCPDF. تحقق من تثبيت حزم Composer ثم أعد المحاولة.'
+    );
+}
 
 // ============================================================
 // 1. EQAS_PDF — TCPDF مخصص للنظام

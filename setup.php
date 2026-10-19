@@ -6,6 +6,9 @@
  * ============================================================
  */
 
+// Central error handler
+require_once __DIR__ . '/includes/error_handler.php';
+
 // Include session management (same path as all pages)
 require_once __DIR__ . '/includes/session.php';
 require_once __DIR__ . '/includes/installer.php';

@@ -146,62 +146,10 @@ function checkSchoolOwnership($targetSchoolId) {
     return true;
 }
 
-/**
- * خريطة صلاحيات الصفحات - تحدد الدور الأدنى لكل صفحة
- * يمكن استخدامها لتطبيق صلاحيات مركزية تلقائية
+/*
+ * ملاحظة معمارية (2026-10-20):
+ * أُزيلت خريطة $PAGE_PERMISSIONS ودالة applyAutoPermissions() لأنهما لم تكونا
+ * مستخدمتين في أي مكان، ولأن الخريطة القديمة تخالف الصلاحيات الفعلية
+ * (مثل حصر pages/users/ على group_admin بينما school_admin يدير معلمي مدرسته).
+ * تُفرض الصلاحيات داخل كل صفحة عبر hasPermission()/requireRole().
  */
-$PAGE_PERMISSIONS = [
-    // المستخدمون
-    '/pages/users/'                  => 'group_admin',
-    // المدارس
-    '/pages/schools/'                => 'group_admin',
-    // الإعدادات
-    '/pages/settings/'               => 'school_admin',
-    '/pages/system/'                 => 'group_admin',
-    // النسخ الاحتياطي
-    '/pages/backup_reports/'         => 'group_admin',
-    // التقييم - إدارة النماذج
-    '/pages/assessment/'             => 'school_admin',
-    // الإعداد الأولي
-    '/pages/setup/'                  => 'school_admin',
-    // الإشراف
-    '/pages/supervision/'            => 'school_admin',
-    // الترفيع - الاعتماد
-    '/pages/promotion/'              => 'teacher',
-    // لوحة التحكم
-    '/pages/dashboard/'              => 'teacher',
-    '/pages/dashboards/'             => 'teacher',
-    // الطلاب والتسجيل
-    '/pages/students/'               => 'school_admin',
-    '/pages/enrollments/'            => 'school_admin',
-    // أولياء الأمور
-    '/pages/parent/'                 => 'parent',
-    '/pages/parent_ack/'             => 'teacher',
-    // التصدير
-    '/pages/export/'                 => 'school_admin',
-    // كشوف الدرجات
-    '/pages/grade_sheets/'           => 'school_admin',
-    // التنبيهات
-    '/pages/alerts/'                 => 'school_admin',
-    // EQI
-    '/pages/eqi/'                    => 'teacher',
-];
-
-/**
- * تطبيق صلاحيات الصفحة تلقائياً بناءً على المسار الحالي
- * يمكن استدعاؤها من header.php
- *
- * @return void
- */
-function applyAutoPermissions() {
-    global $PAGE_PERMISSIONS;
-
-    $currentScript = $_SERVER['SCRIPT_NAME'] ?? '';
-
-    foreach ($PAGE_PERMISSIONS as $path => $minRole) {
-        if (strpos($currentScript, $path) !== false) {
-            checkPageAccess($minRole);
-            return;
-        }
-    }
-}

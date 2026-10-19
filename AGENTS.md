@@ -607,3 +607,34 @@ require_once __DIR__ . '/../../config.php';
 
 **الملف المعدل:**
 - `pages/attendance/amend.php` — السطر 66-89 (INSERT → UPDATE)، السطر 209-247 (SELECT → json_decode)
+
+### 28. تحصين أمني P0 — IDOR/CSRF/تسجيل أولياء الأمور/معالج أخطاء (2026-10-20)
+
+**القرار:** تنفيذ دفعة تحصين P0 تعالج ثغرات عالية الخطورة، دون أي تغيير في مخطط قاعدة البيانات.
+نقطة الرجوع: وسم `pre-p0-hardening-2026-10-20` + `backups/pre_p0_2026-10-20.sql` + `docs/rollback-plan.md`.
+التوثيق التفصيلي: `docs/security-hardening-p0.md`.
+
+**الإصلاحات:**
+1. **IDOR** `pages/parent_ack/acknowledge.php` — إضافة فلتر `AND s.school_id = ?` لغير `group_admin`،
+   ونقل تضمين `header.php` إلى بعد كل قرارات الصلاحية (لتصدر إعادة التوجيه 302 نظيفة).
+2. **تسجيل أولياء الأمور** `pages/parents/register.php` — الحساب الجديد `is_active = 0` (بانتظار اعتماد
+   مدير المدرسة)، إلغاء الربط التلقائي غير الموثّق للحساب القائم (يُسجَّل إشعار تدقيقي فقط)،
+   throttle 5 محاولات/15د، تحقق صيغة الجوال، وعدم عرض كلمة المرور.
+3. **CSRF** على `api/link_parent.php`, `api/unlink_parent.php`, `api/notifications/mark_read.php`
+   عبر `verifyCsrf()` (يقبل التوكن من `$_POST` أو `X-CSRF-Token` الذي يضيفه `main.js` تلقائياً).
+4. **التقارير** `includes/report_template.php` — فحص وجود `vendor/autoload.php` و`TCPDF` ورمي
+   `RuntimeException` ودّي؛ وإضافة CSRF لنموذجي `annual_report.php` و`school_report.php`.
+5. **معالج أخطاء مركزي** `includes/error_handler.php` — تسجيل في `logs/app.log`، صفحة خطأ عربية
+   موحّدة + رقم مرجعي، منع تسريب التفاصيل في الإنتاج، تحويل `E_USER_ERROR` إلى استثناء،
+   والتقاط الأخطاء القاتلة. يُحمَّل من نقاط الدخول + `header.php` + `config.*.php`.
+6. **حماية السجلات** — `logs/.htaccess` (deny all) + `RewriteRule ^logs/ - [F,L]` + `logs/*.log` في `.gitignore`.
+7. **حذف كود تصحيح** `pages/academic_assessment/grade_entry.php` — كتلة `?debug=1` التي تطبع الجلسة.
+8. **حذف كود ميت** `includes/permission_middleware.php` — `$PAGE_PERMISSIONS` و`applyAutoPermissions()`
+   (0 مراجع، وخريطة تخالف الصلاحيات الفعلية).
+
+**الملفات الجديدة:**
+- `includes/error_handler.php`
+- `logs/.htaccess`
+- `docs/security-hardening-p0.md`
+
+**التحقق:** PHP lint (19 ملف) نظيف؛ PHPUnit 98/98؛ فحوص حية (curl) لكل بند موثّقة في الوثيقة الأمنية.
