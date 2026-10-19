@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| ![لوحة القيادة الاستراتيجية](docs/وثيقة%20مشروع%20التخرج/screenshots/01-group-admin-dashboard.png) | ![حساب EQI](docs/وثيقة%20مشروع%20التخرج/screenshots/02-eqi-calculate.png) |
-| **لوحة القيادة الاستراتيجية** | **حساب مؤشر EQI** |
+| ![لوحة إدارة المدرسة](docs/وثيقة%20مشروع%20التخرج/screenshots/11-school-dashboard.png) | ![حساب EQI](docs/وثيقة%20مشروع%20التخرج/screenshots/02-eqi-calculate.png) |
+| **لوحة إدارة المدرسة** | **حساب مؤشر EQI** |
 | ![مركز قيادة EQI](docs/وثيقة%20مشروع%20التخرج/screenshots/03-eqi-dashboard.png) | ![مقارنة المدارس](docs/وثيقة%20مشروع%20التخرج/screenshots/04-eqi-compare.png) |
 | **مركز قيادة EQI** | **مقارنة المدارس** |
 | ![مصفوفة الصلاحيات](docs/وثيقة%20مشروع%20التخرج/screenshots/06-permissions-matrix.png) | ![التقرير السنوي PDF](docs/وثيقة%20مشروع%20التخرج/screenshots/07-annual-quality-report.png) |
