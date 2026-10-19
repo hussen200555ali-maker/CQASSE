@@ -1,3 +1,0 @@
-PHPUnit 10.5.63 by Sebastian Bergmann and contributors.
-
-Unknown option "--verbose"
