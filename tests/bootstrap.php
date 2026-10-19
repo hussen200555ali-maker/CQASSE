@@ -215,6 +215,7 @@ function createTestDB(): PDO {
         student_id INTEGER NOT NULL,
         class_id INTEGER NOT NULL,
         academic_year_id INTEGER NOT NULL DEFAULT 1,
+        school_id INTEGER DEFAULT 1,
         enrollment_date TEXT DEFAULT NULL,
         status TEXT NOT NULL DEFAULT 'enrolled',
         is_active INTEGER DEFAULT 1
