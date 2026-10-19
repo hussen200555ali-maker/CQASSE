@@ -727,6 +727,7 @@ CREATE TABLE `school_improvement_plans` (
   `school_id` int(10) unsigned NOT NULL,
   `academic_year_id` int(10) unsigned NOT NULL,
   `semester_id` int(10) unsigned NOT NULL,
+  `trigger_type` enum('climate','facility','both') DEFAULT 'both' COMMENT 'مصدر خطة التحسين',
   `weaknesses` text DEFAULT NULL,
   `goals` text DEFAULT NULL,
   `strategies` text DEFAULT NULL,
