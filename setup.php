@@ -19,15 +19,8 @@ if (!$eqasInstalled && is_file(__DIR__ . '/config.php')) {
     $eqasInstalled = ($eqasCfg !== false && strpos($eqasCfg, 'EQAS_INSTALLED') !== false);
 }
 if ($eqasInstalled) {
-    // [R-01] إعادة توجيه مطلقة (لا تعتمد على دقة المسار النسبي) لتجنّب 404
-    // عند تثبيت النظام في مجلد فرعي.
-    if (defined('EQAS_URL')) {
-        $eqasLoginUrl = EQAS_URL . '/login.php';
-    } else {
-        $eqasBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/setup.php')), '/');
-        $eqasLoginUrl = $eqasBase . '/login.php';
-    }
-    header('Location: ' . $eqasLoginUrl);
+    // [R-01] إعادة توجيه مطلقة تعمل حتى قبل تحميل config.php
+    header('Location: ' . eqasAppBaseUrl('login.php'));
     exit;
 }
 
@@ -210,6 +203,7 @@ $governorates = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="base-url" content="<?php echo htmlspecialchars(rtrim(eqasAppBaseUrl(), '/')); ?>">
     <title>تثبيت النظام | EQAS</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <style>

@@ -91,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="تغيير كلمة المرور - نظام التقييم الشامل لجودة التعليم المدرسي">
+    <meta name="base-url" content="<?php echo htmlspecialchars(rtrim(eqasAppBaseUrl(), '/')); ?>">
     <title>تغيير كلمة المرور | نظام التقييم الشامل</title>
 
     <!-- FontAwesome 6 -->

@@ -20,6 +20,10 @@ const EQAS = {
     init() {
         this.csrfToken = this.getCsrfToken();
         this.baseUrl = document.querySelector('meta[name="base-url"]')?.content || '';
+        if (!this.baseUrl) {
+            var dir = window.location.pathname.replace(/\/[^\/]*$/, '');
+            this.baseUrl = (dir === '/' || dir === '') ? '' : dir;
+        }
         this.setupAjaxDefaults();
         this.initSidebar();
         this.initDropdowns();

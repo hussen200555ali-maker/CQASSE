@@ -47,6 +47,27 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ============================================================================
+// بناء رابط أساسي موثوق (يعمل حتى قبل تحميل config.php)
+// ============================================================================
+if (!function_exists('eqasAppBaseUrl')) {
+    function eqasAppBaseUrl(string $path = ''): string {
+        if (defined('EQAS_URL') && EQAS_URL !== '') {
+            $base = rtrim(EQAS_URL, '/');
+        } else {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            $docRoot = str_replace('\\', '/', rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/'));
+            $projRoot = str_replace('\\', '/', dirname(__DIR__));
+            $basePath = ($docRoot !== '' && strpos($projRoot, $docRoot) === 0)
+                ? rtrim(substr($projRoot, strlen($docRoot)), '/')
+                : '';
+            $base = $scheme . '://' . $host . $basePath;
+        }
+        return rtrim($base, '/') . '/' . ltrim($path, '/');
+    }
+}
+
+// ============================================================================
 // التحقق من انتهاء صلاحية الجلسة
 // ============================================================================
 $sessionTimeout = defined('SESSION_TIMEOUT') ? SESSION_TIMEOUT : 3600; // ساعة واحدة افتراضياً
@@ -58,7 +79,7 @@ if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) >
     session_start();
     $_SESSION['flash_message'] = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.';
     $_SESSION['flash_type'] = 'warning';
-    header('Location: ' . (defined('EQAS_URL') ? EQAS_URL : '') . '/login.php');
+    header('Location: ' . eqasAppBaseUrl('login.php'));
     exit;
 }
 
@@ -91,7 +112,7 @@ if (isset($_SESSION['fingerprint'])) {
         session_start();
         $_SESSION['flash_message'] = 'تم الكشف عن نشاط مشبوه. يرجى تسجيل الدخول مرة أخرى.';
         $_SESSION['flash_type'] = 'danger';
-        header('Location: ' . (defined('EQAS_URL') ? EQAS_URL : '') . '/login.php');
+        header('Location: ' . eqasAppBaseUrl('login.php'));
         exit;
     }
 } else {
