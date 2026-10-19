@@ -42,3 +42,14 @@ database/eqas_db.sql
 database/demo_data_large.sql
 docs/eqas_db*.sql
 eqas_db.sql
+
+# Debug/temp scripts
+check_*.php
+list_students.php
+run_test_data.php
+create_alerts.php
+desc_table.php
+login-test.html
+test-responsive.php
+phpunit_*.txt
+docs/erd/.*.dtmp
