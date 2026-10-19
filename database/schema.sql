@@ -3,7 +3,7 @@
 -- مخطط قاعدة البيانات النهائي
 -- الإصدار: 3.3.0
 -- تاريخ التحديث: 2026-05-16
--- إجمالي الجداول: 42 جدول + 1 عرض
+-- إجمالي الجداول: 55 جدول + 5 عروض
 --============================================================================
 
 SET NAMES utf8mb4;
@@ -144,7 +144,7 @@ CREATE TABLE `assessment_responses` (
   CONSTRAINT `fk_assessment_responses_academic_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `fk_assessment_responses_class` FOREIGN KEY (`class_id`) REFERENCES `classes` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_assessment_responses_form` FOREIGN KEY (`form_id`) REFERENCES `assessment_forms` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_assessment_responses_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_items` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_assessment_responses_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_structure` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_assessment_responses_responded_by` FOREIGN KEY (`responded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_assessment_responses_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_assessment_responses_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE,
@@ -357,8 +357,8 @@ CREATE TABLE `climate_items` (
   UNIQUE KEY `uk_climate_survey_items` (`survey_id`,`item_id`),
   KEY `idx_climate_survey_items_item` (`item_id`),
   KEY `idx_climate_survey_items_active` (`is_active`),
-  CONSTRAINT `fk_climate_survey_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_items` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_climate_survey_items_survey` FOREIGN KEY (`survey_id`) REFERENCES `climate_surveys` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_climate_survey_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_structure` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_climate_survey_items_survey` FOREIGN KEY (`survey_id`) REFERENCES `surveys` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول عناصر استبيان المناخ';
 
 -- -----------------------------------------------------------
@@ -456,7 +456,7 @@ CREATE TABLE `facility_items` (
   KEY `idx_facility_checklist_items_item` (`item_id`),
   KEY `idx_facility_checklist_items_active` (`is_active`),
   CONSTRAINT `fk_facility_checklist_items_checklist` FOREIGN KEY (`checklist_id`) REFERENCES `facility_checklists` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_facility_checklist_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_items` (`id`) ON UPDATE CASCADE
+  CONSTRAINT `fk_facility_checklist_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_structure` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول عناصر قائمة فحص المرافق';
 
 -- -----------------------------------------------------------
@@ -997,7 +997,7 @@ CREATE TABLE `survey_items` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_survey_items` (`survey_id`,`item_id`),
   KEY `idx_survey_items_item` (`item_id`),
-  CONSTRAINT `fk_survey_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_items` (`id`),
+  CONSTRAINT `fk_survey_items_item` FOREIGN KEY (`item_id`) REFERENCES `assessment_structure` (`id`),
   CONSTRAINT `fk_survey_items_survey` FOREIGN KEY (`survey_id`) REFERENCES `surveys` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -1190,7 +1190,230 @@ CREATE TABLE `export_history` (
   KEY `idx_export_history_created` (`created_at`),
   CONSTRAINT `fk_export_history_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='سجل ملفات التصدير';
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول المستخدمين';
+
+-- ============================================================================
+-- جداول مطلوبة من التطبيق (مفقودة سابقاً في هذا الملف)
+-- ============================================================================
+
+-- -----------------------------------------------------------
+-- Table: assessment_types
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `assessment_types`;
+CREATE TABLE `assessment_types` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `name_ar` varchar(100) NOT NULL COMMENT 'اسم نوع التقييم بالعربية',
+  `name_en` varchar(100) DEFAULT NULL COMMENT 'اسم نوع التقييم بالإنجليزية',
+  `code` varchar(20) NOT NULL COMMENT 'رمز نوع التقييم',
+  `weight_default` decimal(5,2) DEFAULT NULL COMMENT 'الوزن الافتراضي',
+  `sort_order` int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'ترتيب العرض',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل النوع نشط',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_assessment_types_code` (`code`),
+  KEY `idx_assessment_types_sort` (`sort_order`),
+  KEY `idx_assessment_types_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول أنواع التقييم';
+
+-- -----------------------------------------------------------
+-- Table: grade_years
+-- سجل الصف الدراسي للطالب لكل سنة (مصدر عرض v_student_current)
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `grade_years`;
+CREATE TABLE `grade_years` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` int(10) unsigned NOT NULL,
+  `grade_level_id` int(10) unsigned NOT NULL,
+  `school_id` int(10) unsigned DEFAULT NULL,
+  `academic_year_id` int(10) unsigned NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'active',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_grade_years_student` (`student_id`),
+  KEY `idx_grade_years_year` (`academic_year_id`),
+  KEY `idx_grade_years_school` (`school_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول صفوف الطلاب لكل سنة دراسية';
+
+-- -----------------------------------------------------------
+-- Table: parent_acknowledgments
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `parent_acknowledgments`;
+CREATE TABLE `parent_acknowledgments` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `parent_id` int(10) unsigned NOT NULL COMMENT 'رقم ولي الأمر (مستخدم)',
+  `student_id` int(10) unsigned NOT NULL COMMENT 'رقم الطالب',
+  `ack_type` enum('grade','behavior','attendance','promotion') NOT NULL COMMENT 'نوع الإقرار',
+  `entity_id` int(10) unsigned DEFAULT NULL COMMENT 'رقم الكيان المرتبط',
+  `is_acknowledged` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'هل تم الإقرار',
+  `acknowledged_at` datetime DEFAULT NULL COMMENT 'تاريخ الإقرار',
+  `notes` text DEFAULT NULL COMMENT 'ملاحظات',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الإنشاء',
+  PRIMARY KEY (`id`),
+  KEY `idx_parent_acknowledgments_parent` (`parent_id`),
+  KEY `idx_parent_acknowledgments_student` (`student_id`),
+  KEY `idx_parent_acknowledgments_type` (`ack_type`),
+  KEY `idx_parent_acknowledgments_acknowledged` (`is_acknowledged`),
+  KEY `idx_parent_acknowledgments_active` (`is_active`),
+  CONSTRAINT `fk_parent_ack_parent` FOREIGN KEY (`parent_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_parent_ack_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول إقرارات أولياء الأمور';
+
+-- -----------------------------------------------------------
+-- Table: promotion_overrides
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `promotion_overrides`;
+CREATE TABLE `promotion_overrides` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` int(10) unsigned NOT NULL COMMENT 'رقم الطالب',
+  `academic_year_id` int(10) unsigned NOT NULL COMMENT 'رقم السنة الدراسية',
+  `semester_id` int(10) unsigned NOT NULL COMMENT 'رقم الفصل الدراسي',
+  `criterion` enum('academic','behavior','attendance') NOT NULL COMMENT 'معيار التجاوز',
+  `override_reason` text NOT NULL COMMENT 'سبب التجاوز',
+  `approved_by` int(10) unsigned NOT NULL COMMENT 'رقم المستخدم الذي وافق',
+  `approved_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الموافقة',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  PRIMARY KEY (`id`),
+  KEY `idx_promotion_overrides_student` (`student_id`),
+  KEY `idx_promotion_overrides_academic_year` (`academic_year_id`),
+  KEY `idx_promotion_overrides_semester` (`semester_id`),
+  KEY `idx_promotion_overrides_criterion` (`criterion`),
+  KEY `idx_promotion_overrides_approved_by` (`approved_by`),
+  KEY `idx_promotion_overrides_active` (`is_active`),
+  CONSTRAINT `fk_promo_override_approved` FOREIGN KEY (`approved_by`) REFERENCES `users` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_promo_override_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_promo_override_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_promo_override_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول تجاوزات الترفيع';
+
+-- -----------------------------------------------------------
+-- Table: skills_evaluations
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `skills_evaluations`;
+CREATE TABLE `skills_evaluations` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `student_id` int(10) unsigned NOT NULL COMMENT 'رقم الطالب',
+  `skill_name_ar` varchar(200) NOT NULL COMMENT 'اسم المهارة',
+  `academic_year_id` int(10) unsigned NOT NULL COMMENT 'رقم السنة الدراسية',
+  `semester_id` int(10) unsigned NOT NULL COMMENT 'رقم الفصل الدراسي',
+  `score` decimal(5,2) NOT NULL COMMENT 'الدرجة',
+  `max_score` decimal(5,2) NOT NULL DEFAULT 100.00 COMMENT 'الدرجة العظمى',
+  `evaluated_by` int(10) unsigned NOT NULL COMMENT 'رقم المقيّم',
+  `evaluated_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ التقييم',
+  `notes` text DEFAULT NULL COMMENT 'ملاحظات',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  PRIMARY KEY (`id`),
+  KEY `idx_skills_eval_student` (`student_id`),
+  KEY `idx_skills_eval_academic_year` (`academic_year_id`),
+  KEY `idx_skills_eval_semester` (`semester_id`),
+  KEY `idx_skills_eval_evaluated_by` (`evaluated_by`),
+  KEY `idx_skills_eval_active` (`is_active`),
+  CONSTRAINT `fk_skills_eval_evaluator` FOREIGN KEY (`evaluated_by`) REFERENCES `users` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_skills_eval_semester` FOREIGN KEY (`semester_id`) REFERENCES `semesters` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_skills_eval_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_skills_eval_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول تقييم المهارات';
+
+-- -----------------------------------------------------------
+-- Table: subject_weight_distribution
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `subject_weight_distribution`;
+CREATE TABLE `subject_weight_distribution` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `subject_grade_year_id` int(10) unsigned NOT NULL COMMENT 'رقم سجل المادة بالصف',
+  `assessment_type_id` int(10) unsigned NOT NULL COMMENT 'رقم نوع التقييم',
+  `weight` decimal(5,2) NOT NULL COMMENT 'الوزن',
+  `academic_year_id` int(10) unsigned NOT NULL COMMENT 'رقم السنة الدراسية',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_subject_weight_distribution` (`subject_grade_year_id`,`assessment_type_id`,`academic_year_id`),
+  KEY `idx_subject_weight_distribution_type` (`assessment_type_id`),
+  KEY `idx_subject_weight_distribution_academic_year` (`academic_year_id`),
+  KEY `idx_subject_weight_distribution_active` (`is_active`),
+  CONSTRAINT `fk_subject_weight_distribution_academic_year` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_subject_weight_distribution_sgy` FOREIGN KEY (`subject_grade_year_id`) REFERENCES `subject_grade_years` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_subject_weight_distribution_type` FOREIGN KEY (`assessment_type_id`) REFERENCES `assessment_types` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول توزيع أوزان المواد';
+
+-- -----------------------------------------------------------
+-- Table: facility_checklists
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `facility_checklists`;
+CREATE TABLE `facility_checklists` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `school_id` int(10) unsigned DEFAULT NULL,
+  `academic_year_id` int(10) unsigned DEFAULT NULL,
+  `semester_id` int(10) unsigned DEFAULT NULL,
+  `created_by` int(10) unsigned DEFAULT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'draft',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_facility_checklists_school` (`school_id`),
+  KEY `idx_facility_checklists_year` (`academic_year_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول قوائم فحص المرافق';
+
+-- -----------------------------------------------------------
+-- Table: grade_scale
+-- مقياس الدرجات (A+ إلى F) - يقرأ منه AcademicCalculator::getLetterGrade()
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `grade_scale`;
+CREATE TABLE `grade_scale` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `min_value` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'الحد الأدنى للنسبة (%)',
+  `max_value` decimal(5,2) NOT NULL DEFAULT 100.00 COMMENT 'الحد الأقصى للنسبة (%)',
+  `letter` varchar(5) NOT NULL COMMENT 'الدرجة الحرفية (للقراءة من الكود)',
+  `gpa_value` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT 'قيمة المعدل من الحرف',
+  `name_ar` varchar(100) DEFAULT NULL COMMENT 'وصف الأداء بالعربية',
+  `sort_order` int(10) unsigned NOT NULL DEFAULT 0 COMMENT 'ترتيب العرض (من الأعلى للأدنى)',
+  `min_percentage` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'الحد الأدنى (للتوافق مع seed)',
+  `max_percentage` decimal(5,2) NOT NULL DEFAULT 100.00 COMMENT 'الحد الأقصى (للتوافق مع seed)',
+  `letter_grade` varchar(5) NOT NULL DEFAULT '' COMMENT 'الدرجة الحرفية (للتوافق مع seed)',
+  `grade_point` decimal(4,2) NOT NULL DEFAULT 0.00 COMMENT 'النقطة (للتوافق مع seed)',
+  `description_ar` varchar(255) DEFAULT NULL COMMENT 'الوصف (للتوافق مع seed)',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'التفعيل',
+  PRIMARY KEY (`id`),
+  KEY `idx_grade_scale_range` (`min_value`,`max_value`),
+  KEY `idx_grade_scale_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول مقياس الدرجات';
+
+-- -----------------------------------------------------------
+-- Table: eqi_dimension_weights
+-- أوزان أبعاد مؤشر جودة التعليم (تُستخدم في النسخ الاحتياطي والاختبارات)
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `eqi_dimension_weights`;
+CREATE TABLE `eqi_dimension_weights` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `dimension_name` varchar(50) NOT NULL COMMENT 'اسم البعد بالإنجليزية',
+  `dimension_name_ar` varchar(100) DEFAULT NULL COMMENT 'اسم البعد بالعربية',
+  `default_weight` decimal(5,2) NOT NULL DEFAULT 0.00 COMMENT 'الوزن الافتراضي (%)',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل البعد نشط',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_eqi_dimension_weights_name` (`dimension_name`),
+  KEY `idx_eqi_dimension_weights_active` (`is_active`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول أوزان أبعاد EQI';
+
+-- -----------------------------------------------------------
+-- Table: alert_settings
+-- إعدادات عتبات التنبيهات لكل مدرسة
+-- -----------------------------------------------------------
+DROP TABLE IF EXISTS `alert_settings`;
+CREATE TABLE `alert_settings` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `school_id` int(10) unsigned DEFAULT NULL COMMENT 'رقم المدرسة (NULL = جميع المدارس)',
+  `alert_type` varchar(50) NOT NULL COMMENT 'نوع التنبيه',
+  `is_enabled` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل التنبيه مفعّل',
+  `threshold_value` decimal(8,2) DEFAULT NULL COMMENT 'قيمة العتبة',
+  `severity` varchar(20) NOT NULL DEFAULT 'warning' COMMENT 'درجة الخطورة (info/warning/danger/critical)',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'هل السجل نشط',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'تاريخ الإنشاء',
+  PRIMARY KEY (`id`),
+  KEY `idx_alert_settings_school` (`school_id`),
+  KEY `idx_alert_settings_type` (`alert_type`),
+  KEY `idx_alert_settings_active` (`is_active`),
+  CONSTRAINT `fk_alert_settings_school` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='جدول إعدادات التنبيهات';
 
 -- -----------------------------------------------------------
 -- View: v_student_current
